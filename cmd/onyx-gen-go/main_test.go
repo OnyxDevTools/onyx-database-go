@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -52,8 +54,30 @@ func TestValidArguments(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	if err := run([]string{"--out", "./out.go", "--package", "models"}, stdout, stderr); err != nil {
+	tmp := t.TempDir()
+	schemaPath := filepath.Join(tmp, "schema.json")
+	if err := os.WriteFile(schemaPath, []byte(`{"tables": []}`), 0o644); err != nil {
+		t.Fatalf("failed to write schema: %v", err)
+	}
+
+	args := []string{"--out", "./out.go", "--package", "models", "--schema", schemaPath}
+
+	if err := run(args, stdout, stderr); err != nil {
 		t.Fatalf("expected valid arguments to pass, got %v", err)
+	}
+}
+
+func TestInvalidSource(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	err := run([]string{"--out", "./out.go", "--package", "models", "--source", "unknown"}, stdout, stderr)
+	if err == nil {
+		t.Fatalf("expected invalid source to fail")
+	}
+
+	if !strings.Contains(err.Error(), "--source") {
+		t.Fatalf("unexpected error for invalid source: %v", err)
 	}
 }
 
