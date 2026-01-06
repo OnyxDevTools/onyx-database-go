@@ -21,5 +21,31 @@ jobs:
       - name: Go vet
         run: go vet ./...
 
-      - name: Go test
-        run: go test ./...
+      - name: Go test with coverage
+        run: go test ./... -coverprofile=coverage.out -covermode=atomic
+
+      - name: Enforce coverage threshold
+        env:
+          COVERAGE_THRESHOLD: "54.0"
+        run: |
+          total=$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage is ${total}%"
+          TOTAL=$total python - <<'PY'
+import os
+import sys
+
+total = float(os.environ["TOTAL"])
+threshold = float(os.environ["COVERAGE_THRESHOLD"])
+
+if total < threshold:
+    sys.stderr.write(f"Coverage {total:.1f}% is below the required {threshold:.1f}% minimum.\n")
+    sys.exit(1)
+
+print(f"Coverage {total:.1f}% meets the {threshold:.1f}% threshold.")
+PY
+
+      - name: Upload coverage profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-profile
+          path: coverage.out
