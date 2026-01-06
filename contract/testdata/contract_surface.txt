@@ -1,0 +1,37 @@
+func Asc func(field string) Sort
+func Between func(field string, from any, to any) Condition
+func Cascade func(spec string) CascadeSpec
+func Contains func(field string, value any) Condition
+func Desc func(field string) Sort
+func Eq func(field string, value any) Condition
+func Gt func(field string, value any) Condition
+func Gte func(field string, value any) Condition
+func In func(field string, values []any) Condition
+func IsNull func(field string) Condition
+func Like func(field string, pattern any) Condition
+func Lt func(field string, value any) Condition
+func Lte func(field string, value any) Condition
+func Neq func(field string, value any) Condition
+func NewCascadeBuilder func() CascadeBuilder
+func NewError func(code string, message string, meta map[string]any) *Error
+func NormalizeSchema func(s Schema) Schema
+func NotIn func(field string, values []any) Condition
+func NotNull func(field string) Condition
+func NotWithin func(field string, query Query) Condition
+func ParseSchemaJSON func(data []byte) (Schema, error)
+func StartsWith func(field string, value any) Condition
+func Within func(field string, query Query) Condition
+type CascadeBuilder interface{Build() CascadeSpec; Graph(name string) CascadeBuilder; GraphType(table string) CascadeBuilder; SourceField(field string) CascadeBuilder; TargetField(field string) CascadeBuilder}
+type CascadeClient interface{Delete(ctx context.Context, table string, id string) error; Save(ctx context.Context, table string, entity any) error}
+type CascadeSpec interface{String() string}
+type Client interface{BatchSave(ctx context.Context, table string, entities []any, batchSize int) error; Cascade(spec CascadeSpec) CascadeClient; Delete(ctx context.Context, table string, id string) error; From(table string) Query; Save(ctx context.Context, table string, entity any) error; Schema(ctx context.Context) (Schema, error)}
+type Condition interface{encoding/json.Marshaler}
+type Error struct{Code string; Message string; Meta map[string]any}
+type Field struct{Name string "json:\"name\""; Type string "json:\"type\""; Nullable bool "json:\"nullable,omitempty\""; Primary bool "json:\"primaryKey,omitempty\""; Unique bool "json:\"unique,omitempty\""}
+type Iterator interface{Close() error; Err() error; Next() bool; Value() map[string]any}
+type PageResult struct{Items QueryResults "json:\"items\""; NextCursor string "json:\"nextCursor,omitempty\""}
+type Query interface{And(condition Condition) Query; Limit(limit int) Query; List(ctx context.Context) (QueryResults, error); MarshalJSON() ([]byte, error); Or(condition Condition) Query; OrderBy(sorts ...Sort) Query; Page(ctx context.Context, cursor string) (PageResult, error); Resolve(paths ...string) Query; Select(fields ...string) Query; Stream(ctx context.Context) (Iterator, error); Where(condition Condition) Query}
+type QueryResults []map[string]any
+type Schema struct{Tables []Table "json:\"tables\""}
+type Sort interface{encoding/json.Marshaler}
+type Table struct{Name string "json:\"name\""; Fields []Field "json:\"fields\""}
