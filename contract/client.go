@@ -11,6 +11,7 @@ type Client interface {
 	BatchSave(ctx context.Context, table string, entities []any, batchSize int) error
 	Schema(ctx context.Context) (Schema, error)
 	PublishSchema(ctx context.Context, schema Schema) error
+	Metrics(ctx context.Context, params MetricsParams) (Metrics, error)
 	Documents() DocumentClient
 	Secrets() SecretClient
 }

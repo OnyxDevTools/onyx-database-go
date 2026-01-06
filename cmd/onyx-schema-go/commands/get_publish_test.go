@@ -79,6 +79,9 @@ func (s *stubClient) Delete(ctx context.Context, table, id string) error       {
 func (s *stubClient) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {
 	return nil
 }
+func (s *stubClient) Metrics(ctx context.Context, params contract.MetricsParams) (contract.Metrics, error) {
+	return nil, nil
+}
 func (s *stubClient) Schema(ctx context.Context) (contract.Schema, error) { return s.schema, nil }
 func (s *stubClient) PublishSchema(ctx context.Context, schema contract.Schema) error {
 	s.publishCalled = true
