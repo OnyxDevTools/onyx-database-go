@@ -11,6 +11,64 @@ Go SDK and CLIs for Onyx Database, mirroring the TypeScript client with a contra
 - `examples/` — runnable samples and README snippets that compile under the `docs` build tag.
 - `codex-tasks/` — task manifest (`tasks.yaml`) plus per-task guides.
 
+## Install
+
+Requires Go 1.22+. Install the CLIs into your `$(go env GOBIN)` (or `$(go env GOPATH)/bin`) from the repo root:
+
+```bash
+go install ./cmd/onyx-schema-go
+go install ./cmd/onyx-gen-go
+```
+
+## Build
+
+Compile everything to ensure the SDK and CLIs are healthy:
+
+```bash
+go build ./...
+go vet ./...
+```
+
+## Examples
+
+The Go examples mirror the TypeScript examples and are gated by the `docs` build tag so they stay out of normal builds. They rely on `ONYX_DATABASE_ID`, `ONYX_DATABASE_BASE_URL`, `ONYX_DATABASE_API_KEY`, and `ONYX_DATABASE_API_SECRET` (see `examples/shared/config.go` for defaults you can override).
+
+- Compile-check everything: `go test -tags docs ./examples/...`
+- Run a specific sample: wrap the desired function in a tiny `main` and execute with the `docs` tag. Example:
+
+```bash
+cat > /tmp/run_example.go <<'EOF'
+package main
+
+import (
+	"context"
+	"log"
+
+	"github.com/OnyxDevTools/onyx-database-go/examples/query"
+)
+
+func main() {
+	if err := query.Basic(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}
+EOF
+
+go run -tags docs /tmp/run_example.go
+```
+
+## Test and coverage
+
+CI enforces coverage thresholds. Run the suite from the repo root:
+
+Quick check: `go test ./...`
+
+Coverage run:
+```bash
+go test ./... -coverprofile=coverage.out -covermode=atomic
+go tool cover -func=coverage.out
+```
+
 ## Initialize the client
 
 The Go client resolves configuration in the same order as the TS client: explicit values > environment variables > config files. Use `ClearConfigCache` between tests to reset cached values.
@@ -19,7 +77,7 @@ The Go client resolves configuration in the same order as the TS client: explici
 ```go
 ctx := context.Background()
 
-client, err := onyx.Init(ctx, onyx.Config{
+db, err := onyx.Init(ctx, onyx.Config{
     DatabaseID:      "db_123",
     DatabaseBaseURL: "https://api.onyx.dev",
     APIKey:          os.Getenv("ONYX_DATABASE_API_KEY"),
@@ -39,7 +97,7 @@ os.Setenv("ONYX_DATABASE_API_KEY", "key_abc")
 os.Setenv("ONYX_DATABASE_API_SECRET", "secret_xyz")
 
 ctx := context.Background()
-client, err := onyx.InitWithDatabaseID(ctx, "db_123")
+db, err := onyx.InitWithDatabaseID(ctx, "db_123")
 if err != nil { log.Fatal(err) }
 
 defer onyx.ClearConfigCache() // reset between test cases
@@ -130,7 +188,7 @@ if _, err := client.Documents().Save(ctx, doc); err != nil {
 }
 
 secret := contract.Secret{Key: "API_KEY", Value: "abc"}
-if _, err := client.Secrets().Set(ctx, secret); err != nil {
+if _, err := client.PutSecret(ctx, secret); err != nil {
     log.Fatal(err)
 }
 ```
@@ -157,15 +215,6 @@ onyx-gen-go --source api --database-id db_123 --out ./models/onyx.go --package m
 ```
 
 Generated helpers let you write `q := FromUser(client).Where(contract.Eq("id", userID))` while keeping the public API aligned with the TS client.
-
-## Testing and coverage
-
-CI enforces a coverage threshold. Run the same commands locally to verify:
-
-```bash
-go test ./... -coverprofile=coverage.out -covermode=atomic
-go tool cover -func=coverage.out
-```
 
 ## Working with the task pack
 - Tasks are dependency-aware: P0 setup → P1 contract freeze → P2 CLIs → P3 SDK core → P4 docs/CI/release/parity.

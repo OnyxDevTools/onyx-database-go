@@ -131,6 +131,7 @@ func cacheKey(cfg Config) string {
 type fileConfig struct {
 	DatabaseID      string `json:"databaseId"`
 	DatabaseBaseURL string `json:"databaseBaseUrl"`
+	BaseURL         string `json:"baseUrl"`
 	APIKey          string `json:"apiKey"`
 	APISecret       string `json:"apiSecret"`
 }
@@ -186,9 +187,15 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 			resolved.DatabaseID = fc.DatabaseID
 			meta.Sources.DatabaseID = SourceFile
 		}
-		if resolved.DatabaseBaseURL == "" && fc.DatabaseBaseURL != "" {
-			resolved.DatabaseBaseURL = fc.DatabaseBaseURL
-			meta.Sources.DatabaseBaseURL = SourceFile
+		if resolved.DatabaseBaseURL == "" {
+			switch {
+			case fc.DatabaseBaseURL != "":
+				resolved.DatabaseBaseURL = fc.DatabaseBaseURL
+				meta.Sources.DatabaseBaseURL = SourceFile
+			case fc.BaseURL != "":
+				resolved.DatabaseBaseURL = fc.BaseURL
+				meta.Sources.DatabaseBaseURL = SourceFile
+			}
 		}
 		if resolved.APIKey == "" && fc.APIKey != "" {
 			resolved.APIKey = fc.APIKey

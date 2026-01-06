@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/internal/httpclient"
@@ -36,6 +36,14 @@ type client struct {
 	sleep      func(time.Duration)
 }
 
+func (c *client) tablePath(table string) string {
+	return "/data/" + tableEscape(c.cfg.DatabaseID) + "/" + tableEscape(table)
+}
+
+func tableEscape(s string) string {
+	return url.PathEscape(s)
+}
+
 // Init constructs a contract.Client using the provided configuration.
 func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 	resolved, _, err := resolver.Resolve(ctx, resolver.Config{
@@ -59,17 +67,11 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 		logResponses = true
 	}
 
-	logger := log.New(os.Stdout, "", log.LstdFlags)
+	// Match the TS SDK logging output (no timestamps/prefixes).
+	logger := log.New(os.Stdout, "", 0)
 	signer := httpclient.Signer{
 		APIKey:    resolved.APIKey,
 		APISecret: resolved.APISecret,
-		Now: func() time.Time {
-			if cfg.Clock != nil {
-				return cfg.Clock()
-			}
-			return time.Now()
-		},
-		RequestID: func() string { return uuid.NewString() },
 	}
 
 	hc := httpclient.New(resolved.DatabaseBaseURL, cfg.HTTPClient, httpclient.Options{
@@ -79,7 +81,12 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 		Signer:       signer,
 	})
 
-	c := &client{cfg: resolved, httpClient: hc, now: signer.Now}
+	nowFn := time.Now
+	if cfg.Clock != nil {
+		nowFn = cfg.Clock
+	}
+
+	c := &client{cfg: resolved, httpClient: hc, now: nowFn}
 	if cfg.Sleep != nil {
 		c.sleep = cfg.Sleep
 	} else {
@@ -107,13 +114,22 @@ func (c *client) Cascade(spec contract.CascadeSpec) contract.CascadeClient {
 	return &cascadeClient{client: c, spec: spec}
 }
 
-func (c *client) Save(ctx context.Context, table string, entity any) error {
-	path := "/tables/" + table + "/save"
-	return c.httpClient.DoJSON(ctx, http.MethodPost, path, entity, nil)
+func (c *client) Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
+	path := c.tablePath(table)
+	if len(relationships) > 0 {
+		params := url.Values{}
+		params.Set("relationships", strings.Join(relationships, ","))
+		path += "?" + params.Encode()
+	}
+	var resp map[string]any
+	if err := c.httpClient.DoJSON(ctx, http.MethodPut, path, entity, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (c *client) Delete(ctx context.Context, table, id string) error {
-	path := "/tables/" + table + "/" + id
+	path := c.tablePath(table) + "/" + tableEscape(id)
 	return c.httpClient.DoJSON(ctx, http.MethodDelete, path, nil, nil)
 }
 
@@ -122,10 +138,32 @@ func (c *client) BatchSave(ctx context.Context, table string, entities []any, ba
 }
 
 func (c *client) Schema(ctx context.Context) (contract.Schema, error) {
-	return fetchSchema(ctx, c)
+	return c.GetSchema(ctx, nil)
+}
+
+func (c *client) GetSchema(ctx context.Context, tables []string) (contract.Schema, error) {
+	return fetchSchema(ctx, c, tables)
 }
 
 func (c *client) PublishSchema(ctx context.Context, schema contract.Schema) error {
+	return publishSchema(ctx, c, schema, false)
+}
+
+func (c *client) UpdateSchema(ctx context.Context, schema contract.Schema, publish bool) error {
+	return publishSchema(ctx, c, schema, publish)
+}
+
+func (c *client) ValidateSchema(ctx context.Context, schema contract.Schema) error {
 	normalized := contract.NormalizeSchema(schema)
-	return c.httpClient.DoJSON(ctx, http.MethodPost, "/schema", normalized, nil)
+	path := "/schemas/" + tableEscape(c.cfg.DatabaseID) + "/validate"
+	return c.httpClient.DoJSON(ctx, http.MethodPost, path, schemaUpsertPayload(normalized, c.cfg.DatabaseID), nil)
+}
+
+func (c *client) GetSchemaHistory(ctx context.Context) ([]contract.Schema, error) {
+	var history []contract.Schema
+	path := "/schemas/" + tableEscape(c.cfg.DatabaseID) + "/history"
+	if err := c.httpClient.DoJSON(ctx, http.MethodGet, path, nil, &history); err != nil {
+		return nil, err
+	}
+	return history, nil
 }

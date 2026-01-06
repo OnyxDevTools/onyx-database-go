@@ -89,18 +89,24 @@ func (c *Client) do(ctx context.Context, method, path string, reqBody any, strea
 	if err != nil {
 		return nil, nil, err
 	}
-	if reqBody != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
+	req.Header.Set("Content-Type", "application/json")
 
-	if c.signer.APIKey != "" {
-		if err := c.signer.Sign(req, buf.Bytes()); err != nil {
-			return nil, nil, err
-		}
+	if err := c.signer.Sign(req, buf.Bytes()); err != nil {
+		return nil, nil, err
 	}
 
 	if c.logRequests {
 		c.logger.Printf("[onyx] %s %s", method, req.URL.String())
+		if buf.Len() > 0 {
+			c.logger.Printf("[onyx] %s", strings.TrimSpace(buf.String()))
+		}
+		c.logger.Printf(
+			"[onyx] Headers: {x-onyx-key: '%s', x-onyx-secret: '%s', Accept: '%s', Content-Type: '%s'}",
+			req.Header.Get("x-onyx-key"),
+			redactedSecret(req.Header.Get("x-onyx-secret")),
+			req.Header.Get("Accept"),
+			req.Header.Get("Content-Type"),
+		)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -108,23 +114,35 @@ func (c *Client) do(ctx context.Context, method, path string, reqBody any, strea
 		return nil, nil, err
 	}
 
-	if c.logResponses {
-		c.logger.Printf("[onyx] response %d %s", resp.StatusCode, req.URL.String())
-	}
-
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		data, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
+		if c.logResponses {
+			c.logger.Printf("[onyx] %s", resp.Status)
+			if len(data) > 0 {
+				c.logger.Printf("[onyx] %s", strings.TrimSpace(string(data)))
+			}
+		}
 		return resp, nil, parseError(req.Context(), resp.StatusCode, data)
 	}
 
 	if streaming {
+		if c.logResponses {
+			c.logger.Printf("[onyx] %s", resp.Status)
+		}
 		return resp, nil, nil
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return resp, nil, err
+	}
+
+	if c.logResponses {
+		c.logger.Printf("[onyx] %s", resp.Status)
+		if len(data) > 0 {
+			c.logger.Printf("[onyx] %s", strings.TrimSpace(string(data)))
+		}
 	}
 
 	return resp, data, nil

@@ -22,6 +22,8 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 		batchSize = defaultBatchSize
 	}
 
+	path := c.tablePath(table)
+
 	for start := 0; start < len(entities); start += batchSize {
 		end := start + batchSize
 		if end > len(entities) {
@@ -30,7 +32,7 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 		chunk := entities[start:end]
 		payload := map[string]any{"items": chunk}
 
-		err := c.httpClient.DoJSON(ctx, http.MethodPost, "/tables/"+table+"/batch_save", payload, nil)
+		err := c.httpClient.DoJSON(ctx, http.MethodPut, path, payload, nil)
 		if err == nil {
 			continue
 		}
@@ -43,7 +45,7 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 					return ctx.Err()
 				case <-time.After(50 * time.Millisecond):
 				}
-				if retryErr := c.httpClient.DoJSON(ctx, http.MethodPost, "/tables/"+table+"/batch_save", payload, nil); retryErr == nil {
+				if retryErr := c.httpClient.DoJSON(ctx, http.MethodPut, path, payload, nil); retryErr == nil {
 					continue
 				} else {
 					return retryErr

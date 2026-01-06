@@ -20,6 +20,8 @@ func (s stubQuery) Page(context.Context, string) (PageResult, error) {
 	return PageResult{}, nil
 }
 func (s stubQuery) Stream(context.Context) (Iterator, error) { return nil, nil }
+func (s stubQuery) SetUpdates(map[string]any) Query          { return s }
+func (s stubQuery) Update(context.Context) (int, error)      { return 0, nil }
 func (s stubQuery) MarshalJSON() ([]byte, error)             { return []byte(`{"table":"User"}`), nil }
 
 func TestConditionJSON(t *testing.T) {
@@ -30,22 +32,22 @@ func TestConditionJSON(t *testing.T) {
 		cond Condition
 		want string
 	}{
-		{name: "eq", cond: Eq("name", "alice"), want: `{"field":"name","op":"eq","value":"alice"}`},
-		{name: "neq", cond: Neq("age", 30), want: `{"field":"age","op":"neq","value":30}`},
-		{name: "in", cond: In("role", []any{"admin", "member"}), want: `{"field":"role","op":"in","values":["admin","member"]}`},
-		{name: "not_in", cond: NotIn("role", []any{"guest"}), want: `{"field":"role","op":"not_in","values":["guest"]}`},
-		{name: "between", cond: Between("score", 1, 10), want: `{"field":"score","from":1,"op":"between","to":10}`},
-		{name: "gt", cond: Gt("score", 9), want: `{"field":"score","op":"gt","value":9}`},
-		{name: "gte", cond: Gte("score", 9), want: `{"field":"score","op":"gte","value":9}`},
-		{name: "lt", cond: Lt("score", 9), want: `{"field":"score","op":"lt","value":9}`},
-		{name: "lte", cond: Lte("score", 9), want: `{"field":"score","op":"lte","value":9}`},
-		{name: "like", cond: Like("email", "%@example.com"), want: `{"field":"email","op":"like","pattern":"%@example.com"}`},
-		{name: "contains", cond: Contains("tags", "blue"), want: `{"field":"tags","op":"contains","value":"blue"}`},
-		{name: "starts_with", cond: StartsWith("name", "Al"), want: `{"field":"name","op":"starts_with","value":"Al"}`},
-		{name: "is_null", cond: IsNull("deletedAt"), want: `{"field":"deletedAt","op":"is_null"}`},
-		{name: "not_null", cond: NotNull("createdAt"), want: `{"field":"createdAt","op":"not_null"}`},
-		{name: "within", cond: Within("userId", sampleQuery), want: `{"field":"userId","op":"within","query":{"table":"User"}}`},
-		{name: "not_within", cond: NotWithin("userId", sampleQuery), want: `{"field":"userId","op":"not_within","query":{"table":"User"}}`},
+		{name: "eq", cond: Eq("name", "alice"), want: `{"conditionType":"SingleCondition","criteria":{"field":"name","operator":"EQUAL","value":"alice"}}`},
+		{name: "neq", cond: Neq("age", 30), want: `{"conditionType":"SingleCondition","criteria":{"field":"age","operator":"NOT_EQUAL","value":30}}`},
+		{name: "in", cond: In("role", []any{"admin", "member"}), want: `{"conditionType":"SingleCondition","criteria":{"field":"role","operator":"IN","value":["admin","member"]}}`},
+		{name: "not_in", cond: NotIn("role", []any{"guest"}), want: `{"conditionType":"SingleCondition","criteria":{"field":"role","operator":"NOT_IN","value":["guest"]}}`},
+		{name: "between", cond: Between("score", 1, 10), want: `{"conditionType":"SingleCondition","criteria":{"field":"score","operator":"BETWEEN","value":{"from":1,"to":10}}}`},
+		{name: "gt", cond: Gt("score", 9), want: `{"conditionType":"SingleCondition","criteria":{"field":"score","operator":"GREATER_THAN","value":9}}`},
+		{name: "gte", cond: Gte("score", 9), want: `{"conditionType":"SingleCondition","criteria":{"field":"score","operator":"GREATER_THAN_EQUAL","value":9}}`},
+		{name: "lt", cond: Lt("score", 9), want: `{"conditionType":"SingleCondition","criteria":{"field":"score","operator":"LESS_THAN","value":9}}`},
+		{name: "lte", cond: Lte("score", 9), want: `{"conditionType":"SingleCondition","criteria":{"field":"score","operator":"LESS_THAN_EQUAL","value":9}}`},
+		{name: "like", cond: Like("email", "%@example.com"), want: `{"conditionType":"SingleCondition","criteria":{"field":"email","operator":"LIKE","value":"%@example.com"}}`},
+		{name: "contains", cond: Contains("tags", "blue"), want: `{"conditionType":"SingleCondition","criteria":{"field":"tags","operator":"CONTAINS","value":"blue"}}`},
+		{name: "starts_with", cond: StartsWith("name", "Al"), want: `{"conditionType":"SingleCondition","criteria":{"field":"name","operator":"STARTS_WITH","value":"Al"}}`},
+		{name: "is_null", cond: IsNull("deletedAt"), want: `{"conditionType":"SingleCondition","criteria":{"field":"deletedAt","operator":"IS_NULL"}}`},
+		{name: "not_null", cond: NotNull("createdAt"), want: `{"conditionType":"SingleCondition","criteria":{"field":"createdAt","operator":"NOT_NULL"}}`},
+		{name: "within", cond: Within("userId", sampleQuery), want: `{"conditionType":"SingleCondition","criteria":{"field":"userId","operator":"IN","value":{"table":"User"}}}`},
+		{name: "not_within", cond: NotWithin("userId", sampleQuery), want: `{"conditionType":"SingleCondition","criteria":{"field":"userId","operator":"NOT_IN","value":{"table":"User"}}}`},
 	}
 
 	for _, tt := range cases {

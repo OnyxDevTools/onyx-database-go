@@ -74,16 +74,39 @@ type stubClient struct {
 
 func (s *stubClient) From(table string) contract.Query                         { return nil }
 func (s *stubClient) Cascade(spec contract.CascadeSpec) contract.CascadeClient { return nil }
-func (s *stubClient) Save(ctx context.Context, table string, entity any) error { return nil }
-func (s *stubClient) Delete(ctx context.Context, table, id string) error       { return nil }
+func (s *stubClient) Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
+	return nil, nil
+}
+func (s *stubClient) Delete(ctx context.Context, table, id string) error { return nil }
 func (s *stubClient) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {
 	return nil
 }
 func (s *stubClient) Schema(ctx context.Context) (contract.Schema, error) { return s.schema, nil }
+func (s *stubClient) GetSchema(ctx context.Context, tables []string) (contract.Schema, error) {
+	return s.schema, nil
+}
+func (s *stubClient) GetSchemaHistory(ctx context.Context) ([]contract.Schema, error) {
+	return nil, nil
+}
+func (s *stubClient) UpdateSchema(ctx context.Context, schema contract.Schema, publish bool) error {
+	s.publishCalled = publish
+	s.schema = schema
+	return nil
+}
+func (s *stubClient) ValidateSchema(ctx context.Context, schema contract.Schema) error { return nil }
 func (s *stubClient) PublishSchema(ctx context.Context, schema contract.Schema) error {
 	s.publishCalled = true
 	s.schema = schema
 	return nil
 }
 func (s *stubClient) Documents() contract.DocumentClient { return nil }
-func (s *stubClient) Secrets() contract.SecretClient     { return nil }
+func (s *stubClient) ListSecrets(ctx context.Context) ([]contract.Secret, error) {
+	return nil, nil
+}
+func (s *stubClient) GetSecret(ctx context.Context, key string) (contract.Secret, error) {
+	return contract.Secret{}, nil
+}
+func (s *stubClient) PutSecret(ctx context.Context, secret contract.Secret) (contract.Secret, error) {
+	return secret, nil
+}
+func (s *stubClient) DeleteSecret(ctx context.Context, key string) error { return nil }
