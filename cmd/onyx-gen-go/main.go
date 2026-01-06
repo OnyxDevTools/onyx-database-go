@@ -24,6 +24,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 	fs.SetOutput(&usageBuffer)
 
 	schemaPath := fs.String("schema", "./onyx.schema.json", "path to the onyx.schema.json file")
+	source := fs.String("source", "file", "schema source: file or api")
+	databaseID := fs.String("database-id", "", "database id used when --source=api")
 	outPath := fs.String("out", "", "path to the generated Go file (required)")
 	packageName := fs.String("package", "", "package name for generated code (required)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
@@ -47,6 +49,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 
 	opts := generator.Options{
 		SchemaPath:      *schemaPath,
+		Source:          *source,
+		DatabaseID:      *databaseID,
 		OutPath:         *outPath,
 		PackageName:     *packageName,
 		Tables:          parseTables(*tables),
