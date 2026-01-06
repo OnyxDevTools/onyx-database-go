@@ -1,10 +1,10 @@
 # onyx-database-go
 
-Go SDK and CLIs for Onyx Database, built with a contract-first design that mirrors the TypeScript client. The repository currently ships with a dependency-aware task pack in `codex-tasks/`; follow those tasks to build out the contract, CLIs, SDK, and parity docs.
+Go SDK and CLIs for Onyx Database, built with a contract-first design that mirrors the TypeScript client. The repository is currently scaffolded with the core packages and CLI entry points that future tasks will fill in.
 
 ## Status and layout
-- `contract/` — stable, stdlib-only API surface (Error, Sort/Condition, Query, Cascade, Schema, Client) guarded by compliance tests and `STABILITY.md`.
-- `onyx/` — SDK implementation: init + resolver chain, HTTP client, auth/signing, query execution, CRUD/cascade/schema, documents and secrets endpoints.
+- `contract/` — stable, stdlib-only API surface guarded by compliance tests and `STABILITY.md`.
+- `onyx/` — SDK implementation: configuration resolution, HTTP client, auth/signing, query execution, CRUD/cascade/schema, documents and secrets endpoints.
 - `internal/` — shared helpers kept out of the public API.
 - `cmd/onyx-schema-go/` — schema CLI: validate, diff, normalize, get, publish.
 - `cmd/onyx-gen-go/` — codegen CLI: Go structs/table consts/helpers from `onyx.schema.json`.
@@ -14,7 +14,7 @@ Go SDK and CLIs for Onyx Database, built with a contract-first design that mirro
 ## Development principles
 - Contract-first: `/contract` stays stdlib-only and stable; breaking changes require a deliberate major bump and updates to `contract/STABILITY.md`.
 - Determinism: stable JSON for conditions/sorts, normalized schema ordering, reproducible codegen with no timestamps; generated files import `contract` only (plus `time` when needed).
-- Testing: every behavior in `/onyx`, `/cmd`, `/internal` needs unit tests. Keep contract compliance tests green. Run `go test ./...` and `go vet ./...` (optionally `golangci-lint run`).
+- Testing: every behavior in `/onyx`, `/cmd`, `/internal` needs unit tests. Run `go test ./...` and `go vet ./...` (optionally `golangci-lint run`).
 - Resolver parity: explicit config > env vars > config files with cache TTL + `ClearConfigCache`, matching the TS client.
 
 ## Planned usage (post-implementation)
