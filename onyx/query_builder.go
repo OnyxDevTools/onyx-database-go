@@ -12,9 +12,11 @@ type query struct {
 	table         string
 	clauses       []clause
 	selectFields  []string
+	groupFields   []string
 	resolveFields []string
 	sorts         []contract.Sort
-	limit         int
+	limit         *int
+	updates       map[string]any
 }
 
 func newQuery(client *client, table string) contract.Query {
@@ -25,8 +27,15 @@ func (q *query) clone() *query {
 	nq := *q
 	nq.clauses = append([]clause{}, q.clauses...)
 	nq.selectFields = append([]string{}, q.selectFields...)
+	nq.groupFields = append([]string{}, q.groupFields...)
 	nq.resolveFields = append([]string{}, q.resolveFields...)
 	nq.sorts = append([]contract.Sort{}, q.sorts...)
+	if q.updates != nil {
+		nq.updates = map[string]any{}
+		for k, v := range q.updates {
+			nq.updates[k] = v
+		}
+	}
 	return &nq
 }
 
@@ -52,6 +61,12 @@ func (q *query) Select(fields ...string) contract.Query {
 	return nq
 }
 
+func (q *query) GroupBy(fields ...string) contract.Query {
+	nq := q.clone()
+	nq.groupFields = append(nq.groupFields, fields...)
+	return nq
+}
+
 func (q *query) Resolve(paths ...string) contract.Query {
 	nq := q.clone()
 	nq.resolveFields = append(nq.resolveFields, paths...)
@@ -66,10 +81,19 @@ func (q *query) OrderBy(sorts ...contract.Sort) contract.Query {
 
 func (q *query) Limit(limit int) contract.Query {
 	nq := q.clone()
-	nq.limit = limit
+	nq.limit = &limit
+	return nq
+}
+
+func (q *query) SetUpdates(updates map[string]any) contract.Query {
+	nq := q.clone()
+	nq.updates = map[string]any{}
+	for k, v := range updates {
+		nq.updates[k] = v
+	}
 	return nq
 }
 
 func (q *query) MarshalJSON() ([]byte, error) {
-	return buildQueryPayload(q).MarshalJSON()
+	return buildQueryPayload(q, true).MarshalJSON()
 }

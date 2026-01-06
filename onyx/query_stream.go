@@ -2,6 +2,7 @@ package onyx
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -26,19 +27,26 @@ func (s *streamIterator) Next() bool {
 	if s.err != nil {
 		return false
 	}
-	if !s.scanner.Scan() {
-		if err := s.scanner.Err(); err != nil && err != io.EOF {
-			s.err = err
+	for {
+		if !s.scanner.Scan() {
+			if err := s.scanner.Err(); err != nil && err != io.EOF {
+				s.err = err
+			}
+			return false
 		}
-		return false
+		raw := bytes.TrimSpace(s.scanner.Bytes())
+		if len(raw) == 0 {
+			continue
+		}
+
+		var m map[string]any
+		if err := json.Unmarshal(raw, &m); err != nil {
+			s.err = err
+			return false
+		}
+		s.current = m
+		return true
 	}
-	var m map[string]any
-	if err := json.Unmarshal(s.scanner.Bytes(), &m); err != nil {
-		s.err = err
-		return false
-	}
-	s.current = m
-	return true
 }
 
 func (s *streamIterator) Value() map[string]any {

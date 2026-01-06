@@ -10,23 +10,23 @@ type Sort interface {
 }
 
 type sortOrder struct {
-	Field     string `json:"field"`
-	Direction string `json:"direction"`
+	Field string `json:"field"`
+	Order string `json:"order"`
 }
 
 func (s sortOrder) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Field     string `json:"field"`
-		Direction string `json:"direction"`
-	}{Field: s.Field, Direction: s.Direction})
+		Field string `json:"field"`
+		Order string `json:"order"`
+	}{Field: s.Field, Order: s.Order})
 }
 
 // Asc sorts by the provided field in ascending order.
 func Asc(field string) Sort {
-	return sortOrder{Field: field, Direction: "asc"}
+	return sortOrder{Field: field, Order: "ASC"}
 }
 
 // Desc sorts by the provided field in descending order.
 func Desc(field string) Sort {
-	return sortOrder{Field: field, Direction: "desc"}
+	return sortOrder{Field: field, Order: "DESC"}
 }

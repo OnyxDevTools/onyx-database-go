@@ -22,36 +22,75 @@ type condition struct {
 }
 
 func (c condition) MarshalJSON() ([]byte, error) {
-	m := map[string]any{
-		"op":    c.op,
-		"field": c.field,
+	crit := map[string]any{
+		"field":    c.field,
+		"operator": operatorFor(c.op),
 	}
 
 	switch c.op {
 	case "in", "not_in":
 		if c.values != nil {
-			m["values"] = c.values
+			crit["value"] = c.values
 		}
 	case "between":
-		m["from"] = c.from
-		m["to"] = c.to
+		crit["value"] = map[string]any{"from": c.from, "to": c.to}
 	case "is_null", "not_null":
-		// no additional fields
+		// no value
 	case "within", "not_within":
 		if c.query != nil {
 			raw, err := c.query.MarshalJSON()
 			if err != nil {
 				return nil, err
 			}
-			m["query"] = json.RawMessage(raw)
+			crit["value"] = json.RawMessage(raw)
 		}
-	case "like":
-		m["pattern"] = c.value
 	default:
-		m["value"] = c.value
+		crit["value"] = c.value
 	}
 
-	return json.Marshal(m)
+	return json.Marshal(map[string]any{
+		"conditionType": "SingleCondition",
+		"criteria":      crit,
+	})
+}
+
+func operatorFor(op string) string {
+	switch op {
+	case "eq":
+		return "EQUAL"
+	case "neq":
+		return "NOT_EQUAL"
+	case "in":
+		return "IN"
+	case "not_in":
+		return "NOT_IN"
+	case "between":
+		return "BETWEEN"
+	case "gt":
+		return "GREATER_THAN"
+	case "gte":
+		return "GREATER_THAN_EQUAL"
+	case "lt":
+		return "LESS_THAN"
+	case "lte":
+		return "LESS_THAN_EQUAL"
+	case "like":
+		return "LIKE"
+	case "contains":
+		return "CONTAINS"
+	case "starts_with":
+		return "STARTS_WITH"
+	case "is_null":
+		return "IS_NULL"
+	case "not_null":
+		return "NOT_NULL"
+	case "within":
+		return "IN"
+	case "not_within":
+		return "NOT_IN"
+	default:
+		return op
+	}
 }
 
 // Eq creates an equality condition for the given field.

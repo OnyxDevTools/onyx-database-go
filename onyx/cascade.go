@@ -2,7 +2,6 @@ package onyx
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
 )
@@ -13,18 +12,12 @@ type cascadeClient struct {
 }
 
 func (c *cascadeClient) Save(ctx context.Context, table string, entity any) error {
-	payload := map[string]any{
-		"spec":   c.spec.String(),
-		"entity": entity,
-	}
-	path := "/cascade/" + table + "/save"
-	return c.client.httpClient.DoJSON(ctx, http.MethodPost, path, payload, nil)
+	_, err := c.client.Save(ctx, table, entity, []string{c.spec.String()})
+	return err
 }
 
 func (c *cascadeClient) Delete(ctx context.Context, table, id string) error {
-	payload := map[string]any{
-		"spec": c.spec.String(),
-	}
-	path := "/cascade/" + table + "/" + id
-	return c.client.httpClient.DoJSON(ctx, http.MethodDelete, path, payload, nil)
+	// Cascade deletes reuse the same Delete endpoint with relationship spec.
+	// The API currently only supports relationship filters via resolvers; no extra payload needed.
+	return c.client.Delete(ctx, table, id)
 }
