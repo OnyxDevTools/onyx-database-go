@@ -1,0 +1,75 @@
+package onyx
+
+import "github.com/OnyxDevTools/onyx-database-go/contract"
+
+type clause struct {
+	Type      string
+	Condition contract.Condition
+}
+
+type query struct {
+	client        *client
+	table         string
+	clauses       []clause
+	selectFields  []string
+	resolveFields []string
+	sorts         []contract.Sort
+	limit         int
+}
+
+func newQuery(client *client, table string) contract.Query {
+	return &query{client: client, table: table}
+}
+
+func (q *query) clone() *query {
+	nq := *q
+	nq.clauses = append([]clause{}, q.clauses...)
+	nq.selectFields = append([]string{}, q.selectFields...)
+	nq.resolveFields = append([]string{}, q.resolveFields...)
+	nq.sorts = append([]contract.Sort{}, q.sorts...)
+	return &nq
+}
+
+func (q *query) Where(condition contract.Condition) contract.Query {
+	nq := q.clone()
+	nq.clauses = append(nq.clauses, clause{Type: "and", Condition: condition})
+	return nq
+}
+
+func (q *query) And(condition contract.Condition) contract.Query {
+	return q.Where(condition)
+}
+
+func (q *query) Or(condition contract.Condition) contract.Query {
+	nq := q.clone()
+	nq.clauses = append(nq.clauses, clause{Type: "or", Condition: condition})
+	return nq
+}
+
+func (q *query) Select(fields ...string) contract.Query {
+	nq := q.clone()
+	nq.selectFields = append(nq.selectFields, fields...)
+	return nq
+}
+
+func (q *query) Resolve(paths ...string) contract.Query {
+	nq := q.clone()
+	nq.resolveFields = append(nq.resolveFields, paths...)
+	return nq
+}
+
+func (q *query) OrderBy(sorts ...contract.Sort) contract.Query {
+	nq := q.clone()
+	nq.sorts = append(nq.sorts, sorts...)
+	return nq
+}
+
+func (q *query) Limit(limit int) contract.Query {
+	nq := q.clone()
+	nq.limit = limit
+	return nq
+}
+
+func (q *query) MarshalJSON() ([]byte, error) {
+	return buildQueryPayload(q).MarshalJSON()
+}
