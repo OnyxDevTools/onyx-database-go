@@ -1,0 +1,431 @@
+version: 1
+project: onyx-database-go
+generated_at: '2026-01-06T00:48:12Z'
+tasks:
+- id: P0_SETUP_01_REPO_SCAFFOLD
+  title: Repo scaffold for onyx-database-go (dirs, go.mod, baseline files)
+  depends_on: []
+  tags:
+  - setup
+  - foundation
+  file: tasks/P0_SETUP_01_REPO_SCAFFOLD.md
+- id: P0_SETUP_02_AGENT_GUIDANCE
+  title: Add AGENTS.md guidance for Codex work in this repo
+  depends_on:
+  - P0_SETUP_01_REPO_SCAFFOLD
+  tags:
+  - setup
+  - codex
+  file: tasks/P0_SETUP_02_AGENT_GUIDANCE.md
+- id: P0_SETUP_03_CI_BASELINE
+  title: Add GitHub Actions CI for go test and basic checks
+  depends_on:
+  - P0_SETUP_01_REPO_SCAFFOLD
+  tags:
+  - setup
+  - ci
+  file: tasks/P0_SETUP_03_CI_BASELINE.md
+- id: P1_CONTRACT_01_PACKAGE_SKELETON
+  title: Create contract package skeleton and stability policy doc
+  depends_on:
+  - P0_SETUP_01_REPO_SCAFFOLD
+  - P0_SETUP_02_AGENT_GUIDANCE
+  tags:
+  - contract
+  - foundation
+  file: tasks/P1_CONTRACT_01_PACKAGE_SKELETON.md
+- id: P1_CONTRACT_02_ERRORS
+  title: Define contract.Error and error conversion expectations
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  tags:
+  - contract
+  file: tasks/P1_CONTRACT_02_ERRORS.md
+- id: P1_CONTRACT_03_SORT
+  title: Define contract.Sort with Asc/Desc helpers (pure JSON shapes)
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  tags:
+  - contract
+  - query
+  file: tasks/P1_CONTRACT_03_SORT.md
+- id: P1_CONTRACT_04_CONDITIONS
+  title: Define contract.Condition and condition helper constructors
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  tags:
+  - contract
+  - query
+  file: tasks/P1_CONTRACT_04_CONDITIONS.md
+- id: P1_CONTRACT_05_QUERY_INTERFACE
+  title: Define contract.Query interface (builder + terminal ops)
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  - P1_CONTRACT_03_SORT
+  - P1_CONTRACT_04_CONDITIONS
+  tags:
+  - contract
+  - query
+  file: tasks/P1_CONTRACT_05_QUERY_INTERFACE.md
+- id: P1_CONTRACT_06_CASCADE
+  title: Define cascade contract (CascadeSpec, CascadeBuilder, CascadeClient)
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  tags:
+  - contract
+  - cascade
+  file: tasks/P1_CONTRACT_06_CASCADE.md
+- id: P1_CONTRACT_07_SCHEMA_TYPES
+  title: Define schema contract types and JSON parsing helpers
+  depends_on:
+  - P1_CONTRACT_01_PACKAGE_SKELETON
+  tags:
+  - contract
+  - schema
+  file: tasks/P1_CONTRACT_07_SCHEMA_TYPES.md
+- id: P1_CONTRACT_08_CLIENT_INTERFACE
+  title: Define contract.Client interface (From, Cascade, Save/Delete/BatchSave/Schema)
+  depends_on:
+  - P1_CONTRACT_05_QUERY_INTERFACE
+  - P1_CONTRACT_06_CASCADE
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  - P1_CONTRACT_02_ERRORS
+  tags:
+  - contract
+  - client
+  file: tasks/P1_CONTRACT_08_CLIENT_INTERFACE.md
+- id: P1_CONTRACT_09_CONTRACT_COMPLIANCE_TESTS
+  title: 'Add contract compliance tests: stdlib-only imports and API surface snapshot'
+  depends_on:
+  - P1_CONTRACT_02_ERRORS
+  - P1_CONTRACT_03_SORT
+  - P1_CONTRACT_04_CONDITIONS
+  - P1_CONTRACT_05_QUERY_INTERFACE
+  - P1_CONTRACT_06_CASCADE
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  - P1_CONTRACT_08_CLIENT_INTERFACE
+  tags:
+  - contract
+  - tests
+  file: tasks/P1_CONTRACT_09_CONTRACT_COMPLIANCE_TESTS.md
+- id: P1_CONTRACT_10_FREEZE_V1
+  title: Freeze contract v1 checklist and tag readiness notes
+  depends_on:
+  - P1_CONTRACT_09_CONTRACT_COMPLIANCE_TESTS
+  tags:
+  - contract
+  - release
+  file: tasks/P1_CONTRACT_10_FREEZE_V1.md
+- id: P2_SCHEMA_CLI_01_SKELETON
+  title: Create onyx-schema-go CLI skeleton with subcommand dispatch
+  depends_on:
+  - P1_CONTRACT_10_FREEZE_V1
+  tags:
+  - cli
+  - schema
+  file: tasks/P2_SCHEMA_CLI_01_SKELETON.md
+- id: P2_SCHEMA_CLI_02_VALIDATE
+  title: Implement onyx-schema-go validate (local file only)
+  depends_on:
+  - P2_SCHEMA_CLI_01_SKELETON
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  tags:
+  - cli
+  - schema
+  file: tasks/P2_SCHEMA_CLI_02_VALIDATE.md
+- id: P2_SCHEMA_CLI_03_DIFF
+  title: Implement onyx-schema-go diff (local vs local) with --json option
+  depends_on:
+  - P2_SCHEMA_CLI_01_SKELETON
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  tags:
+  - cli
+  - schema
+  file: tasks/P2_SCHEMA_CLI_03_DIFF.md
+- id: P2_SCHEMA_CLI_04_NORMALIZE
+  title: Implement onyx-schema-go normalize command (optional but recommended)
+  depends_on:
+  - P2_SCHEMA_CLI_01_SKELETON
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  tags:
+  - cli
+  - schema
+  file: tasks/P2_SCHEMA_CLI_04_NORMALIZE.md
+- id: P2_CODEGEN_01_SKELETON
+  title: Create onyx-gen-go CLI skeleton (schema file -> Go file)
+  depends_on:
+  - P1_CONTRACT_10_FREEZE_V1
+  tags:
+  - cli
+  - codegen
+  file: tasks/P2_CODEGEN_01_SKELETON.md
+- id: P2_CODEGEN_02_LOAD_SCHEMA
+  title: Implement schema loader + normalization for codegen
+  depends_on:
+  - P2_CODEGEN_01_SKELETON
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  tags:
+  - cli
+  - codegen
+  file: tasks/P2_CODEGEN_02_LOAD_SCHEMA.md
+- id: P2_CODEGEN_03_TYPE_MAPPING
+  title: Implement Onyx->Go type mapping rules for fields
+  depends_on:
+  - P2_CODEGEN_02_LOAD_SCHEMA
+  tags:
+  - cli
+  - codegen
+  file: tasks/P2_CODEGEN_03_TYPE_MAPPING.md
+- id: P2_CODEGEN_04_GENERATE_STRUCTS_AND_TABLES
+  title: Generate Go structs + table constants (imports contract only if helpers emitted)
+  depends_on:
+  - P2_CODEGEN_03_TYPE_MAPPING
+  tags:
+  - cli
+  - codegen
+  file: tasks/P2_CODEGEN_04_GENERATE_STRUCTS_AND_TABLES.md
+- id: P2_CODEGEN_05_GENERATE_HELPERS
+  title: Generate optional helper functions (FromUser etc) that depend only on contract
+  depends_on:
+  - P2_CODEGEN_04_GENERATE_STRUCTS_AND_TABLES
+  tags:
+  - cli
+  - codegen
+  file: tasks/P2_CODEGEN_05_GENERATE_HELPERS.md
+- id: P2_CODEGEN_06_GOLDEN_TESTS
+  title: Add golden tests for codegen output stability
+  depends_on:
+  - P2_CODEGEN_04_GENERATE_STRUCTS_AND_TABLES
+  - P2_CODEGEN_05_GENERATE_HELPERS
+  tags:
+  - cli
+  - codegen
+  - tests
+  file: tasks/P2_CODEGEN_06_GOLDEN_TESTS.md
+- id: P3_SDK_01_PUBLIC_INIT
+  title: Implement onyx.Init that resolves config and returns contract.Client
+  depends_on:
+  - P1_CONTRACT_10_FREEZE_V1
+  - P0_SETUP_03_CI_BASELINE
+  tags:
+  - sdk
+  - foundation
+  file: tasks/P3_SDK_01_PUBLIC_INIT.md
+- id: P3_SDK_02_RESOLVER_ENV
+  title: 'Implement config resolver: explicit + env vars'
+  depends_on:
+  - P3_SDK_01_PUBLIC_INIT
+  tags:
+  - sdk
+  - resolver
+  file: tasks/P3_SDK_02_RESOLVER_ENV.md
+- id: P3_SDK_03_RESOLVER_FILES
+  title: 'Implement config resolver: ONYX_CONFIG_PATH + well-known JSON paths'
+  depends_on:
+  - P3_SDK_02_RESOLVER_ENV
+  tags:
+  - sdk
+  - resolver
+  file: tasks/P3_SDK_03_RESOLVER_FILES.md
+- id: P3_SDK_04_RESOLVER_CACHE_TTL
+  title: Add resolver caching (default 5m) + ClearConfigCache parity
+  depends_on:
+  - P3_SDK_03_RESOLVER_FILES
+  tags:
+  - sdk
+  - resolver
+  - cache
+  file: tasks/P3_SDK_04_RESOLVER_CACHE_TTL.md
+- id: P3_SDK_05_HTTP_CLIENT_CORE
+  title: 'Implement internal HTTP client: base URL, keepalive transport, logging toggles'
+  depends_on:
+  - P3_SDK_01_PUBLIC_INIT
+  tags:
+  - sdk
+  - http
+  file: tasks/P3_SDK_05_HTTP_CLIENT_CORE.md
+- id: P3_SDK_06_AUTH_SIGNING
+  title: Implement API auth/signing exactly like TS client
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_02_RESOLVER_ENV
+  tags:
+  - sdk
+  - http
+  - auth
+  file: tasks/P3_SDK_06_AUTH_SIGNING.md
+- id: P3_SDK_07_ERROR_MAPPING
+  title: Map non-2xx HTTP responses into contract.Error consistently
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P1_CONTRACT_02_ERRORS
+  tags:
+  - sdk
+  - errors
+  file: tasks/P3_SDK_07_ERROR_MAPPING.md
+- id: P3_SDK_08_QUERY_BUILDER_IMPL
+  title: Implement onyx query builder that satisfies contract.Query (build payload
+    only)
+  depends_on:
+  - P3_SDK_01_PUBLIC_INIT
+  - P1_CONTRACT_05_QUERY_INTERFACE
+  - P1_CONTRACT_04_CONDITIONS
+  - P1_CONTRACT_03_SORT
+  tags:
+  - sdk
+  - query
+  file: tasks/P3_SDK_08_QUERY_BUILDER_IMPL.md
+- id: P3_SDK_09_QUERY_LIST_PAGE
+  title: 'Wire query builder to API: List and Page terminal methods'
+  depends_on:
+  - P3_SDK_08_QUERY_BUILDER_IMPL
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_06_AUTH_SIGNING
+  - P3_SDK_07_ERROR_MAPPING
+  tags:
+  - sdk
+  - query
+  - api
+  file: tasks/P3_SDK_09_QUERY_LIST_PAGE.md
+- id: P3_SDK_10_QUERY_STREAM
+  title: Implement Query.Stream(ctx) iterator using streaming results API
+  depends_on:
+  - P3_SDK_09_QUERY_LIST_PAGE
+  tags:
+  - sdk
+  - query
+  - streaming
+  file: tasks/P3_SDK_10_QUERY_STREAM.md
+- id: P3_SDK_11_CRUD_SAVE_DELETE
+  title: Implement Client.Save and Client.Delete API calls
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_06_AUTH_SIGNING
+  - P3_SDK_07_ERROR_MAPPING
+  - P3_SDK_01_PUBLIC_INIT
+  - P1_CONTRACT_08_CLIENT_INTERFACE
+  tags:
+  - sdk
+  - api
+  - crud
+  file: tasks/P3_SDK_11_CRUD_SAVE_DELETE.md
+- id: P3_SDK_12_BATCH_SAVE
+  title: Implement Client.BatchSave with chunking and safe retries
+  depends_on:
+  - P3_SDK_11_CRUD_SAVE_DELETE
+  tags:
+  - sdk
+  - api
+  - batch
+  file: tasks/P3_SDK_12_BATCH_SAVE.md
+- id: P3_SDK_13_CASCADE_IMPL
+  title: Implement CascadeClient.Save/Delete using cascade spec
+  depends_on:
+  - P3_SDK_11_CRUD_SAVE_DELETE
+  - P1_CONTRACT_06_CASCADE
+  tags:
+  - sdk
+  - cascade
+  - api
+  file: tasks/P3_SDK_13_CASCADE_IMPL.md
+- id: P3_SDK_14_SCHEMA_API
+  title: Implement Client.Schema(ctx) fetching schema from API
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_06_AUTH_SIGNING
+  - P3_SDK_07_ERROR_MAPPING
+  - P1_CONTRACT_07_SCHEMA_TYPES
+  - P1_CONTRACT_08_CLIENT_INTERFACE
+  tags:
+  - sdk
+  - schema
+  - api
+  file: tasks/P3_SDK_14_SCHEMA_API.md
+- id: P4_SCHEMA_CLI_01_GET_PUBLISH
+  title: Implement onyx-schema-go get/publish using onyx SDK resolver + HTTP stack
+  depends_on:
+  - P3_SDK_14_SCHEMA_API
+  - P3_SDK_04_RESOLVER_CACHE_TTL
+  - P2_SCHEMA_CLI_01_SKELETON
+  tags:
+  - cli
+  - schema
+  - api
+  file: tasks/P4_SCHEMA_CLI_01_GET_PUBLISH.md
+- id: P4_CODEGEN_01_SOURCE_API
+  title: Add onyx-gen-go --source api to fetch schema via SDK before generating
+  depends_on:
+  - P3_SDK_14_SCHEMA_API
+  - P2_CODEGEN_01_SKELETON
+  - P2_CODEGEN_02_LOAD_SCHEMA
+  tags:
+  - cli
+  - codegen
+  - api
+  file: tasks/P4_CODEGEN_01_SOURCE_API.md
+- id: P4_ENDPOINTS_01_DOCUMENTS_API
+  title: Implement Documents API surface in onyx SDK (parity with TS docs)
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_06_AUTH_SIGNING
+  - P3_SDK_07_ERROR_MAPPING
+  - P3_SDK_01_PUBLIC_INIT
+  tags:
+  - sdk
+  - api
+  - documents
+  file: tasks/P4_ENDPOINTS_01_DOCUMENTS_API.md
+- id: P4_ENDPOINTS_02_SECRETS_API
+  title: Implement Secrets API surface in onyx SDK (parity with TS docs)
+  depends_on:
+  - P3_SDK_05_HTTP_CLIENT_CORE
+  - P3_SDK_06_AUTH_SIGNING
+  - P3_SDK_07_ERROR_MAPPING
+  - P3_SDK_01_PUBLIC_INIT
+  tags:
+  - sdk
+  - api
+  - secrets
+  file: tasks/P4_ENDPOINTS_02_SECRETS_API.md
+- id: P4_DOCS_01_README_PARITY
+  title: Write README with Go equivalents of TS client examples (init/query/resolve/cascade/codegen)
+  depends_on:
+  - P3_SDK_11_CRUD_SAVE_DELETE
+  - P3_SDK_09_QUERY_LIST_PAGE
+  - P3_SDK_13_CASCADE_IMPL
+  - P2_CODEGEN_04_GENERATE_STRUCTS_AND_TABLES
+  - P2_SCHEMA_CLI_02_VALIDATE
+  tags:
+  - docs
+  file: tasks/P4_DOCS_01_README_PARITY.md
+- id: P4_CI_01_COVERAGE_GATE
+  title: Add CI coverage gate and enforce minimum threshold
+  depends_on:
+  - P0_SETUP_03_CI_BASELINE
+  - P3_SDK_11_CRUD_SAVE_DELETE
+  tags:
+  - ci
+  - tests
+  file: tasks/P4_CI_01_COVERAGE_GATE.md
+- id: P4_RELEASE_01_VERSIONING
+  title: Define release/versioning process for Go module + CLIs
+  depends_on:
+  - P4_DOCS_01_README_PARITY
+  - P4_CI_01_COVERAGE_GATE
+  tags:
+  - release
+  file: tasks/P4_RELEASE_01_VERSIONING.md
+- id: P4_PARITY_01_TS_AUDIT
+  title: 'Perform parity audit vs TypeScript SDK: endpoints, JSON shapes, query/cascade
+    behaviors'
+  depends_on:
+  - P3_SDK_12_BATCH_SAVE
+  - P3_SDK_10_QUERY_STREAM
+  - P4_ENDPOINTS_01_DOCUMENTS_API
+  - P4_ENDPOINTS_02_SECRETS_API
+  - P4_SCHEMA_CLI_01_GET_PUBLISH
+  - P4_CODEGEN_01_SOURCE_API
+  tags:
+  - parity
+  - audit
+  file: tasks/P4_PARITY_01_TS_AUDIT.md
