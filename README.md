@@ -17,6 +17,11 @@ Go SDK and CLIs for Onyx Database, built with a contract-first design that mirro
 - Testing: every behavior in `/onyx`, `/cmd`, `/internal` needs unit tests. Run `go test ./...` and `go vet ./...` (optionally `golangci-lint run`).
 - Resolver parity: explicit config > env vars > config files with cache TTL + `ClearConfigCache`, matching the TS client.
 
+## Testing and coverage
+- Run the test suite with coverage locally using `go test ./... -coverprofile=coverage.out -covermode=atomic`.
+- Summarize total coverage with `go tool cover -func=coverage.out`.
+- CI enforces a minimum 54% total coverage; PRs will fail if the threshold is not met.
+
 ## Planned usage (post-implementation)
 
 ### Initialize the client
