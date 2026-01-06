@@ -10,4 +10,7 @@ type Client interface {
 	Delete(ctx context.Context, table, id string) error
 	BatchSave(ctx context.Context, table string, entities []any, batchSize int) error
 	Schema(ctx context.Context) (Schema, error)
+	PublishSchema(ctx context.Context, schema Schema) error
+	Documents() DocumentClient
+	Secrets() SecretClient
 }

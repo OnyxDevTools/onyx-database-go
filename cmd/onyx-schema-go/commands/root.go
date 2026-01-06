@@ -68,7 +68,7 @@ func availableCommands() []Command {
 		&ValidateCommand{},
 		&DiffCommand{},
 		&NormalizeCommand{},
-		&StubCommand{name: "get", description: "retrieve schema from service (coming soon)"},
-		&StubCommand{name: "publish", description: "publish schema to service (coming soon)"},
+		&GetCommand{},
+		&PublishCommand{},
 	}
 }

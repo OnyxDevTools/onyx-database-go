@@ -124,3 +124,8 @@ func (c *client) BatchSave(ctx context.Context, table string, entities []any, ba
 func (c *client) Schema(ctx context.Context) (contract.Schema, error) {
 	return fetchSchema(ctx, c)
 }
+
+func (c *client) PublishSchema(ctx context.Context, schema contract.Schema) error {
+	normalized := contract.NormalizeSchema(schema)
+	return c.httpClient.DoJSON(ctx, http.MethodPost, "/schema", normalized, nil)
+}
