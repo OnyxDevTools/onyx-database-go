@@ -1,0 +1,30 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Build directories
+bin/
+
+# Go workspace/cache artifacts
+*.out
+*.log
+coverage.*
+*.coverprofile
+*.cov
+*.prof
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+
+# Go modules
+vendor/
