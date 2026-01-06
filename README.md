@@ -113,6 +113,28 @@ if err := client.Cascade(spec).Delete(ctx, "User", user.ID); err != nil {
 }
 ```
 
+## Documents and secrets APIs
+
+The Go SDK mirrors the TS helpers for auxiliary APIs as well:
+
+```go
+ctx := context.Background()
+client := mustInit(ctx)
+
+doc, err := client.Documents().Get(ctx, "doc_123")
+if err != nil { log.Fatal(err) }
+
+doc.Data["status"] = "updated"
+if _, err := client.Documents().Save(ctx, doc); err != nil {
+    log.Fatal(err)
+}
+
+secret := contract.Secret{Key: "API_KEY", Value: "abc"}
+if _, err := client.Secrets().Set(ctx, secret); err != nil {
+    log.Fatal(err)
+}
+```
+
 ## Schema CLI (onyx-schema-go)
 
 Validate and normalize contract-first schemas locally, or fetch/publish them via the API:
@@ -135,6 +157,15 @@ onyx-gen-go --source api --database-id db_123 --out ./models/onyx.go --package m
 ```
 
 Generated helpers let you write `q := FromUser(client).Where(contract.Eq("id", userID))` while keeping the public API aligned with the TS client.
+
+## Testing and coverage
+
+CI enforces a coverage threshold. Run the same commands locally to verify:
+
+```bash
+go test ./... -coverprofile=coverage.out -covermode=atomic
+go tool cover -func=coverage.out
+```
 
 ## Working with the task pack
 - Tasks are dependency-aware: P0 setup → P1 contract freeze → P2 CLIs → P3 SDK core → P4 docs/CI/release/parity.
