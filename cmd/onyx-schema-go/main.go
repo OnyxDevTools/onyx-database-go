@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/OnyxDevTools/onyx-database-go/cmd/onyx-schema-go/commands"
+)
 
 func main() {
-    fmt.Println("onyx-schema-go scaffold: commands will be added in future tasks")
+	os.Exit(commands.Dispatch(os.Args[1:]))
 }
