@@ -42,8 +42,16 @@ func main() {
 		},
 	}
 
-	if _, err := db.SaveUser(ctx, user, spec); err != nil {
+	saved, err := db.SaveUser(ctx, user, spec)
+	if err != nil {
 		log.Fatal(err)
 	}
+	if saved.Id == "" {
+		log.Println("warning: expected saved user id")
+	}
+	if saved.Profile == nil {
+		log.Println("warning: expected saved profile")
+	}
 	fmt.Println("Saved user with cascadeBuilder")
+	log.Println("example: completed")
 }

@@ -38,11 +38,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if saved.ID == "" {
+		log.Println("warning: expected saved document id")
+	}
 	fmt.Printf("saved document: %+v\n", saved)
 
 	found, err := docs.Get(ctx, saved.ID)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if found.ID != saved.ID {
+		log.Println("warning: expected fetched document to match saved id")
 	}
 	if found.Content != "" {
 		if decoded, decodeErr := base64.StdEncoding.DecodeString(found.Content); decodeErr == nil {
@@ -58,6 +64,7 @@ func main() {
 	if _, err := docs.Get(ctx, saved.ID); err != nil {
 		fmt.Println("Document was deleted successfully")
 	} else {
-		fmt.Println("oops document still exists")
+		log.Println("warning: expected document to be deleted")
 	}
+	log.Println("example: completed")
 }

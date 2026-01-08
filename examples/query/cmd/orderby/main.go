@@ -27,7 +27,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if users == nil {
+		log.Println("warning: expected users response")
+	}
 
 	out, _ := json.MarshalIndent(users, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }

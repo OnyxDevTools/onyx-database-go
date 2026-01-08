@@ -28,16 +28,19 @@ func main() {
 		Description: strPtr("Administrators with full access"),
 		IsSystem:    false,
 	}
-	if _, err := db.SaveRole(ctx, role); err != nil {
+	_, err = db.SaveRole(ctx, role)
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	permRead := onyxclient.Permission{Id: "resolver-perm-read", Name: "user.read", Description: strPtr("get user(s)")}
 	permWrite := onyxclient.Permission{Id: "resolver-perm-write", Name: "user.write", Description: strPtr("Create, update, and delete users")}
-	if _, err := db.SavePermission(ctx, permRead); err != nil {
+	_, err = db.SavePermission(ctx, permRead)
+	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := db.SavePermission(ctx, permWrite); err != nil {
+	_, err = db.SavePermission(ctx, permWrite)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -46,7 +49,8 @@ func main() {
 		onyxclient.RolePermission{Id: "resolver-rp-write", RoleId: roleID, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		if _, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission)); err != nil {
+		_, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission))
+		if err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -61,7 +65,8 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	if _, err := db.SaveUser(ctx, user); err != nil {
+	_, err = db.SaveUser(ctx, user)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -70,7 +75,8 @@ func main() {
 		UserId: userID,
 		RoleId: roleID,
 	}
-	if _, err := db.SaveUserRole(ctx, userRole); err != nil {
+	_, err = db.SaveUserRole(ctx, userRole)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -81,9 +87,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if len(admins) == 0 {
+		log.Println("warning: expected admin users from resolver query")
+	} else if admins[0].Roles == nil {
+		log.Println("warning: expected resolved roles")
+	}
 
 	out, _ := json.MarshalIndent(admins, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }
 
 func strPtr(s string) *string { return &s }

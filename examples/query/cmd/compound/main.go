@@ -30,7 +30,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if logs == nil {
+		log.Println("warning: expected audit logs response")
+	}
 
 	out, _ := json.MarshalIndent(logs, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }

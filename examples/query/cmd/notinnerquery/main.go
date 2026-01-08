@@ -26,6 +26,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if users == nil {
+		log.Println("warning: expected users response")
+	}
 	fmt.Println("Users without admin role:", users)
 
 	roles, err := db.ListRoles().
@@ -35,5 +38,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if roles == nil {
+		log.Println("warning: expected roles response")
+	}
 	fmt.Println("Roles missing perm-manage-users:", roles)
+	log.Println("example: completed")
 }

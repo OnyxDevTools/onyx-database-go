@@ -27,16 +27,19 @@ func main() {
 		Description: strPtr("Administrators with full access"),
 		IsSystem:    false,
 	}
-	if _, err := db.SaveRole(ctx, role); err != nil {
+	_, err = db.SaveRole(ctx, role)
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	permRead := onyxclient.Permission{Id: "perm_user_read_resolver", Name: "user.read", Description: strPtr("get user(s)")}
 	permWrite := onyxclient.Permission{Id: "perm_user_write_resolver", Name: "user.write", Description: strPtr("Create, update, and delete users")}
-	if _, err := db.SavePermission(ctx, permRead); err != nil {
+	_, err = db.SavePermission(ctx, permRead)
+	if err != nil {
 		log.Fatal(err)
 	}
-	if _, err := db.SavePermission(ctx, permWrite); err != nil {
+	_, err = db.SavePermission(ctx, permWrite)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -45,7 +48,8 @@ func main() {
 		onyxclient.RolePermission{Id: "rp_write_resolver", RoleId: role.Id, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		if _, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission)); err != nil {
+		_, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission))
+		if err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -60,7 +64,8 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	if _, err := db.SaveUser(ctx, user); err != nil {
+	_, err = db.SaveUser(ctx, user)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -72,7 +77,8 @@ func main() {
 		Bio:       strPtr("Seeded admin profile"),
 		Age:       int64Ptr(42),
 	}
-	if _, err := db.SaveUserProfile(ctx, profile); err != nil {
+	_, err = db.SaveUserProfile(ctx, profile)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -81,7 +87,8 @@ func main() {
 		UserId: userID,
 		RoleId: role.Id,
 	}
-	if _, err := db.SaveUserRole(ctx, userRole); err != nil {
+	_, err = db.SaveUserRole(ctx, userRole)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -93,9 +100,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if len(users) == 0 {
+		log.Println("warning: expected resolver user to be returned")
+	} else {
+		if users[0].Profile == nil {
+			log.Println("warning: expected resolver profile")
+		}
+		if users[0].Roles == nil {
+			log.Println("warning: expected resolver roles")
+		}
+	}
 
 	out, _ := json.MarshalIndent(users, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }
 
 func strPtr(s string) *string { return &s }

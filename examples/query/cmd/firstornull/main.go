@@ -26,8 +26,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if first == nil {
+		log.Println("warning: expected query response")
+	}
 
 	if len(first) > 0 {
+		if first[0].Id == "" {
+			log.Println("warning: expected user id")
+		}
 		out, _ := json.MarshalIndent(first[0], "", "  ")
 		fmt.Println(string(out))
 	} else {
@@ -41,11 +47,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if also == nil {
+		log.Println("warning: expected query response")
+	}
 
 	if len(also) == 0 {
 		fmt.Println("\nshould be null: null")
 	} else {
+		if also[0].Id == "" {
+			log.Println("warning: expected user id")
+		}
 		out, _ := json.MarshalIndent(also[0], "", "  ")
 		fmt.Printf("\nshould be null: %s\n", string(out))
 	}
+	log.Println("example: completed")
 }
