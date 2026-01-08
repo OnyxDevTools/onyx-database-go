@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 // NormalizeCommand writes a normalized schema document.
@@ -36,13 +36,13 @@ func (c *NormalizeCommand) Run(args []string) int {
 		return 1
 	}
 
-	schema, err := contract.ParseSchemaJSON(data)
+	schema, err := onyx.ParseSchemaJSON(data)
 	if err != nil {
 		fmt.Fprintf(Stderr, "failed to parse schema: %v\n", err)
 		return 1
 	}
 
-	normalized := contract.NormalizeSchema(schema)
+	normalized := onyx.NormalizeSchema(schema)
 	rendered, err := json.MarshalIndent(normalized, "", "  ")
 	if err != nil {
 		fmt.Fprintf(Stderr, "failed to encode schema: %v\n", err)

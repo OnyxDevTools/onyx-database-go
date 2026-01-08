@@ -1,4 +1,4 @@
-// Package contract defines the stable, stdlib-only API surface shared by the Onyx Database client.
+// package contract defines the stable, stdlib-only API surface shared by the Onyx Database client.
 //
 // The contract package owns the data structures and interfaces that other packages implement.
 // It purposefully avoids any runtime behavior so the API remains deterministic and easy to audit.

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 func TestLoadSchemaFromFileNormalizesAndFilters(t *testing.T) {
@@ -41,9 +41,9 @@ func TestLoadSchemaFromAPIUsesResolver(t *testing.T) {
 		if databaseID != "db_123" {
 			t.Fatalf("unexpected database id: %s", databaseID)
 		}
-		return &stubSchemaClient{schema: contract.Schema{Tables: []contract.Table{{
+		return &stubSchemaClient{schema: onyx.Schema{Tables: []onyx.Table{{
 			Name:   "B",
-			Fields: []contract.Field{{Name: "z"}, {Name: "a"}},
+			Fields: []onyx.Field{{Name: "z"}, {Name: "a"}},
 		}}}}, nil
 	}
 	defer func() { initClient = originalInit }()
@@ -63,9 +63,9 @@ func TestLoadSchemaFromAPIUsesResolver(t *testing.T) {
 }
 
 type stubSchemaClient struct {
-	schema contract.Schema
+	schema onyx.Schema
 }
 
-func (s *stubSchemaClient) Schema(ctx context.Context) (contract.Schema, error) {
+func (s *stubSchemaClient) Schema(ctx context.Context) (onyx.Schema, error) {
 	return s.schema, nil
 }

@@ -7,20 +7,22 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	users, err := db.From("User").
+	users, err := db.ListUsers().
 		Select("username", "email").
 		Limit(2).
-		List(ctx)
+		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

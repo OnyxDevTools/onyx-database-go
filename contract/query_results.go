@@ -23,3 +23,12 @@ func (q *QueryResults) UnmarshalJSON(data []byte) error {
 	*q = wrapper.Records
 	return nil
 }
+
+// Decode unmarshals the query results into the provided destination (pointer to slice/struct).
+func (q QueryResults) Decode(dest any) error {
+	raw, err := json.Marshal(q)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, dest)
+}

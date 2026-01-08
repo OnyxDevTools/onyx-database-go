@@ -7,85 +7,86 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
 	// Seed a role, permissions, user, profile, and link them together so resolvers have data.
-	role := map[string]any{
-		"id":          "role_admin_resolver",
-		"name":        "Admin",
-		"description": "Administrators with full access",
-		"isSystem":    false,
+	role := onyxclient.Role{
+		Id:          "role_admin_resolver",
+		Name:        "Admin",
+		Description: strPtr("Administrators with full access"),
+		IsSystem:    false,
 	}
-	if _, err := db.Save(ctx, "Role", role, nil); err != nil {
+	if _, err := db.SaveRole(ctx, role); err != nil {
 		log.Fatal(err)
 	}
 
-	permRead := map[string]any{"id": "perm_user_read_resolver", "name": "user.read", "description": "get user(s)"}
-	permWrite := map[string]any{"id": "perm_user_write_resolver", "name": "user.write", "description": "Create, update, and delete users"}
-	if _, err := db.Save(ctx, "Permission", permRead, nil); err != nil {
+	permRead := onyxclient.Permission{Id: "perm_user_read_resolver", Name: "user.read", Description: strPtr("get user(s)")}
+	permWrite := onyxclient.Permission{Id: "perm_user_write_resolver", Name: "user.write", Description: strPtr("Create, update, and delete users")}
+	if _, err := db.SavePermission(ctx, permRead); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := db.Save(ctx, "Permission", permWrite, nil); err != nil {
+	if _, err := db.SavePermission(ctx, permWrite); err != nil {
 		log.Fatal(err)
 	}
 
 	rolePerms := []any{
-		map[string]any{"id": "rp_read_resolver", "roleId": role["id"], "permissionId": permRead["id"]},
-		map[string]any{"id": "rp_write_resolver", "roleId": role["id"], "permissionId": permWrite["id"]},
+		onyxclient.RolePermission{Id: "rp_read_resolver", RoleId: role.Id, PermissionId: permRead.Id},
+		onyxclient.RolePermission{Id: "rp_write_resolver", RoleId: role.Id, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		if _, err := db.Save(ctx, "RolePermission", rp, nil); err != nil {
+		if _, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission)); err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	userID := "resolver-user-1"
-	now := time.Now().UTC().Format(time.RFC3339)
-	user := map[string]any{
-		"id":        userID,
-		"username":  "admin-user-1",
-		"email":     "admin@example.com",
-		"isActive":  true,
-		"createdAt": now,
-		"updatedAt": now,
+	now := time.Now().UTC()
+	user := onyxclient.User{
+		Id:        userID,
+		Username:  "admin-user-1",
+		Email:     "admin@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
-	if _, err := db.Save(ctx, "User", user, nil); err != nil {
+	if _, err := db.SaveUser(ctx, user); err != nil {
 		log.Fatal(err)
 	}
 
-	profile := map[string]any{
-		"id":        "resolver-profile-1",
-		"userId":    userID,
-		"firstName": "Example",
-		"lastName":  "Admin",
-		"bio":       "Seeded admin profile",
-		"age":       42,
+	profile := onyxclient.UserProfile{
+		Id:        "resolver-profile-1",
+		UserId:    userID,
+		FirstName: "Example",
+		LastName:  "Admin",
+		Bio:       strPtr("Seeded admin profile"),
+		Age:       int64Ptr(42),
 	}
-	if _, err := db.Save(ctx, "UserProfile", profile, nil); err != nil {
+	if _, err := db.SaveUserProfile(ctx, profile); err != nil {
 		log.Fatal(err)
 	}
 
-	userRole := map[string]any{
-		"id":     "resolver-user-role-1",
-		"userId": userID,
-		"roleId": role["id"],
+	userRole := onyxclient.UserRole{
+		Id:     "resolver-user-role-1",
+		UserId: userID,
+		RoleId: role.Id,
 	}
-	if _, err := db.Save(ctx, "UserRole", userRole, nil); err != nil {
+	if _, err := db.SaveUserRole(ctx, userRole); err != nil {
 		log.Fatal(err)
 	}
 
-	users, err := db.From("User").
-		Where(contract.Eq("id", userID)).
+	users, err := db.ListUsers().
+		Where(onyx.Eq("id", userID)).
 		Resolve("profile", "roles.permissions").
 		Limit(5).
 		List(ctx)
@@ -96,3 +97,6 @@ func main() {
 	out, _ := json.MarshalIndent(users, "", "  ")
 	fmt.Println(string(out))
 }
+
+func strPtr(s string) *string { return &s }
+func int64Ptr(v int64) *int64 { return &v }

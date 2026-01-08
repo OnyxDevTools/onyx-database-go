@@ -11,8 +11,12 @@ type Field struct {
 
 // Table represents a database table with fields.
 type Table struct {
-	Name   string  `json:"name"`
-	Fields []Field `json:"fields"`
+	Name      string         `json:"name"`
+	Fields    []Field        `json:"fields"`
+	Resolvers []string       `json:"resolvers,omitempty"`
+	Indexes   []Index        `json:"indexes,omitempty"`
+	Triggers  []string       `json:"triggers,omitempty"`
+	Meta      map[string]any `json:"meta,omitempty"`
 }
 
 // Field retrieves a field by name, if present.

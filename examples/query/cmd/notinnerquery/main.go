@@ -5,29 +5,33 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
+	coreClient := db.Core()
 
-	users, err := db.From("User").
-		Where(contract.NotWithin("id", db.From("UserRole").Select("userId").Where(contract.Eq("roleId", "role-admin")))).
-		List(ctx)
+	users, err := db.ListUsers().
+		Select("id").
+		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
+		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Users without admin role:", users)
 
-	roles, err := db.From("Role").
-		Where(contract.NotWithin("id", db.From("RolePermission").Where(contract.Eq("permissionId", "perm-manage-users")))).
-		List(ctx)
+	roles, err := db.ListRoles().
+		Select("id").
+		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
+		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

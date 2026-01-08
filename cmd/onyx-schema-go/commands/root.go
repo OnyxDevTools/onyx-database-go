@@ -63,7 +63,9 @@ func printRootUsage(cmds []Command) {
 	}
 }
 
-func availableCommands() []Command {
+var availableCommands = defaultAvailableCommands
+
+func defaultAvailableCommands() []Command {
 	return []Command{
 		&ValidateCommand{},
 		&DiffCommand{},

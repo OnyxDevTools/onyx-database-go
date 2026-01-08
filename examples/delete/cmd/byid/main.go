@@ -4,22 +4,43 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	db := onyxclient.NewClient(core)
+
+	targetID := "user-id-1"
+	now := time.Now().UTC()
+	saved, err := db.SaveUser(ctx, onyxclient.User{
+		Id:        targetID,
+		Asdf:      "tmp",
+		Username:  "delete_me",
+		Email:     "delete_me@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	targetID := "user-id-1"
-	if err := db.Delete(ctx, "User", targetID); err != nil {
+	fmt.Printf("Saved user: %+v\n", saved)
+
+	deleted, err := db.DeleteUser(ctx, targetID)
+	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Deleted %d record(s).\n", deleted)
 
-	fmt.Println("Deleted 1 record(s).")
+	fmt.Println("Done.")
 }

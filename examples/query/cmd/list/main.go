@@ -5,25 +5,25 @@ import (
 	"fmt"
 	"log"
 
+	model "github.com/OnyxDevTools/onyx-database-go/examples/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := model.NewClient(core)
 
-	users, err := db.From("User").Limit(5).List(ctx)
+	users, err := db.ListUsers().Limit(5).List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, u := range users {
-		if name, ok := u["username"]; ok {
-			fmt.Println(name)
-		}
+		fmt.Println(u.Username)
 	}
 }

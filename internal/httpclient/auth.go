@@ -1,8 +1,6 @@
 package httpclient
 
-import (
-	"net/http"
-)
+import "net/http"
 
 // Signer applies API authentication headers.
 type Signer struct {
@@ -15,5 +13,6 @@ func (s Signer) Sign(req *http.Request, body []byte) error {
 	req.Header.Set("x-onyx-key", s.APIKey)
 	req.Header.Set("x-onyx-secret", s.APISecret)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	return nil
 }

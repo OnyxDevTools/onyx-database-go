@@ -7,55 +7,58 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	now := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
-	userID := "example_user2"
-	spec := contract.Cascade("profile:UserProfile(userId,id)")
+	client := onyxclient.NewClient(core)
 
-	cascade := db.Cascade(spec)
-	user := map[string]any{
-		"id":        userID,
-		"username":  "cascade",
-		"email":     "cascade@example.com",
-		"isActive":  true,
-		"createdAt": now,
-		"updatedAt": now,
-		"profile": map[string]any{
-			"id":        "profile_001",
-			"userId":    userID,
-			"firstName": "Test",
-			"lastName":  "User",
-			"age":       24,
-			"createdAt": now,
-			"updatedAt": now,
+	now := time.Now().UTC()
+	userID := "example_user2"
+	user := onyxclient.User{
+		Id:        userID,
+		Username:  "cascade",
+		Email:     "cascade@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+		Profile: onyxclient.UserProfile{
+			Id:        "profile_001",
+			UserId:    userID,
+			FirstName: "Test",
+			LastName:  "User",
+			Age:       int64Ptr(24),
+			CreatedAt: now,
+			UpdatedAt: &now,
 		},
 	}
 
-	if err := cascade.Save(ctx, "User", user); err != nil {
+	// Cascade save using a CascadeSpec; SaveUser returns the saved graph.
+	spec := onyx.Cascade("profile:UserProfile(userId,id)")
+	saved, err := client.SaveUser(ctx, user, spec)
+	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Saved user with cascade.")
 
-	users, err := db.From("User").
-		Where(contract.Eq("id", userID)).
-		Resolve("profile").
-		Limit(1).
-		List(ctx)
-	if err != nil {
-		log.Fatal(err)
+	outUser, _ := json.MarshalIndent(saved, "", "  ")
+	fmt.Printf("saved user: %s\n", string(outUser))
+	if saved.Profile != nil {
+		outProfile, _ := json.MarshalIndent(saved.Profile, "", "  ")
+		fmt.Printf("saved profile: %s\n", string(outProfile))
+	} else {
+		log.Fatal("expected profile to be returned in save response")
 	}
+}
 
-	out, _ := json.MarshalIndent(users, "", "  ")
-	fmt.Printf("retrieved user with profile: %s\n", string(out))
+func int64Ptr(v int64) *int64 {
+	return &v
 }

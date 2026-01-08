@@ -6,23 +6,24 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	users, err := db.From("User").
+	users, err := db.ListUsers().
 		Select("id", "email", "createdAt").
-		OrderBy(contract.Desc("createdAt")).
+		OrderBy("createdAt", false).
 		Limit(3).
-		List(ctx)
+		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

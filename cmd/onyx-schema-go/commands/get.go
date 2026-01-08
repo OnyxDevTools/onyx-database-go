@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 // GetCommand fetches the schema from the API using resolver/init behavior.
@@ -19,8 +19,9 @@ func (c *GetCommand) Description() string { return "retrieve schema from the API
 func (c *GetCommand) Run(args []string) int {
 	fs := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	fs.SetOutput(Stderr)
-	databaseID := fs.String("database-id", "", "database id (optional if configured)")
-	outPath := fs.String("out", "", "path to write schema JSON (stdout when empty)")
+	databaseID := fs.String("database-id", "", "database id (optional; defaults to env/config such as onyx-database.json)")
+	outPath := fs.String("out", "onyx.schema.json", "path to write schema JSON (stdout when --print is set)")
+	printOnly := fs.Bool("print", false, "print schema to stdout without writing to disk")
 
 	fs.Usage = func() {
 		fmt.Fprintf(Stdout, "Usage of %s:\n", c.Name())
@@ -44,14 +45,14 @@ func (c *GetCommand) Run(args []string) int {
 		return 1
 	}
 
-	normalized := contract.NormalizeSchema(schema)
+	normalized := onyx.NormalizeSchema(schema)
 	data, err := json.MarshalIndent(normalized, "", "  ")
 	if err != nil {
 		fmt.Fprintln(Stderr, err)
 		return 1
 	}
 
-	if *outPath == "" {
+	if *printOnly || *outPath == "" {
 		if _, err := Stdout.Write(append(data, '\n')); err != nil {
 			fmt.Fprintln(Stderr, err)
 			return 1

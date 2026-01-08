@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
@@ -25,9 +24,9 @@ func main() {
 		log.Fatal("expected non-empty schema")
 	}
 
-	temp := contract.Table{
+	temp := onyx.Table{
 		Name: "TempTable",
-		Fields: []contract.Field{
+		Fields: []onyx.Field{
 			{Name: "id", Type: "String", Primary: true},
 			{Name: "name", Type: "String"},
 		},
@@ -70,7 +69,7 @@ func main() {
 	log.Printf("all operations worked as expected, %s added, removed and published", temp.Name)
 }
 
-func hasTable(schema contract.Schema, name string) bool {
+func hasTable(schema onyx.Schema, name string) bool {
 	for _, t := range schema.Tables {
 		if t.Name == name {
 			return true
@@ -79,17 +78,17 @@ func hasTable(schema contract.Schema, name string) bool {
 	return false
 }
 
-func addTable(schema contract.Schema, table contract.Table) contract.Schema {
+func addTable(schema onyx.Schema, table onyx.Table) onyx.Schema {
 	if hasTable(schema, table.Name) {
 		return schema
 	}
-	copyTables := append([]contract.Table{}, schema.Tables...)
+	copyTables := append([]onyx.Table{}, schema.Tables...)
 	copyTables = append(copyTables, table)
-	return contract.Schema{Tables: copyTables}
+	return onyx.Schema{Tables: copyTables}
 }
 
-func removeTable(schema contract.Schema, name string) contract.Schema {
-	out := contract.Schema{}
+func removeTable(schema onyx.Schema, name string) onyx.Schema {
+	out := onyx.Schema{}
 	for _, t := range schema.Tables {
 		if t.Name == name {
 			continue
