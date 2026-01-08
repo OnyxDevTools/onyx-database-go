@@ -26,7 +26,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if stats == nil {
+		log.Println("warning: expected grouped aggregates")
+	}
 
 	out, _ := json.MarshalIndent(stats, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }

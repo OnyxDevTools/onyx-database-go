@@ -22,8 +22,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if users == nil {
+		log.Println("warning: expected users response")
+	}
 
 	for _, u := range users {
 		fmt.Println(u.Username)
 	}
+	log.Println("example: completed")
 }

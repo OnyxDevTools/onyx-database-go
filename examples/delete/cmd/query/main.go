@@ -29,7 +29,8 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	if _, err := db.SaveUser(ctx, seed); err != nil {
+	_, err = db.SaveUser(ctx, seed)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -38,6 +39,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if deletedCount == 0 {
+		log.Println("warning: expected to delete seeded user")
+	}
 
 	fmt.Printf("Deleted %d record(s).\n", deletedCount)
+	log.Println("example: completed")
 }
