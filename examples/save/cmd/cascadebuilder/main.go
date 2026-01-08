@@ -6,42 +6,43 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	spec := contract.NewCascadeBuilder().
+	spec := onyx.NewCascadeBuilder().
 		Graph("profile").
 		GraphType("UserProfile").
-		TargetField("userId").
-		SourceField("id").
+		SourceField("userId").
+		TargetField("id").
 		Build()
 
-	now := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
-	user := map[string]any{
-		"id":        "cb-user-1",
-		"username":  "Cascade Builder",
-		"email":     "cascade-builder@example.com",
-		"isActive":  true,
-		"createdAt": now,
-		"updatedAt": now,
-		"profile": map[string]any{
-			"id":        "cb-profile-1",
-			"userId":    "cb-user-1",
-			"firstName": "Cascade",
-			"lastName":  "Builder",
+	now := time.Now().UTC()
+	user := onyxclient.User{
+		Id:        "cb-user-1",
+		Username:  "Cascade Builder",
+		Email:     "cascade-builder@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+		Profile: onyxclient.UserProfile{
+			Id:        "cb-profile-1",
+			UserId:    "cb-user-1",
+			FirstName: "Cascade",
+			LastName:  "Builder",
 		},
 	}
 
-	if err := db.Cascade(spec).Save(ctx, "User", user); err != nil {
+	if _, err := db.SaveUser(ctx, user, spec); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Saved user with cascadeBuilder")

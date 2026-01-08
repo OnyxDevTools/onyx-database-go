@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
 )
@@ -52,7 +51,7 @@ func TestLoggingToggle(t *testing.T) {
 	c := New(srv.URL, srv.Client(), Options{Logger: logger, LogRequests: true, LogResponses: true})
 	_ = c.DoJSON(context.Background(), http.MethodGet, "/", nil, nil)
 	logs := buf.String()
-	if !strings.Contains(logs, "GET") || !strings.Contains(logs, "response") {
+	if !strings.Contains(logs, "GET") || !strings.Contains(logs, "200") {
 		t.Fatalf("expected logs, got %s", logs)
 	}
 
@@ -83,6 +82,25 @@ func TestDoStream(t *testing.T) {
 	}
 }
 
+func TestParseErrorAndRedaction(t *testing.T) {
+	err := parseError(context.Background(), http.StatusBadRequest, []byte(`{"code":"bad","message":"nope"}`))
+	if cerr, ok := err.(*contract.Error); !ok || cerr.Code != "bad" || cerr.Meta["status"].(int) != http.StatusBadRequest {
+		t.Fatalf("unexpected structured error: %v", err)
+	}
+
+	err = parseError(context.Background(), http.StatusTeapot, []byte("oops"))
+	if cerr, ok := err.(*contract.Error); !ok || cerr.Meta["body"] != "oops" {
+		t.Fatalf("unexpected fallback error: %v", err)
+	}
+
+	if redactedSecret("abcd") != "****" {
+		t.Fatalf("redaction mismatch for short secret")
+	}
+	if redactedSecret("abc") != "****" {
+		t.Fatalf("short secret should be fully redacted")
+	}
+}
+
 func TestErrorMapping(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -102,19 +120,15 @@ func TestErrorMapping(t *testing.T) {
 }
 
 func TestAuthSigning(t *testing.T) {
-	now := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
-	signer := Signer{APIKey: "key", APISecret: "secret", Now: func() time.Time { return now }, RequestID: func() string { return "req" }}
+	signer := Signer{APIKey: "key", APISecret: "secret"}
 
 	req, _ := http.NewRequest(http.MethodPost, "https://example.com/path", strings.NewReader("body"))
 	_ = signer.Sign(req, []byte("body"))
 
-	if req.Header.Get("X-Onyx-Api-Key") != "key" {
+	if req.Header.Get("x-onyx-key") != "key" {
 		t.Fatalf("missing api key header")
 	}
-	if req.Header.Get("X-Onyx-Request-Id") != "req" {
-		t.Fatalf("missing request id")
-	}
-	if req.Header.Get("X-Onyx-Timestamp") != now.Format(time.RFC3339) {
-		t.Fatalf("timestamp mismatch")
+	if req.Header.Get("x-onyx-secret") != "secret" {
+		t.Fatalf("missing secret header")
 	}
 }

@@ -6,20 +6,24 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
 	id := "example-user-1"
-	results, err := db.From("User").Where(contract.Eq("id", id)).Limit(1).List(ctx)
+	results, err := db.ListUsers().
+		Where(onyx.Eq("id", id)).
+		Limit(1).
+		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

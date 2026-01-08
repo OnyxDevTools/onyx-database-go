@@ -6,22 +6,24 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
+	secrets := db.Secrets()
 
 	secretKey := fmt.Sprintf("example-secret-%d", time.Now().UnixMilli())
 	secretValue := "demo-secret-value"
 
-	entries, err := db.ListSecrets(ctx)
+	entries, err := secrets.List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,13 +37,13 @@ func main() {
 		fmt.Println("Initial secrets list does not include the example key.")
 	}
 
-	saved, err := db.PutSecret(ctx, contract.Secret{Key: secretKey, Value: secretValue})
+	saved, err := secrets.Set(ctx, onyx.Secret{Key: secretKey, Value: secretValue})
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Saved secret metadata:", saved)
 
-	afterSet, err := db.ListSecrets(ctx)
+	afterSet, err := secrets.List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,18 +54,18 @@ func main() {
 		}
 	}
 
-	found, err := db.GetSecret(ctx, secretKey)
+	found, err := secrets.Get(ctx, secretKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Fetched secret:", found)
 
-	if err := db.DeleteSecret(ctx, secretKey); err != nil {
+	if err := secrets.Delete(ctx, secretKey); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Secret deleted:", secretKey)
 
-	finalList, err := db.ListSecrets(ctx)
+	finalList, err := secrets.List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

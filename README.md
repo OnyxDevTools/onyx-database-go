@@ -27,7 +27,37 @@ Compile everything to ensure the SDK and CLIs are healthy:
 ```bash
 go build ./...
 go vet ./...
+go test ./...
+go tool cover -func=coverage.out 
 ```
+
+## Usage (CLIs)
+
+Install globally (recommended once published):
+
+```bash
+go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-schema-go@latest
+go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-gen-go@latest
+```
+
+Local install from the repo (ensure `$(go env GOBIN)` or `$(go env GOPATH)/bin` is on your PATH):
+
+```bash
+go install ./cmd/onyx-schema-go
+go install ./cmd/onyx-gen-go
+```
+
+- Schema CLI:
+  - Validate: `onyx-schema-go validate`
+  - Diff: `onyx-schema-go diff`
+  - Get (API): `onyx-schema-go get` (replaces your schema with what is in onyx) or use `--print` to pretty-print without writing to your local schema)
+  - Publish (API): `onyx-schema-go publish` if valid, will publish your remote database with the local one
+
+- Codegen CLI:
+  - File source: `onyx-gen-go --out /examples/onyx/models.go --package model`
+  - API source: `onyx-gen-go --source api`
+
+If you prefer not to install, prefix commands with `go run ./cmd/<cli> ...`.
 
 ## Examples
 
@@ -121,12 +151,12 @@ The fluent query API mirrors the TS builder, supporting filters, projections, ne
 ctx := context.Background()
 client := mustInit(ctx) // helper that wraps onyx.Init
 
-page, err := client.From("User").
+page, err := db.From("User").
     Select("id", "email", "profile.avatarUrl").
-    Where(contract.Contains("email", "@example.com")).
-    And(contract.Gte("createdAt", "2024-01-01T00:00:00Z")).
+    Where(onyx.Contains("email", "@example.com")).
+    And(onyx.Gte("createdAt", "2024-01-01T00:00:00Z")).
     Resolve("roles", "profile").
-    OrderBy(contract.Desc("createdAt")).
+    OrderBy(onyx.Desc("createdAt")).
     Limit(25).
     Page(ctx, "") // empty cursor = first page
 if err != nil { log.Fatal(err) }
@@ -135,7 +165,7 @@ for _, user := range page.Items {
     fmt.Println(user)
 }
 
-iter, err := client.From("Event").Stream(ctx)
+iter, err := db.From("Event").Stream(ctx)
 if err != nil { log.Fatal(err) }
 for iter.Next() {
     evt := iter.Value()
@@ -148,8 +178,8 @@ if err := iter.Err(); err != nil { log.Fatal(err) }
 
 Use `Resolve` with dotted paths to hydrate related records just like the TS client:
 ```go
-post, err := client.From("Post").
-    Where(contract.Eq("id", "post_123")).
+post, err := db.From("Post").
+    Where(onyx.Eq("id", "post_123")).
     Resolve("author.profile", "comments.author").
     Limit(1).
     List(ctx)
@@ -158,15 +188,15 @@ if err != nil { log.Fatal(err) }
 
 ## Cascades
 
-Cascade specs match TS semantics and are constructed via `contract.Cascade`:
+Cascade specs match TS semantics and are constructed via `onyx.Cascade`:
 ```go
-spec := contract.Cascade("userRoles:UserRole(userId,id)")
+spec := onyx.Cascade("userRoles:UserRole(userId,id)")
 
-if err := client.Cascade(spec).Save(ctx, "User", user); err != nil {
+if err := db.Cascade(spec).Save(ctx, "User", user); err != nil {
     log.Fatal(err)
 }
 
-if err := client.Cascade(spec).Delete(ctx, "User", user.ID); err != nil {
+if err := db.Cascade(spec).Delete(ctx, "User", user.ID); err != nil {
     log.Fatal(err)
 }
 ```
@@ -179,16 +209,16 @@ The Go SDK mirrors the TS helpers for auxiliary APIs as well:
 ctx := context.Background()
 client := mustInit(ctx)
 
-doc, err := client.Documents().Get(ctx, "doc_123")
+doc, err := db.Documents().Get(ctx, "doc_123")
 if err != nil { log.Fatal(err) }
 
 doc.Data["status"] = "updated"
-if _, err := client.Documents().Save(ctx, doc); err != nil {
+if _, err := db.Documents().Save(ctx, doc); err != nil {
     log.Fatal(err)
 }
 
-secret := contract.Secret{Key: "API_KEY", Value: "abc"}
-if _, err := client.PutSecret(ctx, secret); err != nil {
+secret := onyx.Secret{Key: "API_KEY", Value: "abc"}
+if _, err := db.PutSecret(ctx, secret); err != nil {
     log.Fatal(err)
 }
 ```
@@ -201,8 +231,12 @@ onyx-schema-go validate --schema ./onyx.schema.json
 onyx-schema-go diff --a ./onyx.schema.json --b ./next.schema.json --json
 onyx-schema-go normalize --schema ./onyx.schema.json --out ./onyx.normalized.json
 onyx-schema-go get --database-id db_123 --out ./onyx.schema.json
+# or just print the remote schema using your env/config (onyx-database.json):
+onyx-schema-go get --print
 onyx-schema-go publish --schema ./onyx.schema.json
 ```
+
+If `--database-id` is omitted, the CLI resolves credentials from env vars or config files such as `./onyx-database.json` (also `~/.onyx/onyx-database.json`).
 
 ## Codegen CLI (onyx-gen-go)
 
@@ -214,7 +248,7 @@ onyx-gen-go --schema ./onyx.schema.json --out ./models/onyx.go --package models 
 onyx-gen-go --source api --database-id db_123 --out ./models/onyx.go --package models
 ```
 
-Generated helpers let you write `q := FromUser(client).Where(contract.Eq("id", userID))` while keeping the public API aligned with the TS client.
+Generated helpers let you write `q := FromUser(client).Where(onyx.Eq("id", userID))` while keeping the public API aligned with the TS db.
 
 ## Working with the task pack
 - Tasks are dependency-aware: P0 setup → P1 contract freeze → P2 CLIs → P3 SDK core → P4 docs/CI/release/parity.

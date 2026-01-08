@@ -15,10 +15,12 @@ type FieldDiff struct {
 
 // TableDiff captures changes within a table.
 type TableDiff struct {
-	Name           string           `json:"name"`
-	AddedFields    []contract.Field `json:"addedFields,omitempty"`
-	RemovedFields  []contract.Field `json:"removedFields,omitempty"`
-	ModifiedFields []FieldDiff      `json:"modifiedFields,omitempty"`
+	Name             string           `json:"name"`
+	AddedFields      []contract.Field `json:"addedFields,omitempty"`
+	RemovedFields    []contract.Field `json:"removedFields,omitempty"`
+	ModifiedFields   []FieldDiff      `json:"modifiedFields,omitempty"`
+	AddedResolvers   []string         `json:"addedResolvers,omitempty"`
+	RemovedResolvers []string         `json:"removedResolvers,omitempty"`
 }
 
 // SchemaDiff reports differences between schemas.
@@ -101,11 +103,32 @@ func diffTable(a, b contract.Table) *TableDiff {
 		}
 	}
 
+	resolverMapA := map[string]struct{}{}
+	for _, r := range a.Resolvers {
+		resolverMapA[r] = struct{}{}
+	}
+	resolverMapB := map[string]struct{}{}
+	for _, r := range b.Resolvers {
+		resolverMapB[r] = struct{}{}
+	}
+	for r := range resolverMapA {
+		if _, ok := resolverMapB[r]; !ok {
+			td.AddedResolvers = append(td.AddedResolvers, r)
+		}
+	}
+	for r := range resolverMapB {
+		if _, ok := resolverMapA[r]; !ok {
+			td.RemovedResolvers = append(td.RemovedResolvers, r)
+		}
+	}
+
 	sort.Slice(td.AddedFields, func(i, j int) bool { return td.AddedFields[i].Name < td.AddedFields[j].Name })
 	sort.Slice(td.RemovedFields, func(i, j int) bool { return td.RemovedFields[i].Name < td.RemovedFields[j].Name })
 	sort.Slice(td.ModifiedFields, func(i, j int) bool { return td.ModifiedFields[i].Name < td.ModifiedFields[j].Name })
+	sort.Strings(td.AddedResolvers)
+	sort.Strings(td.RemovedResolvers)
 
-	if len(td.AddedFields) == 0 && len(td.RemovedFields) == 0 && len(td.ModifiedFields) == 0 {
+	if len(td.AddedFields) == 0 && len(td.RemovedFields) == 0 && len(td.ModifiedFields) == 0 && len(td.AddedResolvers) == 0 && len(td.RemovedResolvers) == 0 {
 		return nil
 	}
 

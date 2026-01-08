@@ -46,7 +46,9 @@ func buildContractSurface() (string, error) {
 		return "", err
 	}
 
-	pkg, ok := pkgs["contract"]
+	const pkgName = "contract"
+
+	pkg, ok := pkgs[pkgName]
 	if !ok {
 		return "", os.ErrNotExist
 	}
@@ -62,7 +64,7 @@ func buildContractSurface() (string, error) {
 	}
 
 	cfg := &types.Config{Importer: importer.Default()}
-	checked, err := cfg.Check("contract", fset, files, nil)
+	checked, err := cfg.Check(pkgName, fset, files, nil)
 	if err != nil {
 		return "", err
 	}

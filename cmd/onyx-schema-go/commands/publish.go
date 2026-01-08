@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 // PublishCommand pushes a local schema to the API.
@@ -36,7 +36,7 @@ func (c *PublishCommand) Run(args []string) int {
 		return 1
 	}
 
-	schema, err := contract.ParseSchemaJSON(data)
+	schema, err := onyx.ParseSchemaJSON(data)
 	if err != nil {
 		fmt.Fprintf(Stderr, "failed to parse schema: %v\n", err)
 		return 1

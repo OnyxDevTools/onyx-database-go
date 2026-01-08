@@ -18,6 +18,7 @@ type Query interface {
 	List(ctx context.Context) (QueryResults, error)
 	Page(ctx context.Context, cursor string) (PageResult, error)
 	Stream(ctx context.Context) (Iterator, error)
+	Delete(ctx context.Context) (int, error)
 
 	MarshalJSON() ([]byte, error)
 }

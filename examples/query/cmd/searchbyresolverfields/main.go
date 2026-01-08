@@ -7,74 +7,75 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{LogRequests: true})
+	core, err := onyx.Init(ctx, onyx.Config{LogRequests: true})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
 	// Seed data so resolver-based search has results.
 	roleID := "resolver-role-admin"
-	role := map[string]any{
-		"id":          roleID,
-		"name":        "Admin",
-		"description": "Administrators with full access",
-		"isSystem":    false,
+	role := onyxclient.Role{
+		Id:          roleID,
+		Name:        "Admin",
+		Description: strPtr("Administrators with full access"),
+		IsSystem:    false,
 	}
-	if _, err := db.Save(ctx, "Role", role, nil); err != nil {
+	if _, err := db.SaveRole(ctx, role); err != nil {
 		log.Fatal(err)
 	}
 
-	permRead := map[string]any{"id": "resolver-perm-read", "name": "user.read", "description": "get user(s)"}
-	permWrite := map[string]any{"id": "resolver-perm-write", "name": "user.write", "description": "Create, update, and delete users"}
-	if _, err := db.Save(ctx, "Permission", permRead, nil); err != nil {
+	permRead := onyxclient.Permission{Id: "resolver-perm-read", Name: "user.read", Description: strPtr("get user(s)")}
+	permWrite := onyxclient.Permission{Id: "resolver-perm-write", Name: "user.write", Description: strPtr("Create, update, and delete users")}
+	if _, err := db.SavePermission(ctx, permRead); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := db.Save(ctx, "Permission", permWrite, nil); err != nil {
+	if _, err := db.SavePermission(ctx, permWrite); err != nil {
 		log.Fatal(err)
 	}
 
 	rolePerms := []any{
-		map[string]any{"id": "resolver-rp-read", "roleId": roleID, "permissionId": permRead["id"]},
-		map[string]any{"id": "resolver-rp-write", "roleId": roleID, "permissionId": permWrite["id"]},
+		onyxclient.RolePermission{Id: "resolver-rp-read", RoleId: roleID, PermissionId: permRead.Id},
+		onyxclient.RolePermission{Id: "resolver-rp-write", RoleId: roleID, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		if _, err := db.Save(ctx, "RolePermission", rp, nil); err != nil {
+		if _, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission)); err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	userID := "resolver-admin-user"
-	now := time.Now().UTC().Format(time.RFC3339)
-	user := map[string]any{
-		"id":        userID,
-		"username":  "admin-user-1",
-		"email":     "admin@example.com",
-		"isActive":  true,
-		"createdAt": now,
-		"updatedAt": now,
+	now := time.Now().UTC()
+	user := onyxclient.User{
+		Id:        userID,
+		Username:  "admin-user-1",
+		Email:     "admin@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
-	if _, err := db.Save(ctx, "User", user, nil); err != nil {
+	if _, err := db.SaveUser(ctx, user); err != nil {
 		log.Fatal(err)
 	}
 
-	userRole := map[string]any{
-		"id":     "resolver-admin-user-role",
-		"userId": userID,
-		"roleId": roleID,
+	userRole := onyxclient.UserRole{
+		Id:     "resolver-admin-user-role",
+		UserId: userID,
+		RoleId: roleID,
 	}
-	if _, err := db.Save(ctx, "UserRole", userRole, nil); err != nil {
+	if _, err := db.SaveUserRole(ctx, userRole); err != nil {
 		log.Fatal(err)
 	}
 
-	admins, err := db.From("User").
-		Where(contract.Eq("roles.name", "Admin")).
+	admins, err := db.ListUsers().
+		Where(onyx.Eq("roles.name", "Admin")).
 		Resolve("roles").
 		List(ctx)
 	if err != nil {
@@ -84,3 +85,5 @@ func main() {
 	out, _ := json.MarshalIndent(admins, "", "  ")
 	fmt.Println(string(out))
 }
+
+func strPtr(s string) *string { return &s }

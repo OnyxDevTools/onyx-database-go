@@ -1,14 +1,15 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
-	schemas "github.com/OnyxDevTools/onyx-database-go/onyx/schema"
+	schemas "github.com/OnyxDevTools/onyx-database-go/impl/schema"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 // DiffCommand compares two schema files.
@@ -22,6 +23,7 @@ func (c *DiffCommand) Run(args []string) int {
 	fs.SetOutput(Stderr)
 	pathA := fs.String("a", "onyx.schema.json", "path to base schema JSON")
 	pathB := fs.String("b", "", "path to updated schema JSON")
+	databaseID := fs.String("database-id", "", "database id to fetch updated schema via API when --b is omitted")
 	jsonOut := fs.Bool("json", false, "emit machine-readable JSON diff")
 
 	fs.Usage = func() {
@@ -33,22 +35,32 @@ func (c *DiffCommand) Run(args []string) int {
 		return 2
 	}
 
-	if *pathB == "" {
-		fmt.Fprintln(Stderr, "--b is required")
-		fs.Usage()
-		return 2
-	}
-
 	schemaA, err := loadSchema(*pathA)
 	if err != nil {
 		fmt.Fprintf(Stderr, "failed to read schema --a: %v\n", err)
 		return 1
 	}
 
-	schemaB, err := loadSchema(*pathB)
-	if err != nil {
-		fmt.Fprintf(Stderr, "failed to read schema --b: %v\n", err)
-		return 1
+	var schemaB onyx.Schema
+	var updatedSource string
+	if *pathB != "" {
+		updatedSource = fmt.Sprintf("updated=%s (file)", *pathB)
+		schemaB, err = loadSchema(*pathB)
+		if err != nil {
+			fmt.Fprintf(Stderr, "failed to read schema --b: %v\n", err)
+			return 1
+		}
+	} else {
+		if *databaseID != "" {
+			updatedSource = fmt.Sprintf("updated=API (database-id=%s)", *databaseID)
+		} else {
+			updatedSource = "updated=API (configured credentials)"
+		}
+		schemaB, err = fetchSchemaFromAPI(context.Background(), *databaseID)
+		if err != nil {
+			fmt.Fprintf(Stderr, "failed to fetch schema from API: %v\n", err)
+			return 1
+		}
 	}
 
 	diff := schemas.DiffSchemas(schemaA, schemaB)
@@ -63,6 +75,8 @@ func (c *DiffCommand) Run(args []string) int {
 		return 0
 	}
 
+	fmt.Fprintf(Stdout, "Comparing schemas (base=%s, %s)\n", *pathA, updatedSource)
+
 	summary := summarizeDiff(diff)
 	if summary == "" {
 		fmt.Fprintln(Stdout, "Schemas are identical.")
@@ -72,12 +86,29 @@ func (c *DiffCommand) Run(args []string) int {
 	return 0
 }
 
-func loadSchema(path string) (contract.Schema, error) {
+func loadSchema(path string) (onyx.Schema, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return contract.Schema{}, err
+		return onyx.Schema{}, err
 	}
-	return contract.ParseSchemaJSON(data)
+	return onyx.ParseSchemaJSON(data)
+}
+
+var fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
+	var (
+		client onyx.Client
+		err    error
+	)
+
+	if databaseID != "" {
+		client, err = onyx.InitWithDatabaseID(ctx, databaseID)
+	} else {
+		client, err = onyx.Init(ctx, onyx.Config{})
+	}
+	if err != nil {
+		return onyx.Schema{}, err
+	}
+	return client.Schema(ctx)
 }
 
 func summarizeDiff(diff schemas.SchemaDiff) string {
@@ -88,7 +119,7 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 		for _, t := range diff.AddedTables {
 			lines = append(lines, fmt.Sprintf("- %s", t.Name))
 		}
-		sections = append(sections, "Added tables:\n"+strings.Join(lines, "\n"))
+		sections = append(sections, "Tables only in updated schema:\n"+strings.Join(lines, "\n"))
 	}
 
 	if len(diff.RemovedTables) > 0 {
@@ -96,7 +127,7 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 		for _, t := range diff.RemovedTables {
 			lines = append(lines, fmt.Sprintf("- %s", t.Name))
 		}
-		sections = append(sections, "Removed tables:\n"+strings.Join(lines, "\n"))
+		sections = append(sections, "Tables only in base schema:\n"+strings.Join(lines, "\n"))
 	}
 
 	for _, td := range diff.TableDiffs {
@@ -120,6 +151,18 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 				lines = append(lines, fmt.Sprintf("  - %s: %s", f.Name, changes))
 			}
 		}
+		if len(td.AddedResolvers) > 0 {
+			lines = append(lines, "  Added resolvers:")
+			for _, r := range td.AddedResolvers {
+				lines = append(lines, fmt.Sprintf("  - %s", r))
+			}
+		}
+		if len(td.RemovedResolvers) > 0 {
+			lines = append(lines, "  Removed resolvers:")
+			for _, r := range td.RemovedResolvers {
+				lines = append(lines, fmt.Sprintf("  - %s", r))
+			}
+		}
 		if len(lines) > 0 {
 			section := fmt.Sprintf("Changes to table %s:\n%s", td.Name, strings.Join(lines, "\n"))
 			sections = append(sections, section)
@@ -129,7 +172,7 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 	return strings.Join(sections, "\n")
 }
 
-func describeFieldChange(a, b contract.Field) string {
+func describeFieldChange(a, b onyx.Field) string {
 	var parts []string
 	if a.Type != b.Type {
 		parts = append(parts, fmt.Sprintf("type %s -> %s", a.Type, b.Type))

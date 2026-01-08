@@ -6,26 +6,27 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	logs, err := db.From("AuditLog").
+	logs, err := db.ListAuditLogs().
 		Select("actorId", "action", "targetId", "status", "dateTime").
-		Where(contract.Eq("actorId", "admin-user-1")).
-		And(contract.Eq("action", "DELETE")).
-		Or(contract.Eq("action", "UPDATE")).
-		Or(contract.NotNull("actorId")).
-		OrderBy(contract.Desc("dateTime")).
-		List(ctx)
+		Where(onyx.Eq("actorId", "admin-user-1")).
+		And(onyx.Eq("action", "DELETE")).
+		Or(onyx.Eq("action", "UPDATE")).
+		Or(onyx.NotNull("actorId")).
+		OrderBy("dateTime", false).
+		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

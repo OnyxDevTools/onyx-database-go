@@ -12,10 +12,12 @@ func (s stubQuery) Where(Condition) Query                      { return s }
 func (s stubQuery) And(Condition) Query                        { return s }
 func (s stubQuery) Or(Condition) Query                         { return s }
 func (s stubQuery) Select(...string) Query                     { return s }
+func (s stubQuery) GroupBy(...string) Query                    { return s }
 func (s stubQuery) Resolve(...string) Query                    { return s }
 func (s stubQuery) OrderBy(...Sort) Query                      { return s }
 func (s stubQuery) Limit(int) Query                            { return s }
 func (s stubQuery) List(context.Context) (QueryResults, error) { return nil, nil }
+func (s stubQuery) Delete(context.Context) (int, error)        { return 0, nil }
 func (s stubQuery) Page(context.Context, string) (PageResult, error) {
 	return PageResult{}, nil
 }

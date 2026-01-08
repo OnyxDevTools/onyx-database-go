@@ -8,27 +8,29 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	now := time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
-	user := map[string]any{
-		"id":        "example-user-1", // if you omit this one will be generated for you when the schema has a UUID generator specified
-		"username":  "Example User",
-		"email":     "basic@example.com",
-		"isActive":  true,
-		"createdAt": now,
-		"updatedAt": now,
+	now := time.Now().UTC()
+	user := onyxclient.User{
+		Id:        "example-user-1", // if you omit this one will be generated when the schema has a UUID generator specified
+		Username:  "Example User",
+		Email:     "basic@example.com",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	saved, err := db.Save(ctx, "User", user, nil)
+	saved, err := db.SaveUser(ctx, user)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	model "github.com/OnyxDevTools/onyx-database-go/examples/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	iter, err := streamDB.From("User").Stream(ctx)
+	iter, err := streamDB.From(model.Tables.User).Stream(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,16 +30,17 @@ func main() {
 	// seed then delete to trigger an event
 	go func() {
 		time.Sleep(200 * time.Millisecond)
-		_, _ = writeDB.Save(ctx, "User", map[string]any{
-			"id":        "stream_user_delete",
-			"username":  "delete-user",
-			"email":     "delete@example.com",
-			"isActive":  true,
-			"createdAt": time.Now().UTC().Format(time.RFC3339),
-			"updatedAt": time.Now().UTC().Format(time.RFC3339),
+		now := time.Now().UTC()
+		_, _ = writeDB.Save(ctx, model.Tables.User, model.User{
+			Id:        "stream_user_delete",
+			Username:  "delete-user",
+			Email:     "delete@example.com",
+			IsActive:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
 		}, nil)
 		time.Sleep(200 * time.Millisecond)
-		_ = writeDB.Delete(ctx, "User", "stream_user_delete")
+		_ = writeDB.Delete(ctx, model.Tables.User, "stream_user_delete")
 	}()
 
 	for iter.Next() {

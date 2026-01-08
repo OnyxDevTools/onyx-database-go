@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 func TestGetCommandWritesSchema(t *testing.T) {
@@ -16,8 +16,8 @@ func TestGetCommandWritesSchema(t *testing.T) {
 	outPath := filepath.Join(tmp, "schema.json")
 
 	originalInit := initSchemaClient
-	initSchemaClient = func(ctx context.Context, databaseID string) (contract.Client, error) {
-		return &stubClient{schema: contract.Schema{Tables: []contract.Table{{Name: "User"}}}}, nil
+	initSchemaClient = func(ctx context.Context, databaseID string) (onyx.Client, error) {
+		return &stubClient{schema: onyx.Schema{Tables: []onyx.Table{{Name: "User"}}}}, nil
 	}
 	defer func() { initSchemaClient = originalInit }()
 
@@ -39,6 +39,34 @@ func TestGetCommandWritesSchema(t *testing.T) {
 	}
 }
 
+func TestGetCommandPrintsSchema(t *testing.T) {
+	tmp := t.TempDir()
+	outPath := filepath.Join(tmp, "schema.json")
+
+	originalInit := initSchemaClient
+	initSchemaClient = func(ctx context.Context, databaseID string) (onyx.Client, error) {
+		return &stubClient{schema: onyx.Schema{Tables: []onyx.Table{{Name: "Role"}}}}, nil
+	}
+	defer func() { initSchemaClient = originalInit }()
+
+	var out bytes.Buffer
+	Stdout, Stderr = &out, &out
+	defer func() { Stdout, Stderr = os.Stdout, os.Stderr }()
+
+	cmd := &GetCommand{}
+	if code := cmd.Run([]string{"--print", "--out", outPath}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if !strings.Contains(out.String(), `"Role"`) {
+		t.Fatalf("expected printed schema, got: %s", out.String())
+	}
+
+	if _, err := os.Stat(outPath); err == nil {
+		t.Fatalf("expected no file to be written when --print is set")
+	}
+}
+
 func TestPublishCommandSendsSchema(t *testing.T) {
 	tmp := t.TempDir()
 	schemaPath := filepath.Join(tmp, "schema.json")
@@ -48,7 +76,7 @@ func TestPublishCommandSendsSchema(t *testing.T) {
 
 	stub := &stubClient{}
 	originalInit := initSchemaClient
-	initSchemaClient = func(ctx context.Context, databaseID string) (contract.Client, error) {
+	initSchemaClient = func(ctx context.Context, databaseID string) (onyx.Client, error) {
 		return stub, nil
 	}
 	defer func() { initSchemaClient = originalInit }()
@@ -68,12 +96,12 @@ func TestPublishCommandSendsSchema(t *testing.T) {
 }
 
 type stubClient struct {
-	schema        contract.Schema
+	schema        onyx.Schema
 	publishCalled bool
 }
 
-func (s *stubClient) From(table string) contract.Query                         { return nil }
-func (s *stubClient) Cascade(spec contract.CascadeSpec) contract.CascadeClient { return nil }
+func (s *stubClient) From(table string) onyx.Query                     { return nil }
+func (s *stubClient) Cascade(spec onyx.CascadeSpec) onyx.CascadeClient { return nil }
 func (s *stubClient) Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
 	return nil, nil
 }
@@ -81,32 +109,32 @@ func (s *stubClient) Delete(ctx context.Context, table, id string) error { retur
 func (s *stubClient) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {
 	return nil
 }
-func (s *stubClient) Schema(ctx context.Context) (contract.Schema, error) { return s.schema, nil }
-func (s *stubClient) GetSchema(ctx context.Context, tables []string) (contract.Schema, error) {
+func (s *stubClient) Schema(ctx context.Context) (onyx.Schema, error) { return s.schema, nil }
+func (s *stubClient) GetSchema(ctx context.Context, tables []string) (onyx.Schema, error) {
 	return s.schema, nil
 }
-func (s *stubClient) GetSchemaHistory(ctx context.Context) ([]contract.Schema, error) {
+func (s *stubClient) GetSchemaHistory(ctx context.Context) ([]onyx.Schema, error) {
 	return nil, nil
 }
-func (s *stubClient) UpdateSchema(ctx context.Context, schema contract.Schema, publish bool) error {
+func (s *stubClient) UpdateSchema(ctx context.Context, schema onyx.Schema, publish bool) error {
 	s.publishCalled = publish
 	s.schema = schema
 	return nil
 }
-func (s *stubClient) ValidateSchema(ctx context.Context, schema contract.Schema) error { return nil }
-func (s *stubClient) PublishSchema(ctx context.Context, schema contract.Schema) error {
+func (s *stubClient) ValidateSchema(ctx context.Context, schema onyx.Schema) error { return nil }
+func (s *stubClient) PublishSchema(ctx context.Context, schema onyx.Schema) error {
 	s.publishCalled = true
 	s.schema = schema
 	return nil
 }
-func (s *stubClient) Documents() contract.DocumentClient { return nil }
-func (s *stubClient) ListSecrets(ctx context.Context) ([]contract.Secret, error) {
+func (s *stubClient) Documents() onyx.DocumentClient { return nil }
+func (s *stubClient) ListSecrets(ctx context.Context) ([]onyx.Secret, error) {
 	return nil, nil
 }
-func (s *stubClient) GetSecret(ctx context.Context, key string) (contract.Secret, error) {
-	return contract.Secret{}, nil
+func (s *stubClient) GetSecret(ctx context.Context, key string) (onyx.Secret, error) {
+	return onyx.Secret{}, nil
 }
-func (s *stubClient) PutSecret(ctx context.Context, secret contract.Secret) (contract.Secret, error) {
+func (s *stubClient) PutSecret(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) {
 	return secret, nil
 }
 func (s *stubClient) DeleteSecret(ctx context.Context, key string) error { return nil }
