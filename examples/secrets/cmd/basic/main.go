@@ -27,6 +27,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if entries == nil {
+		log.Println("warning: expected secrets list")
+	}
 	exists := false
 	for _, s := range entries {
 		if s.Key == secretKey {
@@ -41,11 +44,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if saved.Key != secretKey {
+		log.Println("warning: expected saved secret key")
+	}
 	fmt.Println("Saved secret metadata:", saved)
 
 	afterSet, err := secrets.List(ctx)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if afterSet == nil {
+		log.Println("warning: expected secrets list after set")
 	}
 	for _, s := range afterSet {
 		if s.Key == secretKey {
@@ -58,6 +67,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if found.Key != secretKey {
+		log.Println("warning: expected fetched secret key")
+	}
 	fmt.Println("Fetched secret:", found)
 
 	if err := secrets.Delete(ctx, secretKey); err != nil {
@@ -69,6 +81,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if finalList == nil {
+		log.Println("warning: expected final secrets list")
+	}
 	stillExists := false
 	for _, s := range finalList {
 		if s.Key == secretKey {
@@ -78,4 +93,8 @@ func main() {
 	if !stillExists {
 		fmt.Println("Final secrets list confirms removal.")
 	}
+	if stillExists {
+		log.Println("warning: expected secret to be removed")
+	}
+	log.Println("example: completed")
 }

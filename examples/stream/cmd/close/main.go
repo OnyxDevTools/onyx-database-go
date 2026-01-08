@@ -19,7 +19,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer iter.Close()
+	if iter == nil {
+		log.Println("warning: expected stream iterator")
+		return
+	}
+	defer func() {
+		if err := iter.Close(); err != nil {
+			log.Printf("stream close error: %v", err)
+		}
+	}()
 
 	// Let the stream start, then cancel shortly after to demonstrate cleanup.
 	time.AfterFunc(500*time.Millisecond, func() {
@@ -32,4 +40,5 @@ func main() {
 	if err := iter.Err(); err != nil {
 		log.Fatal(err)
 	}
+	log.Println("example: completed")
 }

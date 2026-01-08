@@ -27,12 +27,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if results == nil {
+		log.Println("warning: expected query response")
+	}
 
 	if len(results) == 0 {
 		fmt.Println("No record found for id:", id)
 		return
 	}
+	if results[0].Id == "" {
+		log.Println("warning: expected user id")
+	}
 
 	out, _ := json.MarshalIndent(results[0], "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }

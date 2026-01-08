@@ -24,6 +24,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if firstPage.Items == nil {
+		log.Println("warning: expected page items")
+	}
 	fmt.Println("Page 1:", usernames(firstPage.Items))
 
 	if firstPage.NextCursor != "" {
@@ -31,8 +34,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if secondPage.Items == nil {
+			log.Println("warning: expected second page items")
+		}
 		fmt.Println("Page 2:", usernames(secondPage.Items))
 	}
+	log.Println("example: completed")
 }
 
 func usernames(items []onyxclient.User) []string {

@@ -26,7 +26,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("query failed: %v", err)
 	}
+	if users == nil {
+		log.Println("warning: expected users response")
+	}
 
 	pretty, _ := json.MarshalIndent(users, "", "  ")
 	fmt.Println(string(pretty))
+	log.Println("example: completed")
 }
