@@ -34,7 +34,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if saved.Id == "" {
+		log.Println("warning: expected saved user id")
+	}
 
 	jsonOut, _ := json.Marshal(saved)
 	fmt.Printf("Saved user: %s\n", string(jsonOut))
+	log.Println("example: completed")
 }

@@ -34,6 +34,9 @@ func main() {
 		})
 	}
 
+	if len(users) == 0 {
+		log.Println("warning: expected users to save")
+	}
 	if err := db.BatchSave(ctx, onyxclient.Tables.User, toAnySlice(users), 2); err != nil {
 		log.Fatal(err)
 	}
@@ -56,6 +59,7 @@ func main() {
 	} else {
 		fmt.Printf("Fetch skipped: %v\n", err)
 	}
+	log.Println("example: completed")
 }
 
 func toAnySlice[T any](in []T) []any {

@@ -21,21 +21,27 @@ func main() {
 	db := onyxclient.NewClient(core)
 
 	now := time.Now().UTC()
-	_, _ = db.SaveAuditLog(ctx, onyxclient.AuditLog{
+	_, err = db.SaveAuditLog(ctx, onyxclient.AuditLog{
 		Id:       "audit-id-a",
 		TenantId: strPtr("tenantA"),
 		DateTime: now,
 		Action:   strPtr("LOGIN"),
 		Status:   strPtr("SUCCESS"),
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	_, _ = db.SaveAuditLog(ctx, onyxclient.AuditLog{
+	_, err = db.SaveAuditLog(ctx, onyxclient.AuditLog{
 		Id:       "audit-id-b",
 		TenantId: strPtr("tenantB"),
 		DateTime: now,
 		Action:   strPtr("LOGIN"),
 		Status:   strPtr("SUCCESS"),
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	logs, err := db.ListAuditLogs().
 		Where(onyx.Eq("tenantId", "tenantA")).
@@ -43,9 +49,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if logs == nil {
+		log.Println("warning: expected audit log response")
+	}
 
 	out, _ := json.MarshalIndent(logs, "", "  ")
 	fmt.Println(string(out))
+	log.Println("example: completed")
 }
 
 func strPtr(s string) *string { return &s }
