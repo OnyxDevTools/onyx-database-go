@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func main() {
 	log.Println("example: completed")
 }
 
-func usernames(items []onyxdb.User) []string {
+func usernames(items []onyx.User) []string {
 	var names []string
 	for _, u := range items {
 		names = append(names, u.Username)

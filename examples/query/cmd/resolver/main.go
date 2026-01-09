@@ -7,19 +7,19 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Seed a role, permissions, user, profile, and link them together so resolvers have data.
-	role := onyxdb.Role{
+	role := onyx.Role{
 		Id:          "role_admin_resolver",
 		Name:        "Admin",
 		Description: strPtr("Administrators with full access"),
@@ -30,8 +30,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	permRead := onyxdb.Permission{Id: "perm_user_read_resolver", Name: "user.read", Description: strPtr("get user(s)")}
-	permWrite := onyxdb.Permission{Id: "perm_user_write_resolver", Name: "user.write", Description: strPtr("Create, update, and delete users")}
+	permRead := onyx.Permission{Id: "perm_user_read_resolver", Name: "user.read", Description: strPtr("get user(s)")}
+	permWrite := onyx.Permission{Id: "perm_user_write_resolver", Name: "user.write", Description: strPtr("Create, update, and delete users")}
 	_, err = db.Permissions().Save(ctx, permRead)
 	if err != nil {
 		log.Fatal(err)
@@ -42,11 +42,11 @@ func main() {
 	}
 
 	rolePerms := []any{
-		onyxdb.RolePermission{Id: "rp_read_resolver", RoleId: role.Id, PermissionId: permRead.Id},
-		onyxdb.RolePermission{Id: "rp_write_resolver", RoleId: role.Id, PermissionId: permWrite.Id},
+		onyx.RolePermission{Id: "rp_read_resolver", RoleId: role.Id, PermissionId: permRead.Id},
+		onyx.RolePermission{Id: "rp_write_resolver", RoleId: role.Id, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		_, err := db.RolePermissions().Save(ctx, rp.(onyxdb.RolePermission))
+		_, err := db.RolePermissions().Save(ctx, rp.(onyx.RolePermission))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -54,7 +54,7 @@ func main() {
 
 	userID := "resolver-user-1"
 	now := time.Now().UTC()
-	user := onyxdb.User{
+	user := onyx.User{
 		Id:        userID,
 		Username:  "admin-user-1",
 		Email:     "admin@example.com",
@@ -67,7 +67,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	profile := onyxdb.UserProfile{
+	profile := onyx.UserProfile{
 		Id:        "resolver-profile-1",
 		UserId:    userID,
 		FirstName: "Example",
@@ -80,7 +80,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	userRole := onyxdb.UserRole{
+	userRole := onyx.UserRole{
 		Id:     "resolver-user-role-1",
 		UserId: userID,
 		RoleId: role.Id,
@@ -91,7 +91,7 @@ func main() {
 	}
 
 	users, err := db.Users().
-		Where(onyxdb.Eq("id", userID)).
+		Where(onyx.Eq("id", userID)).
 		Resolve("profile", "roles.permissions").
 		Limit(5).
 		List(ctx)

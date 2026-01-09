@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
@@ -15,11 +15,11 @@ func main() {
 	streamCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	streamDB, err := onyxdb.New(ctx, onyxdb.Config{})
+	streamDB, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	writeDB, err := onyxdb.New(ctx, onyxdb.Config{})
+	writeDB, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, err := writeDB.Users().Save(ctx, onyxdb.User{
+		_, err := writeDB.Users().Save(ctx, onyx.User{
 			Id:        "stream_user_delete",
 			Username:  "delete-user",
 			Email:     "delete@example.com",
@@ -54,7 +54,7 @@ func main() {
 			log.Printf("save error: %v", err)
 		}
 		time.Sleep(200 * time.Millisecond)
-		if err := writeDB.Users().DeleteByID(ctx, "stream_user_delete"); err != nil {
+		if _, err := writeDB.Users().DeleteByID(ctx, "stream_user_delete"); err != nil {
 			log.Printf("delete error: %v", err)
 		}
 	}()

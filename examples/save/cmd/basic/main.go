@@ -7,19 +7,19 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	now := time.Now().UTC()
-	user := onyxdb.User{
+	user := onyx.User{
 		Id:        "example-user-1", // if you omit this one will be generated when the schema has a UUID generator specified
 		Username:  "Example User",
 		Email:     "basic@example.com",

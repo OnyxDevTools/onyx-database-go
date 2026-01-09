@@ -6,25 +6,26 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	logs, err := db.AuditLogs().
 		Select("actorId", "action", "targetId", "status", "dateTime").
-		Where(onyxdb.Eq("actorId", "admin-user-1")).
-		And(onyxdb.Eq("action", "DELETE")).
-		Or(onyxdb.Eq("action", "UPDATE")).
-		Or(onyxdb.NotNull("actorId")).
+		Where(onyx.Eq("actorId", "admin-user-1")).
+		And(onyx.Eq("action", "DELETE")).
+		Or(onyx.Eq("action", "UPDATE")).
+		Or(onyx.NotNull("actorId")).
 		OrderBy("dateTime", false).
 		List(ctx)
+
 	if err != nil {
 		log.Fatal(err)
 	}

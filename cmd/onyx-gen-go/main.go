@@ -26,8 +26,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 	schemaPath := fs.String("schema", "./onyx.schema.json", "path to the onyx.schema.json file")
 	source := fs.String("source", "file", "schema source: file or api")
 	databaseID := fs.String("database-id", "", "database id used when --source=api")
-	outPath := fs.String("out", "./onyxdb", "output directory for generated files (models.go, client.go)")
-	packageName := fs.String("package", "", "package name for generated code (defaults to output directory name)")
+	outPath := fs.String("out", "./gen/onyx", "output directory for generated files (models.go, client.go)")
+	packageName := fs.String("package", "", "package name for generated code (default: onyx)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")
 
@@ -62,8 +62,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintf(stdout, "Generated models from %s to %s/models.go\n", opts.SchemaPath, opts.OutPath)
-	fmt.Fprintf(stdout, "Generated typed client to %s/client.go\n", opts.OutPath)
+	fmt.Fprintf(stdout, "Generated code from %s into %s/*.go\n", opts.SchemaPath, opts.OutPath)
 	return nil
 }
 

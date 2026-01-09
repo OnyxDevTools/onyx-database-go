@@ -6,28 +6,28 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	targetID := "user-id-1"
 	now := time.Now().UTC()
-	saved, err := db.Users().Save(ctx, onyxdb.User{
+	saved, err := db.Users().Save(ctx, onyx.User{
 		Id:        targetID,
-		Asdf:      "tmp",
 		Username:  "delete_me",
 		Email:     "delete_me@example.com",
 		IsActive:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	})
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 
 	fmt.Printf("Saved user: %+v\n", saved)
 
-	if err := db.Users().DeleteByID(ctx, targetID); err != nil {
+	if _, err := db.Users().DeleteByID(ctx, targetID); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Deleted saved user.")

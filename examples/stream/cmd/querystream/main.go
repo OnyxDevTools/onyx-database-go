@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 	streamCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, _ = db.Users().Save(ctx, onyxdb.User{
+		_, _ = db.Users().Save(ctx, onyx.User{
 			Id:        "stream_query_user",
 			Username:  "stream-query",
 			Email:     "stream-query@example.com",

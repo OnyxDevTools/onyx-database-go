@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 
-	model "github.com/OnyxDevTools/onyx-database-go/examples/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := model.New(ctx, model.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
