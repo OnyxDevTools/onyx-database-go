@@ -79,7 +79,7 @@ func ValidateOptions(opts *Options) error {
 	}
 
 	if opts.OutPath == "" {
-		opts.OutPath = "./onyxclient"
+		opts.OutPath = "./onyxdb"
 	}
 
 	if opts.PackageName == "" {
@@ -169,50 +169,77 @@ func renderClient(schema onyx.Schema, pkg string) []byte {
 	buf.WriteString("\t\"github.com/OnyxDevTools/onyx-database-go/onyx\"\n")
 	buf.WriteString(")\n\n")
 
-	buf.WriteString("type Client struct { core onyx.Client }\n\n")
-	buf.WriteString("func NewClient(core onyx.Client) Client { return Client{core: core} }\n\n")
-	buf.WriteString("func (c Client) Core() onyx.Client { return c.core }\n\n")
+	buf.WriteString("type DB struct { core onyx.Client }\n\n")
+	buf.WriteString("type Config = onyx.Config\n\n")
+	buf.WriteString("func New(ctx context.Context, cfg Config) (DB, error) {\n")
+	buf.WriteString("\tcore, err := onyx.Init(ctx, cfg)\n")
+	buf.WriteString("\tif err != nil {\n")
+	buf.WriteString("\t\treturn DB{}, err\n")
+	buf.WriteString("\t}\n")
+	buf.WriteString("\treturn DB{core: core}, nil\n")
+	buf.WriteString("}\n\n")
+	buf.WriteString("func Wrap(core onyx.Client) DB { return DB{core: core} }\n\n")
+	buf.WriteString("func (c DB) Core() onyx.Client { return c.core }\n\n")
 
 	for _, t := range schema.Tables {
 		typeName := toExported(t.Name)
 		plural := toPlural(typeName)
 		resourceName := fmt.Sprintf("%sClient", plural)
+		mapResourceName := fmt.Sprintf("%sMapClient", plural)
 		pageName := fmt.Sprintf("%sPage", typeName)
 		pageMapName := fmt.Sprintf("%sMapPage", typeName)
 
 		fmt.Fprintf(&buf, "type %s struct {\n\tItems []%s `json:\"items\"`\n\tNextCursor string `json:\"nextCursor,omitempty\"`\n}\n\n", pageName, typeName)
 		fmt.Fprintf(&buf, "type %s struct {\n\tItems []map[string]any `json:\"items\"`\n\tNextCursor string `json:\"nextCursor,omitempty\"`\n}\n\n", pageMapName)
-		fmt.Fprintf(&buf, "type %s struct { core onyx.Client; ctx context.Context; q onyx.Query }\n\n", resourceName)
-		fmt.Fprintf(&buf, "func (c Client) %s(ctx context.Context) %s { return %s{core: c.core, ctx: ctx, q: c.core.From(Tables.%s)} }\n\n", plural, resourceName, resourceName, typeName)
-		fmt.Fprintf(&buf, "func (c %s) WithContext(ctx context.Context) %s { c.ctx = ctx; return c }\n", resourceName, resourceName)
+		fmt.Fprintf(&buf, "type %s struct { core onyx.Client; q onyx.Query }\n", resourceName)
+		fmt.Fprintf(&buf, "type %s struct { core onyx.Client; q onyx.Query }\n\n", mapResourceName)
+
+		fmt.Fprintf(&buf, "func (c DB) %s() %s { return %s{core: c.core, q: c.core.From(Tables.%s)} }\n\n", plural, resourceName, resourceName, typeName)
+
+		// Typed client methods
 		fmt.Fprintf(&buf, "func (c %s) Where(cond onyx.Condition) %s { c.q = c.q.Where(cond); return c }\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) And(cond onyx.Condition) %s { c.q = c.q.And(cond); return c }\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) Or(cond onyx.Condition) %s { c.q = c.q.Or(cond); return c }\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) Resolve(resolvers ...string) %s { c.q = c.q.Resolve(resolvers...); return c }\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) OrderBy(field string, asc bool) %s {\n\tif asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }\n\treturn c\n}\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) Limit(n int) %s { c.q = c.q.Limit(n); return c }\n", resourceName, resourceName)
-		fmt.Fprintf(&buf, "func (c %s) Select(fields ...string) %s { c.q = c.q.Select(fields...); return c }\n", resourceName, resourceName)
-		fmt.Fprintf(&buf, "func (c %s) GroupBy(fields ...string) %s { c.q = c.q.GroupBy(fields...); return c }\n", resourceName, resourceName)
 		fmt.Fprintf(&buf, "func (c %s) SetUpdates(updates map[string]any) %s { c.q = c.q.SetUpdates(updates); return c }\n", resourceName, resourceName)
-		fmt.Fprintf(&buf, "func (c %s) Stream(ctx context.Context) (onyx.Iterator, error) { ctx = useContext(ctx, c.ctx); return c.q.Stream(ctx) }\n", resourceName)
-		fmt.Fprintf(&buf, "func (c %s) List(ctx context.Context) ([]%s, error) {\n\tctx = useContext(ctx, c.ctx)\n\tres := onyx.List(ctx, c.q)\n\tvar out []%s\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", resourceName, typeName, typeName)
-		fmt.Fprintf(&buf, "func (c %s) ListMaps(ctx context.Context) ([]map[string]any, error) {\n\tctx = useContext(ctx, c.ctx)\n\tres := onyx.List(ctx, c.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", resourceName)
-		fmt.Fprintf(&buf, "func (c %s) ListAggregates(ctx context.Context) ([]map[string]any, error) {\n\tctx = useContext(ctx, c.ctx)\n\tres := onyx.List(ctx, c.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", resourceName)
-		fmt.Fprintf(&buf, "func (c %s) Page(ctx context.Context, cursor string) (%s, error) {\n\tctx = useContext(ctx, c.ctx)\n\tres, err := c.q.Page(ctx, cursor)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\tvar items []%s\n\tif err := decodeList(res.Items, &items); err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn %s{Items: items, NextCursor: res.NextCursor}, nil\n}\n\n", resourceName, pageName, pageName, typeName, pageName, pageName)
-		fmt.Fprintf(&buf, "func (c %s) PageOfMaps(ctx context.Context, cursor string) (%s, error) {\n\tctx = useContext(ctx, c.ctx)\n\tres, err := c.q.Page(ctx, cursor)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn %s{Items: res.Items, NextCursor: res.NextCursor}, nil\n}\n\n", resourceName, pageMapName, pageMapName, pageMapName)
-		fmt.Fprintf(&buf, "func (c %s) Update(ctx context.Context) (int, error) { ctx = useContext(ctx, c.ctx); return c.q.Update(ctx) }\n\n", resourceName)
-		fmt.Fprintf(&buf, "func (c %s) Delete(ctx context.Context) (int, error) { ctx = useContext(ctx, c.ctx); return c.q.Delete(ctx) }\n\n", resourceName)
-		fmt.Fprintf(&buf, "func (c %s) Save(item %s, cascades ...onyx.CascadeSpec) (%s, error) {\n\tctx := useContext(nil, c.ctx)\n\trelationships := make([]string, 0, len(cascades))\n\tfor _, spec := range cascades {\n\t\tif spec != nil {\n\t\t\trelationships = append(relationships, spec.String())\n\t\t}\n\t}\n\tif len(relationships) == 0 {\n\t\trelationships = nil\n\t}\n\tsaved, err := c.core.Save(ctx, Tables.%s, item, relationships)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\tvar out %s\n\tif err := decodeSaved(saved, &out); err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn out, nil\n}\n\n", resourceName, typeName, typeName, typeName, typeName, typeName, typeName)
-		fmt.Fprintf(&buf, "func (c %s) DeleteByID(id string) error {\n\tctx := useContext(nil, c.ctx)\n\treturn c.core.Delete(ctx, Tables.%s, id)\n}\n\n", resourceName, typeName)
+		fmt.Fprintf(&buf, "func (c %s) Select(fields ...string) %s {\n\tc.q = c.q.Select(fields...)\n\treturn %s{core: c.core, q: c.q}\n}\n", resourceName, mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) GroupBy(fields ...string) %s {\n\tc.q = c.q.GroupBy(fields...)\n\treturn %s{core: c.core, q: c.q}\n}\n", resourceName, mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) AsMaps() %s { return %s{core: c.core, q: c.q} }\n", resourceName, mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }\n", resourceName)
+		fmt.Fprintf(&buf, "func (c %s) List(ctx context.Context) ([]%s, error) {\n\tres := onyx.List(ctx, c.q)\n\tvar out []%s\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", resourceName, typeName, typeName)
+		fmt.Fprintf(&buf, "func (c %s) ListMaps(ctx context.Context) ([]map[string]any, error) {\n\tres := onyx.List(ctx, c.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", resourceName)
+		fmt.Fprintf(&buf, "func (c %s) Page(ctx context.Context, cursor string) (%s, error) {\n\tres, err := c.q.Page(ctx, cursor)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\tvar items []%s\n\tif err := decodeList(res.Items, &items); err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn %s{Items: items, NextCursor: res.NextCursor}, nil\n}\n\n", resourceName, pageName, pageName, typeName, pageName, pageName)
+		fmt.Fprintf(&buf, "func (c %s) PageOfMaps(ctx context.Context, cursor string) (%s, error) {\n\tres, err := c.q.Page(ctx, cursor)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn %s{Items: res.Items, NextCursor: res.NextCursor}, nil\n}\n\n", resourceName, pageMapName, pageMapName, pageMapName)
+		fmt.Fprintf(&buf, "func (c %s) Update(ctx context.Context) (int, error) { return c.q.Update(ctx) }\n\n", resourceName)
+		fmt.Fprintf(&buf, "func (c %s) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }\n\n", resourceName)
+		fmt.Fprintf(&buf, "func (c %s) Save(ctx context.Context, item %s, cascades ...onyx.CascadeSpec) (%s, error) {\n\trelationships := make([]string, 0, len(cascades))\n\tfor _, spec := range cascades {\n\t\tif spec != nil {\n\t\t\trelationships = append(relationships, spec.String())\n\t\t}\n\t}\n\tif len(relationships) == 0 {\n\t\trelationships = nil\n\t}\n\tsaved, err := c.core.Save(ctx, Tables.%s, item, relationships)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\tvar out %s\n\tif err := decodeSaved(saved, &out); err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn out, nil\n}\n\n", resourceName, typeName, typeName, typeName, typeName, typeName, typeName)
+		fmt.Fprintf(&buf, "func (c %s) DeleteByID(ctx context.Context, id string) error {\n\treturn c.core.Delete(ctx, Tables.%s, id)\n}\n\n", resourceName, typeName)
+
+		// Map client methods (returned by Select/GroupBy/AsMaps)
+		fmt.Fprintf(&buf, "func (c %s) Where(cond onyx.Condition) %s { c.q = c.q.Where(cond); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) And(cond onyx.Condition) %s { c.q = c.q.And(cond); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Or(cond onyx.Condition) %s { c.q = c.q.Or(cond); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Resolve(resolvers ...string) %s { c.q = c.q.Resolve(resolvers...); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) OrderBy(field string, asc bool) %s {\n\tif asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }\n\treturn c\n}\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Limit(n int) %s { c.q = c.q.Limit(n); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) SetUpdates(updates map[string]any) %s { c.q = c.q.SetUpdates(updates); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Select(fields ...string) %s { c.q = c.q.Select(fields...); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) GroupBy(fields ...string) %s { c.q = c.q.GroupBy(fields...); return c }\n", mapResourceName, mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }\n", mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) List(ctx context.Context) ([]map[string]any, error) {\n\tres := onyx.List(ctx, c.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Page(ctx context.Context, cursor string) (%s, error) {\n\tres, err := c.q.Page(ctx, cursor)\n\tif err != nil {\n\t\treturn %s{}, err\n\t}\n\treturn %s{Items: res.Items, NextCursor: res.NextCursor}, nil\n}\n\n", mapResourceName, pageMapName, pageMapName, pageMapName)
+		fmt.Fprintf(&buf, "func (c %s) Update(ctx context.Context) (int, error) { return c.q.Update(ctx) }\n\n", mapResourceName)
+		fmt.Fprintf(&buf, "func (c %s) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }\n\n", mapResourceName)
 	}
 
 	buf.WriteString("func decodeSaved(saved map[string]any, out any) error {\n\tb, err := json.Marshal(saved)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn json.Unmarshal(b, out)\n}\n\n")
 	buf.WriteString("func decodeList(items []map[string]any, out any) error {\n\tb, err := json.Marshal(items)\n\tif err != nil {\n\t\treturn err\n\t}\n\treturn json.Unmarshal(b, out)\n}\n\n")
-	buf.WriteString("func useContext(ctx, fallback context.Context) context.Context {\n\tif ctx != nil {\n\t\treturn ctx\n\t}\n\treturn fallback\n}\n\n")
 
 	// Documents passthrough helpers
 	buf.WriteString("type DocumentsClient struct { core onyx.DocumentClient }\n\n")
-	buf.WriteString("func (c Client) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }\n\n")
+	buf.WriteString("func (c DB) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }\n\n")
 	buf.WriteString("func (d DocumentsClient) List(ctx context.Context) ([]onyx.Document, error) { return d.core.List(ctx) }\n")
 	buf.WriteString("func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) { return d.core.Get(ctx, id) }\n")
 	buf.WriteString("func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) { return d.core.Save(ctx, doc) }\n")
@@ -220,7 +247,7 @@ func renderClient(schema onyx.Schema, pkg string) []byte {
 
 	// Secrets passthrough helpers
 	buf.WriteString("type SecretsClient struct { core onyx.Client }\n\n")
-	buf.WriteString("func (c Client) Secrets() SecretsClient { return SecretsClient{core: c.core} }\n\n")
+	buf.WriteString("func (c DB) Secrets() SecretsClient { return SecretsClient{core: c.core} }\n\n")
 	buf.WriteString("func (s SecretsClient) List(ctx context.Context) ([]onyx.Secret, error) { return s.core.ListSecrets(ctx) }\n")
 	buf.WriteString("func (s SecretsClient) Get(ctx context.Context, key string) (onyx.Secret, error) { return s.core.GetSecret(ctx, key) }\n")
 	buf.WriteString("func (s SecretsClient) Set(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) { return s.core.PutSecret(ctx, secret) }\n")

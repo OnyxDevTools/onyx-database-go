@@ -7,26 +7,25 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 
-	logs, err := db.AuditLogs(ctx).
+	logs, err := db.AuditLogs().
 		Select("actorId", "action", "targetId", "status", "dateTime").
 		Where(onyx.Eq("actorId", "admin-user-1")).
 		And(onyx.Eq("action", "DELETE")).
 		Or(onyx.Eq("action", "UPDATE")).
 		Or(onyx.NotNull("actorId")).
 		OrderBy("dateTime", false).
-		ListMaps(ctx)
+		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

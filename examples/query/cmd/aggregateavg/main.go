@@ -6,22 +6,20 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 
-	stats, err := db.UserProfiles(ctx).
+	stats, err := db.UserProfiles().
 		Select("avg(age)").
-		ListAggregates(ctx)
+		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -6,23 +6,22 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 	coreClient := db.Core()
 
-	users, err := db.Users(ctx).
+	users, err := db.Users().
 		Select("id").
-		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
-		ListMaps(ctx)
+		Where(onyx.NotWithin("id", coreClient.From(onyxdb.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
+		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,10 +30,10 @@ func main() {
 	}
 	fmt.Println("Users without admin role:", users)
 
-	roles, err := db.Roles(ctx).
+	roles, err := db.Roles().
 		Select("id").
-		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
-		ListMaps(ctx)
+		Where(onyx.NotWithin("id", coreClient.From(onyxdb.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
+		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
