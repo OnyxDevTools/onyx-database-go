@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -34,7 +33,7 @@ func main() {
 	}
 
 	// Match the TS example: delete users where username == "obsolete".
-	deletedCount, err := db.Users().Where(onyx.Eq("username", "obsolete")).Delete(ctx)
+	deletedCount, err := db.Users().Where(onyxdb.Eq("username", "obsolete")).Delete(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,6 +8,27 @@ import (
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
+func Eq(field string, value any) onyx.Condition { return onyx.Eq(field, value) }
+func Neq(field string, value any) onyx.Condition { return onyx.Neq(field, value) }
+func In(field string, values []any) onyx.Condition { return onyx.In(field, values) }
+func NotIn(field string, values []any) onyx.Condition { return onyx.NotIn(field, values) }
+func Between(field string, from, to any) onyx.Condition { return onyx.Between(field, from, to) }
+func Gt(field string, value any) onyx.Condition { return onyx.Gt(field, value) }
+func Gte(field string, value any) onyx.Condition { return onyx.Gte(field, value) }
+func Lt(field string, value any) onyx.Condition { return onyx.Lt(field, value) }
+func Lte(field string, value any) onyx.Condition { return onyx.Lte(field, value) }
+func Like(field string, pattern any) onyx.Condition { return onyx.Like(field, pattern) }
+func Contains(field string, value any) onyx.Condition { return onyx.Contains(field, value) }
+func StartsWith(field string, value any) onyx.Condition { return onyx.StartsWith(field, value) }
+func IsNull(field string) onyx.Condition { return onyx.IsNull(field) }
+func NotNull(field string) onyx.Condition { return onyx.NotNull(field) }
+func Within(field string, query onyx.Query) onyx.Condition { return onyx.Within(field, query) }
+func NotWithin(field string, query onyx.Query) onyx.Condition { return onyx.NotWithin(field, query) }
+func Asc(field string) onyx.Sort { return onyx.Asc(field) }
+func Desc(field string) onyx.Sort { return onyx.Desc(field) }
+func Cascade(spec string) onyx.CascadeSpec { return onyx.Cascade(spec) }
+func NewCascadeBuilder() onyx.CascadeBuilder { return onyx.NewCascadeBuilder() }
+
 type DB struct { core onyx.Client }
 
 type Config = onyx.Config

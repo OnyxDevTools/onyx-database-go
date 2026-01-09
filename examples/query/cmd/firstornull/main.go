@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -19,7 +18,7 @@ func main() {
 	}
 
 	first, err := db.Users().
-		Where(onyx.Eq("email", "basic@example.com")).
+		Where(onyxdb.Eq("email", "basic@example.com")).
 		Limit(1).
 		List(ctx)
 	if err != nil {
@@ -40,7 +39,7 @@ func main() {
 	}
 
 	also, err := db.Users().
-		Where(onyx.Eq("email", "notfound@example.com")).
+		Where(onyxdb.Eq("email", "notfound@example.com")).
 		Limit(1).
 		List(ctx)
 	if err != nil {

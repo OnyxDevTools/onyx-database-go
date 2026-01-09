@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -43,7 +42,7 @@ func main() {
 	}
 
 	logs, err := db.AuditLogs().
-		Where(onyx.Eq("tenantId", "tenantA")).
+		Where(onyxdb.Eq("tenantId", "tenantA")).
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)

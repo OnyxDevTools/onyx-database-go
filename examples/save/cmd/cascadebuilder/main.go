@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -18,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	spec := onyx.NewCascadeBuilder().
+	spec := onyxdb.NewCascadeBuilder().
 		Graph("profile").
 		GraphType("UserProfile").
 		SourceField("userId").
