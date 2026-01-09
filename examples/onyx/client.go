@@ -8,7 +8,28 @@ import (
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
-type DB struct { core onyx.Client }
+func Eq(field string, value any) onyx.Condition               { return onyx.Eq(field, value) }
+func Neq(field string, value any) onyx.Condition              { return onyx.Neq(field, value) }
+func In(field string, values []any) onyx.Condition            { return onyx.In(field, values) }
+func NotIn(field string, values []any) onyx.Condition         { return onyx.NotIn(field, values) }
+func Between(field string, from, to any) onyx.Condition       { return onyx.Between(field, from, to) }
+func Gt(field string, value any) onyx.Condition               { return onyx.Gt(field, value) }
+func Gte(field string, value any) onyx.Condition              { return onyx.Gte(field, value) }
+func Lt(field string, value any) onyx.Condition               { return onyx.Lt(field, value) }
+func Lte(field string, value any) onyx.Condition              { return onyx.Lte(field, value) }
+func Like(field string, pattern any) onyx.Condition           { return onyx.Like(field, pattern) }
+func Contains(field string, value any) onyx.Condition         { return onyx.Contains(field, value) }
+func StartsWith(field string, value any) onyx.Condition       { return onyx.StartsWith(field, value) }
+func IsNull(field string) onyx.Condition                      { return onyx.IsNull(field) }
+func NotNull(field string) onyx.Condition                     { return onyx.NotNull(field) }
+func Within(field string, query onyx.Query) onyx.Condition    { return onyx.Within(field, query) }
+func NotWithin(field string, query onyx.Query) onyx.Condition { return onyx.NotWithin(field, query) }
+func Asc(field string) onyx.Sort                              { return onyx.Asc(field) }
+func Desc(field string) onyx.Sort                             { return onyx.Desc(field) }
+func Cascade(spec string) onyx.CascadeSpec                    { return onyx.Cascade(spec) }
+func NewCascadeBuilder() onyx.CascadeBuilder                  { return onyx.NewCascadeBuilder() }
+
+type DB struct{ core onyx.Client }
 
 type Config = onyx.Config
 
@@ -25,30 +46,48 @@ func Wrap(core onyx.Client) DB { return DB{core: core} }
 func (c DB) Core() onyx.Client { return c.core }
 
 type AuditLogPage struct {
-	Items []AuditLog `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []AuditLog `json:"items"`
+	NextCursor string     `json:"nextCursor,omitempty"`
 }
 
 type AuditLogMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type AuditLogsClient struct { core onyx.Client; q onyx.Query }
-type AuditLogsMapClient struct { core onyx.Client; q onyx.Query }
+type AuditLogsClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type AuditLogsMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
-func (c DB) AuditLogs() AuditLogsClient { return AuditLogsClient{core: c.core, q: c.core.From(Tables.AuditLog)} }
+func (c DB) AuditLogs() AuditLogsClient {
+	return AuditLogsClient{core: c.core, q: c.core.From(Tables.AuditLog)}
+}
 
 func (c AuditLogsClient) Where(cond onyx.Condition) AuditLogsClient { c.q = c.q.Where(cond); return c }
-func (c AuditLogsClient) And(cond onyx.Condition) AuditLogsClient { c.q = c.q.And(cond); return c }
-func (c AuditLogsClient) Or(cond onyx.Condition) AuditLogsClient { c.q = c.q.Or(cond); return c }
-func (c AuditLogsClient) Resolve(resolvers ...string) AuditLogsClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c AuditLogsClient) And(cond onyx.Condition) AuditLogsClient   { c.q = c.q.And(cond); return c }
+func (c AuditLogsClient) Or(cond onyx.Condition) AuditLogsClient    { c.q = c.q.Or(cond); return c }
+func (c AuditLogsClient) Resolve(resolvers ...string) AuditLogsClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c AuditLogsClient) OrderBy(field string, asc bool) AuditLogsClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c AuditLogsClient) Limit(n int) AuditLogsClient { c.q = c.q.Limit(n); return c }
-func (c AuditLogsClient) SetUpdates(updates map[string]any) AuditLogsClient { c.q = c.q.SetUpdates(updates); return c }
+func (c AuditLogsClient) SetUpdates(updates map[string]any) AuditLogsClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c AuditLogsClient) Select(fields ...string) AuditLogsMapClient {
 	c.q = c.q.Select(fields...)
 	return AuditLogsMapClient{core: c.core, q: c.q}
@@ -57,7 +96,7 @@ func (c AuditLogsClient) GroupBy(fields ...string) AuditLogsMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return AuditLogsMapClient{core: c.core, q: c.q}
 }
-func (c AuditLogsClient) AsMaps() AuditLogsMapClient { return AuditLogsMapClient{core: c.core, q: c.q} }
+func (c AuditLogsClient) AsMaps() AuditLogsMapClient                        { return AuditLogsMapClient{core: c.core, q: c.q} }
 func (c AuditLogsClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c AuditLogsClient) List(ctx context.Context) ([]AuditLog, error) {
 	res := onyx.List(ctx, c.q)
@@ -126,19 +165,43 @@ func (c AuditLogsClient) DeleteByID(ctx context.Context, id string) error {
 	return c.core.Delete(ctx, Tables.AuditLog, id)
 }
 
-func (c AuditLogsMapClient) Where(cond onyx.Condition) AuditLogsMapClient { c.q = c.q.Where(cond); return c }
-func (c AuditLogsMapClient) And(cond onyx.Condition) AuditLogsMapClient { c.q = c.q.And(cond); return c }
+func (c AuditLogsMapClient) Where(cond onyx.Condition) AuditLogsMapClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c AuditLogsMapClient) And(cond onyx.Condition) AuditLogsMapClient {
+	c.q = c.q.And(cond)
+	return c
+}
 func (c AuditLogsMapClient) Or(cond onyx.Condition) AuditLogsMapClient { c.q = c.q.Or(cond); return c }
-func (c AuditLogsMapClient) Resolve(resolvers ...string) AuditLogsMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c AuditLogsMapClient) Resolve(resolvers ...string) AuditLogsMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c AuditLogsMapClient) OrderBy(field string, asc bool) AuditLogsMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c AuditLogsMapClient) Limit(n int) AuditLogsMapClient { c.q = c.q.Limit(n); return c }
-func (c AuditLogsMapClient) SetUpdates(updates map[string]any) AuditLogsMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c AuditLogsMapClient) Select(fields ...string) AuditLogsMapClient { c.q = c.q.Select(fields...); return c }
-func (c AuditLogsMapClient) GroupBy(fields ...string) AuditLogsMapClient { c.q = c.q.GroupBy(fields...); return c }
-func (c AuditLogsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c AuditLogsMapClient) SetUpdates(updates map[string]any) AuditLogsMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c AuditLogsMapClient) Select(fields ...string) AuditLogsMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c AuditLogsMapClient) GroupBy(fields ...string) AuditLogsMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
+func (c AuditLogsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c AuditLogsMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
 	var out []map[string]any
@@ -161,30 +224,51 @@ func (c AuditLogsMapClient) Update(ctx context.Context) (int, error) { return c.
 func (c AuditLogsMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type PermissionPage struct {
-	Items []Permission `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []Permission `json:"items"`
+	NextCursor string       `json:"nextCursor,omitempty"`
 }
 
 type PermissionMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type PermissionsClient struct { core onyx.Client; q onyx.Query }
-type PermissionsMapClient struct { core onyx.Client; q onyx.Query }
+type PermissionsClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type PermissionsMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
-func (c DB) Permissions() PermissionsClient { return PermissionsClient{core: c.core, q: c.core.From(Tables.Permission)} }
+func (c DB) Permissions() PermissionsClient {
+	return PermissionsClient{core: c.core, q: c.core.From(Tables.Permission)}
+}
 
-func (c PermissionsClient) Where(cond onyx.Condition) PermissionsClient { c.q = c.q.Where(cond); return c }
+func (c PermissionsClient) Where(cond onyx.Condition) PermissionsClient {
+	c.q = c.q.Where(cond)
+	return c
+}
 func (c PermissionsClient) And(cond onyx.Condition) PermissionsClient { c.q = c.q.And(cond); return c }
-func (c PermissionsClient) Or(cond onyx.Condition) PermissionsClient { c.q = c.q.Or(cond); return c }
-func (c PermissionsClient) Resolve(resolvers ...string) PermissionsClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c PermissionsClient) Or(cond onyx.Condition) PermissionsClient  { c.q = c.q.Or(cond); return c }
+func (c PermissionsClient) Resolve(resolvers ...string) PermissionsClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c PermissionsClient) OrderBy(field string, asc bool) PermissionsClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c PermissionsClient) Limit(n int) PermissionsClient { c.q = c.q.Limit(n); return c }
-func (c PermissionsClient) SetUpdates(updates map[string]any) PermissionsClient { c.q = c.q.SetUpdates(updates); return c }
+func (c PermissionsClient) SetUpdates(updates map[string]any) PermissionsClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c PermissionsClient) Select(fields ...string) PermissionsMapClient {
 	c.q = c.q.Select(fields...)
 	return PermissionsMapClient{core: c.core, q: c.q}
@@ -193,7 +277,9 @@ func (c PermissionsClient) GroupBy(fields ...string) PermissionsMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return PermissionsMapClient{core: c.core, q: c.q}
 }
-func (c PermissionsClient) AsMaps() PermissionsMapClient { return PermissionsMapClient{core: c.core, q: c.q} }
+func (c PermissionsClient) AsMaps() PermissionsMapClient {
+	return PermissionsMapClient{core: c.core, q: c.q}
+}
 func (c PermissionsClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c PermissionsClient) List(ctx context.Context) ([]Permission, error) {
 	res := onyx.List(ctx, c.q)
@@ -262,19 +348,46 @@ func (c PermissionsClient) DeleteByID(ctx context.Context, id string) error {
 	return c.core.Delete(ctx, Tables.Permission, id)
 }
 
-func (c PermissionsMapClient) Where(cond onyx.Condition) PermissionsMapClient { c.q = c.q.Where(cond); return c }
-func (c PermissionsMapClient) And(cond onyx.Condition) PermissionsMapClient { c.q = c.q.And(cond); return c }
-func (c PermissionsMapClient) Or(cond onyx.Condition) PermissionsMapClient { c.q = c.q.Or(cond); return c }
-func (c PermissionsMapClient) Resolve(resolvers ...string) PermissionsMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c PermissionsMapClient) Where(cond onyx.Condition) PermissionsMapClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c PermissionsMapClient) And(cond onyx.Condition) PermissionsMapClient {
+	c.q = c.q.And(cond)
+	return c
+}
+func (c PermissionsMapClient) Or(cond onyx.Condition) PermissionsMapClient {
+	c.q = c.q.Or(cond)
+	return c
+}
+func (c PermissionsMapClient) Resolve(resolvers ...string) PermissionsMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c PermissionsMapClient) OrderBy(field string, asc bool) PermissionsMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c PermissionsMapClient) Limit(n int) PermissionsMapClient { c.q = c.q.Limit(n); return c }
-func (c PermissionsMapClient) SetUpdates(updates map[string]any) PermissionsMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c PermissionsMapClient) Select(fields ...string) PermissionsMapClient { c.q = c.q.Select(fields...); return c }
-func (c PermissionsMapClient) GroupBy(fields ...string) PermissionsMapClient { c.q = c.q.GroupBy(fields...); return c }
-func (c PermissionsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c PermissionsMapClient) SetUpdates(updates map[string]any) PermissionsMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c PermissionsMapClient) Select(fields ...string) PermissionsMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c PermissionsMapClient) GroupBy(fields ...string) PermissionsMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
+func (c PermissionsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c PermissionsMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
 	var out []map[string]any
@@ -297,30 +410,46 @@ func (c PermissionsMapClient) Update(ctx context.Context) (int, error) { return 
 func (c PermissionsMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type RolePage struct {
-	Items []Role `json:"items"`
+	Items      []Role `json:"items"`
 	NextCursor string `json:"nextCursor,omitempty"`
 }
 
 type RoleMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type RolesClient struct { core onyx.Client; q onyx.Query }
-type RolesMapClient struct { core onyx.Client; q onyx.Query }
+type RolesClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type RolesMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
 func (c DB) Roles() RolesClient { return RolesClient{core: c.core, q: c.core.From(Tables.Role)} }
 
 func (c RolesClient) Where(cond onyx.Condition) RolesClient { c.q = c.q.Where(cond); return c }
-func (c RolesClient) And(cond onyx.Condition) RolesClient { c.q = c.q.And(cond); return c }
-func (c RolesClient) Or(cond onyx.Condition) RolesClient { c.q = c.q.Or(cond); return c }
-func (c RolesClient) Resolve(resolvers ...string) RolesClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c RolesClient) And(cond onyx.Condition) RolesClient   { c.q = c.q.And(cond); return c }
+func (c RolesClient) Or(cond onyx.Condition) RolesClient    { c.q = c.q.Or(cond); return c }
+func (c RolesClient) Resolve(resolvers ...string) RolesClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c RolesClient) OrderBy(field string, asc bool) RolesClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c RolesClient) Limit(n int) RolesClient { c.q = c.q.Limit(n); return c }
-func (c RolesClient) SetUpdates(updates map[string]any) RolesClient { c.q = c.q.SetUpdates(updates); return c }
+func (c RolesClient) SetUpdates(updates map[string]any) RolesClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c RolesClient) Select(fields ...string) RolesMapClient {
 	c.q = c.q.Select(fields...)
 	return RolesMapClient{core: c.core, q: c.q}
@@ -329,7 +458,7 @@ func (c RolesClient) GroupBy(fields ...string) RolesMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return RolesMapClient{core: c.core, q: c.q}
 }
-func (c RolesClient) AsMaps() RolesMapClient { return RolesMapClient{core: c.core, q: c.q} }
+func (c RolesClient) AsMaps() RolesMapClient                            { return RolesMapClient{core: c.core, q: c.q} }
 func (c RolesClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c RolesClient) List(ctx context.Context) ([]Role, error) {
 	res := onyx.List(ctx, c.q)
@@ -399,17 +528,33 @@ func (c RolesClient) DeleteByID(ctx context.Context, id string) error {
 }
 
 func (c RolesMapClient) Where(cond onyx.Condition) RolesMapClient { c.q = c.q.Where(cond); return c }
-func (c RolesMapClient) And(cond onyx.Condition) RolesMapClient { c.q = c.q.And(cond); return c }
-func (c RolesMapClient) Or(cond onyx.Condition) RolesMapClient { c.q = c.q.Or(cond); return c }
-func (c RolesMapClient) Resolve(resolvers ...string) RolesMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c RolesMapClient) And(cond onyx.Condition) RolesMapClient   { c.q = c.q.And(cond); return c }
+func (c RolesMapClient) Or(cond onyx.Condition) RolesMapClient    { c.q = c.q.Or(cond); return c }
+func (c RolesMapClient) Resolve(resolvers ...string) RolesMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c RolesMapClient) OrderBy(field string, asc bool) RolesMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c RolesMapClient) Limit(n int) RolesMapClient { c.q = c.q.Limit(n); return c }
-func (c RolesMapClient) SetUpdates(updates map[string]any) RolesMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c RolesMapClient) Select(fields ...string) RolesMapClient { c.q = c.q.Select(fields...); return c }
-func (c RolesMapClient) GroupBy(fields ...string) RolesMapClient { c.q = c.q.GroupBy(fields...); return c }
+func (c RolesMapClient) SetUpdates(updates map[string]any) RolesMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c RolesMapClient) Select(fields ...string) RolesMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c RolesMapClient) GroupBy(fields ...string) RolesMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
 func (c RolesMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c RolesMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
@@ -433,30 +578,57 @@ func (c RolesMapClient) Update(ctx context.Context) (int, error) { return c.q.Up
 func (c RolesMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type RolePermissionPage struct {
-	Items []RolePermission `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []RolePermission `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
 type RolePermissionMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type RolePermissionsClient struct { core onyx.Client; q onyx.Query }
-type RolePermissionsMapClient struct { core onyx.Client; q onyx.Query }
+type RolePermissionsClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type RolePermissionsMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
-func (c DB) RolePermissions() RolePermissionsClient { return RolePermissionsClient{core: c.core, q: c.core.From(Tables.RolePermission)} }
+func (c DB) RolePermissions() RolePermissionsClient {
+	return RolePermissionsClient{core: c.core, q: c.core.From(Tables.RolePermission)}
+}
 
-func (c RolePermissionsClient) Where(cond onyx.Condition) RolePermissionsClient { c.q = c.q.Where(cond); return c }
-func (c RolePermissionsClient) And(cond onyx.Condition) RolePermissionsClient { c.q = c.q.And(cond); return c }
-func (c RolePermissionsClient) Or(cond onyx.Condition) RolePermissionsClient { c.q = c.q.Or(cond); return c }
-func (c RolePermissionsClient) Resolve(resolvers ...string) RolePermissionsClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c RolePermissionsClient) Where(cond onyx.Condition) RolePermissionsClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c RolePermissionsClient) And(cond onyx.Condition) RolePermissionsClient {
+	c.q = c.q.And(cond)
+	return c
+}
+func (c RolePermissionsClient) Or(cond onyx.Condition) RolePermissionsClient {
+	c.q = c.q.Or(cond)
+	return c
+}
+func (c RolePermissionsClient) Resolve(resolvers ...string) RolePermissionsClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c RolePermissionsClient) OrderBy(field string, asc bool) RolePermissionsClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c RolePermissionsClient) Limit(n int) RolePermissionsClient { c.q = c.q.Limit(n); return c }
-func (c RolePermissionsClient) SetUpdates(updates map[string]any) RolePermissionsClient { c.q = c.q.SetUpdates(updates); return c }
+func (c RolePermissionsClient) SetUpdates(updates map[string]any) RolePermissionsClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c RolePermissionsClient) Select(fields ...string) RolePermissionsMapClient {
 	c.q = c.q.Select(fields...)
 	return RolePermissionsMapClient{core: c.core, q: c.q}
@@ -465,8 +637,12 @@ func (c RolePermissionsClient) GroupBy(fields ...string) RolePermissionsMapClien
 	c.q = c.q.GroupBy(fields...)
 	return RolePermissionsMapClient{core: c.core, q: c.q}
 }
-func (c RolePermissionsClient) AsMaps() RolePermissionsMapClient { return RolePermissionsMapClient{core: c.core, q: c.q} }
-func (c RolePermissionsClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c RolePermissionsClient) AsMaps() RolePermissionsMapClient {
+	return RolePermissionsMapClient{core: c.core, q: c.q}
+}
+func (c RolePermissionsClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c RolePermissionsClient) List(ctx context.Context) ([]RolePermission, error) {
 	res := onyx.List(ctx, c.q)
 	var out []RolePermission
@@ -534,19 +710,46 @@ func (c RolePermissionsClient) DeleteByID(ctx context.Context, id string) error 
 	return c.core.Delete(ctx, Tables.RolePermission, id)
 }
 
-func (c RolePermissionsMapClient) Where(cond onyx.Condition) RolePermissionsMapClient { c.q = c.q.Where(cond); return c }
-func (c RolePermissionsMapClient) And(cond onyx.Condition) RolePermissionsMapClient { c.q = c.q.And(cond); return c }
-func (c RolePermissionsMapClient) Or(cond onyx.Condition) RolePermissionsMapClient { c.q = c.q.Or(cond); return c }
-func (c RolePermissionsMapClient) Resolve(resolvers ...string) RolePermissionsMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c RolePermissionsMapClient) Where(cond onyx.Condition) RolePermissionsMapClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c RolePermissionsMapClient) And(cond onyx.Condition) RolePermissionsMapClient {
+	c.q = c.q.And(cond)
+	return c
+}
+func (c RolePermissionsMapClient) Or(cond onyx.Condition) RolePermissionsMapClient {
+	c.q = c.q.Or(cond)
+	return c
+}
+func (c RolePermissionsMapClient) Resolve(resolvers ...string) RolePermissionsMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c RolePermissionsMapClient) OrderBy(field string, asc bool) RolePermissionsMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c RolePermissionsMapClient) Limit(n int) RolePermissionsMapClient { c.q = c.q.Limit(n); return c }
-func (c RolePermissionsMapClient) SetUpdates(updates map[string]any) RolePermissionsMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c RolePermissionsMapClient) Select(fields ...string) RolePermissionsMapClient { c.q = c.q.Select(fields...); return c }
-func (c RolePermissionsMapClient) GroupBy(fields ...string) RolePermissionsMapClient { c.q = c.q.GroupBy(fields...); return c }
-func (c RolePermissionsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c RolePermissionsMapClient) SetUpdates(updates map[string]any) RolePermissionsMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c RolePermissionsMapClient) Select(fields ...string) RolePermissionsMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c RolePermissionsMapClient) GroupBy(fields ...string) RolePermissionsMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
+func (c RolePermissionsMapClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c RolePermissionsMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
 	var out []map[string]any
@@ -569,30 +772,46 @@ func (c RolePermissionsMapClient) Update(ctx context.Context) (int, error) { ret
 func (c RolePermissionsMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type UserPage struct {
-	Items []User `json:"items"`
+	Items      []User `json:"items"`
 	NextCursor string `json:"nextCursor,omitempty"`
 }
 
 type UserMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UsersClient struct { core onyx.Client; q onyx.Query }
-type UsersMapClient struct { core onyx.Client; q onyx.Query }
+type UsersClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type UsersMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
 func (c DB) Users() UsersClient { return UsersClient{core: c.core, q: c.core.From(Tables.User)} }
 
 func (c UsersClient) Where(cond onyx.Condition) UsersClient { c.q = c.q.Where(cond); return c }
-func (c UsersClient) And(cond onyx.Condition) UsersClient { c.q = c.q.And(cond); return c }
-func (c UsersClient) Or(cond onyx.Condition) UsersClient { c.q = c.q.Or(cond); return c }
-func (c UsersClient) Resolve(resolvers ...string) UsersClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UsersClient) And(cond onyx.Condition) UsersClient   { c.q = c.q.And(cond); return c }
+func (c UsersClient) Or(cond onyx.Condition) UsersClient    { c.q = c.q.Or(cond); return c }
+func (c UsersClient) Resolve(resolvers ...string) UsersClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UsersClient) OrderBy(field string, asc bool) UsersClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UsersClient) Limit(n int) UsersClient { c.q = c.q.Limit(n); return c }
-func (c UsersClient) SetUpdates(updates map[string]any) UsersClient { c.q = c.q.SetUpdates(updates); return c }
+func (c UsersClient) SetUpdates(updates map[string]any) UsersClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c UsersClient) Select(fields ...string) UsersMapClient {
 	c.q = c.q.Select(fields...)
 	return UsersMapClient{core: c.core, q: c.q}
@@ -601,7 +820,7 @@ func (c UsersClient) GroupBy(fields ...string) UsersMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return UsersMapClient{core: c.core, q: c.q}
 }
-func (c UsersClient) AsMaps() UsersMapClient { return UsersMapClient{core: c.core, q: c.q} }
+func (c UsersClient) AsMaps() UsersMapClient                            { return UsersMapClient{core: c.core, q: c.q} }
 func (c UsersClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c UsersClient) List(ctx context.Context) ([]User, error) {
 	res := onyx.List(ctx, c.q)
@@ -671,17 +890,33 @@ func (c UsersClient) DeleteByID(ctx context.Context, id string) error {
 }
 
 func (c UsersMapClient) Where(cond onyx.Condition) UsersMapClient { c.q = c.q.Where(cond); return c }
-func (c UsersMapClient) And(cond onyx.Condition) UsersMapClient { c.q = c.q.And(cond); return c }
-func (c UsersMapClient) Or(cond onyx.Condition) UsersMapClient { c.q = c.q.Or(cond); return c }
-func (c UsersMapClient) Resolve(resolvers ...string) UsersMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UsersMapClient) And(cond onyx.Condition) UsersMapClient   { c.q = c.q.And(cond); return c }
+func (c UsersMapClient) Or(cond onyx.Condition) UsersMapClient    { c.q = c.q.Or(cond); return c }
+func (c UsersMapClient) Resolve(resolvers ...string) UsersMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UsersMapClient) OrderBy(field string, asc bool) UsersMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UsersMapClient) Limit(n int) UsersMapClient { c.q = c.q.Limit(n); return c }
-func (c UsersMapClient) SetUpdates(updates map[string]any) UsersMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c UsersMapClient) Select(fields ...string) UsersMapClient { c.q = c.q.Select(fields...); return c }
-func (c UsersMapClient) GroupBy(fields ...string) UsersMapClient { c.q = c.q.GroupBy(fields...); return c }
+func (c UsersMapClient) SetUpdates(updates map[string]any) UsersMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c UsersMapClient) Select(fields ...string) UsersMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c UsersMapClient) GroupBy(fields ...string) UsersMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
 func (c UsersMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c UsersMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
@@ -705,30 +940,54 @@ func (c UsersMapClient) Update(ctx context.Context) (int, error) { return c.q.Up
 func (c UsersMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type UserProfilePage struct {
-	Items []UserProfile `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []UserProfile `json:"items"`
+	NextCursor string        `json:"nextCursor,omitempty"`
 }
 
 type UserProfileMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UserProfilesClient struct { core onyx.Client; q onyx.Query }
-type UserProfilesMapClient struct { core onyx.Client; q onyx.Query }
+type UserProfilesClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type UserProfilesMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
-func (c DB) UserProfiles() UserProfilesClient { return UserProfilesClient{core: c.core, q: c.core.From(Tables.UserProfile)} }
+func (c DB) UserProfiles() UserProfilesClient {
+	return UserProfilesClient{core: c.core, q: c.core.From(Tables.UserProfile)}
+}
 
-func (c UserProfilesClient) Where(cond onyx.Condition) UserProfilesClient { c.q = c.q.Where(cond); return c }
-func (c UserProfilesClient) And(cond onyx.Condition) UserProfilesClient { c.q = c.q.And(cond); return c }
+func (c UserProfilesClient) Where(cond onyx.Condition) UserProfilesClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c UserProfilesClient) And(cond onyx.Condition) UserProfilesClient {
+	c.q = c.q.And(cond)
+	return c
+}
 func (c UserProfilesClient) Or(cond onyx.Condition) UserProfilesClient { c.q = c.q.Or(cond); return c }
-func (c UserProfilesClient) Resolve(resolvers ...string) UserProfilesClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UserProfilesClient) Resolve(resolvers ...string) UserProfilesClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UserProfilesClient) OrderBy(field string, asc bool) UserProfilesClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UserProfilesClient) Limit(n int) UserProfilesClient { c.q = c.q.Limit(n); return c }
-func (c UserProfilesClient) SetUpdates(updates map[string]any) UserProfilesClient { c.q = c.q.SetUpdates(updates); return c }
+func (c UserProfilesClient) SetUpdates(updates map[string]any) UserProfilesClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c UserProfilesClient) Select(fields ...string) UserProfilesMapClient {
 	c.q = c.q.Select(fields...)
 	return UserProfilesMapClient{core: c.core, q: c.q}
@@ -737,8 +996,12 @@ func (c UserProfilesClient) GroupBy(fields ...string) UserProfilesMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return UserProfilesMapClient{core: c.core, q: c.q}
 }
-func (c UserProfilesClient) AsMaps() UserProfilesMapClient { return UserProfilesMapClient{core: c.core, q: c.q} }
-func (c UserProfilesClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c UserProfilesClient) AsMaps() UserProfilesMapClient {
+	return UserProfilesMapClient{core: c.core, q: c.q}
+}
+func (c UserProfilesClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c UserProfilesClient) List(ctx context.Context) ([]UserProfile, error) {
 	res := onyx.List(ctx, c.q)
 	var out []UserProfile
@@ -806,19 +1069,46 @@ func (c UserProfilesClient) DeleteByID(ctx context.Context, id string) error {
 	return c.core.Delete(ctx, Tables.UserProfile, id)
 }
 
-func (c UserProfilesMapClient) Where(cond onyx.Condition) UserProfilesMapClient { c.q = c.q.Where(cond); return c }
-func (c UserProfilesMapClient) And(cond onyx.Condition) UserProfilesMapClient { c.q = c.q.And(cond); return c }
-func (c UserProfilesMapClient) Or(cond onyx.Condition) UserProfilesMapClient { c.q = c.q.Or(cond); return c }
-func (c UserProfilesMapClient) Resolve(resolvers ...string) UserProfilesMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UserProfilesMapClient) Where(cond onyx.Condition) UserProfilesMapClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c UserProfilesMapClient) And(cond onyx.Condition) UserProfilesMapClient {
+	c.q = c.q.And(cond)
+	return c
+}
+func (c UserProfilesMapClient) Or(cond onyx.Condition) UserProfilesMapClient {
+	c.q = c.q.Or(cond)
+	return c
+}
+func (c UserProfilesMapClient) Resolve(resolvers ...string) UserProfilesMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UserProfilesMapClient) OrderBy(field string, asc bool) UserProfilesMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UserProfilesMapClient) Limit(n int) UserProfilesMapClient { c.q = c.q.Limit(n); return c }
-func (c UserProfilesMapClient) SetUpdates(updates map[string]any) UserProfilesMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c UserProfilesMapClient) Select(fields ...string) UserProfilesMapClient { c.q = c.q.Select(fields...); return c }
-func (c UserProfilesMapClient) GroupBy(fields ...string) UserProfilesMapClient { c.q = c.q.GroupBy(fields...); return c }
-func (c UserProfilesMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c UserProfilesMapClient) SetUpdates(updates map[string]any) UserProfilesMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c UserProfilesMapClient) Select(fields ...string) UserProfilesMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c UserProfilesMapClient) GroupBy(fields ...string) UserProfilesMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
+func (c UserProfilesMapClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c UserProfilesMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
 	var out []map[string]any
@@ -841,30 +1131,48 @@ func (c UserProfilesMapClient) Update(ctx context.Context) (int, error) { return
 func (c UserProfilesMapClient) Delete(ctx context.Context) (int, error) { return c.q.Delete(ctx) }
 
 type UserRolePage struct {
-	Items []UserRole `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []UserRole `json:"items"`
+	NextCursor string     `json:"nextCursor,omitempty"`
 }
 
 type UserRoleMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UserRolesClient struct { core onyx.Client; q onyx.Query }
-type UserRolesMapClient struct { core onyx.Client; q onyx.Query }
+type UserRolesClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
+type UserRolesMapClient struct {
+	core onyx.Client
+	q    onyx.Query
+}
 
-func (c DB) UserRoles() UserRolesClient { return UserRolesClient{core: c.core, q: c.core.From(Tables.UserRole)} }
+func (c DB) UserRoles() UserRolesClient {
+	return UserRolesClient{core: c.core, q: c.core.From(Tables.UserRole)}
+}
 
 func (c UserRolesClient) Where(cond onyx.Condition) UserRolesClient { c.q = c.q.Where(cond); return c }
-func (c UserRolesClient) And(cond onyx.Condition) UserRolesClient { c.q = c.q.And(cond); return c }
-func (c UserRolesClient) Or(cond onyx.Condition) UserRolesClient { c.q = c.q.Or(cond); return c }
-func (c UserRolesClient) Resolve(resolvers ...string) UserRolesClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UserRolesClient) And(cond onyx.Condition) UserRolesClient   { c.q = c.q.And(cond); return c }
+func (c UserRolesClient) Or(cond onyx.Condition) UserRolesClient    { c.q = c.q.Or(cond); return c }
+func (c UserRolesClient) Resolve(resolvers ...string) UserRolesClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UserRolesClient) OrderBy(field string, asc bool) UserRolesClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UserRolesClient) Limit(n int) UserRolesClient { c.q = c.q.Limit(n); return c }
-func (c UserRolesClient) SetUpdates(updates map[string]any) UserRolesClient { c.q = c.q.SetUpdates(updates); return c }
+func (c UserRolesClient) SetUpdates(updates map[string]any) UserRolesClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
 func (c UserRolesClient) Select(fields ...string) UserRolesMapClient {
 	c.q = c.q.Select(fields...)
 	return UserRolesMapClient{core: c.core, q: c.q}
@@ -873,7 +1181,7 @@ func (c UserRolesClient) GroupBy(fields ...string) UserRolesMapClient {
 	c.q = c.q.GroupBy(fields...)
 	return UserRolesMapClient{core: c.core, q: c.q}
 }
-func (c UserRolesClient) AsMaps() UserRolesMapClient { return UserRolesMapClient{core: c.core, q: c.q} }
+func (c UserRolesClient) AsMaps() UserRolesMapClient                        { return UserRolesMapClient{core: c.core, q: c.q} }
 func (c UserRolesClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
 func (c UserRolesClient) List(ctx context.Context) ([]UserRole, error) {
 	res := onyx.List(ctx, c.q)
@@ -942,19 +1250,43 @@ func (c UserRolesClient) DeleteByID(ctx context.Context, id string) error {
 	return c.core.Delete(ctx, Tables.UserRole, id)
 }
 
-func (c UserRolesMapClient) Where(cond onyx.Condition) UserRolesMapClient { c.q = c.q.Where(cond); return c }
-func (c UserRolesMapClient) And(cond onyx.Condition) UserRolesMapClient { c.q = c.q.And(cond); return c }
+func (c UserRolesMapClient) Where(cond onyx.Condition) UserRolesMapClient {
+	c.q = c.q.Where(cond)
+	return c
+}
+func (c UserRolesMapClient) And(cond onyx.Condition) UserRolesMapClient {
+	c.q = c.q.And(cond)
+	return c
+}
 func (c UserRolesMapClient) Or(cond onyx.Condition) UserRolesMapClient { c.q = c.q.Or(cond); return c }
-func (c UserRolesMapClient) Resolve(resolvers ...string) UserRolesMapClient { c.q = c.q.Resolve(resolvers...); return c }
+func (c UserRolesMapClient) Resolve(resolvers ...string) UserRolesMapClient {
+	c.q = c.q.Resolve(resolvers...)
+	return c
+}
 func (c UserRolesMapClient) OrderBy(field string, asc bool) UserRolesMapClient {
-	if asc { c.q = c.q.OrderBy(onyx.Asc(field)) } else { c.q = c.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		c.q = c.q.OrderBy(onyx.Asc(field))
+	} else {
+		c.q = c.q.OrderBy(onyx.Desc(field))
+	}
 	return c
 }
 func (c UserRolesMapClient) Limit(n int) UserRolesMapClient { c.q = c.q.Limit(n); return c }
-func (c UserRolesMapClient) SetUpdates(updates map[string]any) UserRolesMapClient { c.q = c.q.SetUpdates(updates); return c }
-func (c UserRolesMapClient) Select(fields ...string) UserRolesMapClient { c.q = c.q.Select(fields...); return c }
-func (c UserRolesMapClient) GroupBy(fields ...string) UserRolesMapClient { c.q = c.q.GroupBy(fields...); return c }
-func (c UserRolesMapClient) Stream(ctx context.Context) (onyx.Iterator, error) { return c.q.Stream(ctx) }
+func (c UserRolesMapClient) SetUpdates(updates map[string]any) UserRolesMapClient {
+	c.q = c.q.SetUpdates(updates)
+	return c
+}
+func (c UserRolesMapClient) Select(fields ...string) UserRolesMapClient {
+	c.q = c.q.Select(fields...)
+	return c
+}
+func (c UserRolesMapClient) GroupBy(fields ...string) UserRolesMapClient {
+	c.q = c.q.GroupBy(fields...)
+	return c
+}
+func (c UserRolesMapClient) Stream(ctx context.Context) (onyx.Iterator, error) {
+	return c.q.Stream(ctx)
+}
 func (c UserRolesMapClient) List(ctx context.Context) ([]map[string]any, error) {
 	res := onyx.List(ctx, c.q)
 	var out []map[string]any
@@ -992,21 +1324,32 @@ func decodeList(items []map[string]any, out any) error {
 	return json.Unmarshal(b, out)
 }
 
-type DocumentsClient struct { core onyx.DocumentClient }
+type DocumentsClient struct{ core onyx.DocumentClient }
 
 func (c DB) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }
 
 func (d DocumentsClient) List(ctx context.Context) ([]onyx.Document, error) { return d.core.List(ctx) }
-func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) { return d.core.Get(ctx, id) }
-func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) { return d.core.Save(ctx, doc) }
+func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) {
+	return d.core.Get(ctx, id)
+}
+func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) {
+	return d.core.Save(ctx, doc)
+}
 func (d DocumentsClient) Delete(ctx context.Context, id string) error { return d.core.Delete(ctx, id) }
 
-type SecretsClient struct { core onyx.Client }
+type SecretsClient struct{ core onyx.Client }
 
 func (c DB) Secrets() SecretsClient { return SecretsClient{core: c.core} }
 
-func (s SecretsClient) List(ctx context.Context) ([]onyx.Secret, error) { return s.core.ListSecrets(ctx) }
-func (s SecretsClient) Get(ctx context.Context, key string) (onyx.Secret, error) { return s.core.GetSecret(ctx, key) }
-func (s SecretsClient) Set(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) { return s.core.PutSecret(ctx, secret) }
-func (s SecretsClient) Delete(ctx context.Context, key string) error { return s.core.DeleteSecret(ctx, key) }
-
+func (s SecretsClient) List(ctx context.Context) ([]onyx.Secret, error) {
+	return s.core.ListSecrets(ctx)
+}
+func (s SecretsClient) Get(ctx context.Context, key string) (onyx.Secret, error) {
+	return s.core.GetSecret(ctx, key)
+}
+func (s SecretsClient) Set(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) {
+	return s.core.PutSecret(ctx, secret)
+}
+func (s SecretsClient) Delete(ctx context.Context, key string) error {
+	return s.core.DeleteSecret(ctx, key)
+}

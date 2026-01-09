@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -19,7 +18,7 @@ func main() {
 	}
 
 	users, err := db.Users().
-		Where(onyx.Eq("isActive", true)).
+		Where(onyxdb.Eq("isActive", true)).
 		Limit(5).
 		List(ctx)
 	if err != nil {

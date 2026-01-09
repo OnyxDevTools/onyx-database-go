@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -18,7 +17,7 @@ func main() {
 	}
 
 	updated, err := db.Users().
-		Where(onyx.Eq("id", "example-user-1")).
+		Where(onyxdb.Eq("id", "example-user-1")).
 		SetUpdates(map[string]any{"isActive": false}).
 		Update(ctx)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -80,7 +79,7 @@ func main() {
 	}
 
 	admins, err := db.Users().
-		Where(onyx.Eq("roles.name", "Admin")).
+		Where(onyxdb.Eq("roles.name", "Admin")).
 		Resolve("roles").
 		List(ctx)
 	if err != nil {

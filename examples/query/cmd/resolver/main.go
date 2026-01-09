@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -92,7 +91,7 @@ func main() {
 	}
 
 	users, err := db.Users().
-		Where(onyx.Eq("id", userID)).
+		Where(onyxdb.Eq("id", userID)).
 		Resolve("profile", "roles.permissions").
 		Limit(5).
 		List(ctx)

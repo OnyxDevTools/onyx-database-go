@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -20,7 +19,7 @@ func main() {
 
 	id := "example-user-1"
 	results, err := db.Users().
-		Where(onyx.Eq("id", id)).
+		Where(onyxdb.Eq("id", id)).
 		Limit(1).
 		List(ctx)
 	if err != nil {

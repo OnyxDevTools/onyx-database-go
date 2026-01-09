@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
@@ -40,7 +39,7 @@ func main() {
 	}
 
 	// Cascade save using a CascadeSpec; Users().Save returns the saved graph.
-	spec := onyx.Cascade("profile:UserProfile(userId,id)")
+	spec := onyxdb.Cascade("profile:UserProfile(userId,id)")
 	saved, err := client.Users().Save(ctx, user, spec)
 	if err != nil {
 		log.Fatal(err)
