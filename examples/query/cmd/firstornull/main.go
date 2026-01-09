@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	first, err := db.ListUsers().
+	first, err := db.Users(ctx).
 		Where(onyx.Eq("email", "basic@example.com")).
 		Limit(1).
 		List(ctx)
@@ -40,7 +40,7 @@ func main() {
 		fmt.Println("null")
 	}
 
-	also, err := db.ListUsers().
+	also, err := db.Users(ctx).
 		Where(onyx.Eq("email", "notfound@example.com")).
 		Limit(1).
 		List(ctx)

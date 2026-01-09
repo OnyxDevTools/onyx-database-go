@@ -27,18 +27,18 @@ func main() {
 		Description: strPtr("Administrators with full access"),
 		IsSystem:    false,
 	}
-	_, err = db.SaveRole(ctx, role)
+	_, err = db.Roles(ctx).Save(role)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	permRead := onyxclient.Permission{Id: "perm_user_read_resolver", Name: "user.read", Description: strPtr("get user(s)")}
 	permWrite := onyxclient.Permission{Id: "perm_user_write_resolver", Name: "user.write", Description: strPtr("Create, update, and delete users")}
-	_, err = db.SavePermission(ctx, permRead)
+	_, err = db.Permissions(ctx).Save(permRead)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = db.SavePermission(ctx, permWrite)
+	_, err = db.Permissions(ctx).Save(permWrite)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func main() {
 		onyxclient.RolePermission{Id: "rp_write_resolver", RoleId: role.Id, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		_, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission))
+		_, err := db.RolePermissions(ctx).Save(rp.(onyxclient.RolePermission))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -64,7 +64,7 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	_, err = db.SaveUser(ctx, user)
+	_, err = db.Users(ctx).Save(user)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func main() {
 		Bio:       strPtr("Seeded admin profile"),
 		Age:       int64Ptr(42),
 	}
-	_, err = db.SaveUserProfile(ctx, profile)
+	_, err = db.UserProfiles(ctx).Save(profile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,12 +87,12 @@ func main() {
 		UserId: userID,
 		RoleId: role.Id,
 	}
-	_, err = db.SaveUserRole(ctx, userRole)
+	_, err = db.UserRoles(ctx).Save(userRole)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	users, err := db.ListUsers().
+	users, err := db.Users(ctx).
 		Where(onyx.Eq("id", userID)).
 		Resolve("profile", "roles.permissions").
 		Limit(5).

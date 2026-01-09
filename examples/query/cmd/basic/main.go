@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	users, err := db.ListUsers().
+	users, err := db.Users(ctx).
 		Where(onyx.Eq("isActive", true)).
 		Limit(5).
 		List(ctx)

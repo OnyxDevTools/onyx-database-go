@@ -18,7 +18,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	q := db.ListUsers().OrderBy("username", false).Limit(2)
+	q := db.Users(ctx).OrderBy("username", false).Limit(2)
 
 	firstPage, err := q.Page(ctx, "")
 	if err != nil {

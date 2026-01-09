@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	stats, err := db.ListUsers().
+	stats, err := db.Users(ctx).
 		Select("isActive", "count(id)").
 		GroupBy("isActive").
 		ListAggregates(ctx)

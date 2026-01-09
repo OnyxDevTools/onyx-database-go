@@ -41,9 +41,9 @@ func main() {
 		},
 	}
 
-	// Cascade save using a CascadeSpec; SaveUser returns the saved graph.
+	// Cascade save using a CascadeSpec; Users(ctx).Save returns the saved graph.
 	spec := onyx.Cascade("profile:UserProfile(userId,id)")
-	saved, err := client.SaveUser(ctx, user, spec)
+	saved, err := client.Users(ctx).Save(user, spec)
 	if err != nil {
 		log.Fatal(err)
 	}

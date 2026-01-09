@@ -22,7 +22,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	iter, err := db.ListUsers().Stream(streamCtx)
+	iter, err := db.Users(streamCtx).Stream(streamCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, _ = db.SaveUser(ctx, onyxclient.User{
+		_, _ = db.Users(ctx).Save(onyxclient.User{
 			Id:        "stream_query_user",
 			Username:  "stream-query",
 			Email:     "stream-query@example.com",

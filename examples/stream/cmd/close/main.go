@@ -18,7 +18,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	iter, err := db.ListUsers().Stream(ctx)
+	iter, err := db.Users(ctx).Stream(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -18,7 +18,7 @@ func main() {
 	}
 	db := model.NewClient(core)
 
-	users, err := db.ListUsers().Limit(5).List(ctx)
+	users, err := db.Users(ctx).Limit(5).List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

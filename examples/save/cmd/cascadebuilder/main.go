@@ -42,7 +42,7 @@ func main() {
 		},
 	}
 
-	saved, err := db.SaveUser(ctx, user, spec)
+	saved, err := db.Users(ctx).Save(user, spec)
 	if err != nil {
 		log.Fatal(err)
 	}

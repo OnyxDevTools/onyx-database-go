@@ -29,18 +29,18 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	_, err = db.SaveUser(ctx, seed)
+	_, err = db.Users(ctx).Save(seed)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Match the TS example: delete users where username == "obsolete".
-	deletedCount, err := db.DeleteUsers(ctx).Where(onyx.Eq("username", "obsolete")).Delete()
+	deletedCount, err := db.Users(ctx).Where(onyx.Eq("username", "obsolete")).Delete(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if deletedCount == 0 {
-		log.Fatalf("warning: expected to delete seeded user")
+		log.Fatalf("warning: expected to delete user")
 	}
 
 	fmt.Printf("Deleted %d record(s).\n", deletedCount)
