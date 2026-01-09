@@ -1,6 +1,6 @@
 Title: Typed client API migration plan (single import, db.User() style)
 
-Goal: let callers use only `onyx` and write `db.User().Save(...)` without breaking existing two-import flows.
+Goal: let callers use only `onyx` and write `db.User().Save(...)`, `db.User().List(...)`, etc without breaking existing two-import flows.
 
 Phases
 - Phase 1: Break circular deps. Extract a minimal core (query/condition/sort helpers) that depends only on contract; re-export from `onyx`. Point the generator to this core instead of `onyx` so generated code no longer imports `onyx`.
