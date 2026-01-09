@@ -35,35 +35,49 @@ func (c *DiffCommand) Run(args []string) int {
 		return 2
 	}
 
-	schemaA, err := loadSchema(*pathA)
-	if err != nil {
-		fmt.Fprintf(Stderr, "failed to read schema --a: %v\n", err)
-		return 1
-	}
+	var (
+		baseSchema    onyx.Schema
+		updatedSchema onyx.Schema
+		baseSource    string
+		updatedSource string
+		err           error
+	)
 
-	var schemaB onyx.Schema
-	var updatedSource string
 	if *pathB != "" {
+		baseSource = fmt.Sprintf("base=%s", *pathA)
+		baseSchema, err = loadSchema(*pathA)
+		if err != nil {
+			fmt.Fprintf(Stderr, "failed to read schema --a: %v\n", err)
+			return 1
+		}
+
 		updatedSource = fmt.Sprintf("updated=%s (file)", *pathB)
-		schemaB, err = loadSchema(*pathB)
+		updatedSchema, err = loadSchema(*pathB)
 		if err != nil {
 			fmt.Fprintf(Stderr, "failed to read schema --b: %v\n", err)
 			return 1
 		}
 	} else {
-		if *databaseID != "" {
-			updatedSource = fmt.Sprintf("updated=API (database-id=%s)", *databaseID)
-		} else {
-			updatedSource = "updated=API (configured credentials)"
+		updatedSource = fmt.Sprintf("updated=%s (file)", *pathA)
+		updatedSchema, err = loadSchema(*pathA)
+		if err != nil {
+			fmt.Fprintf(Stderr, "failed to read schema --a: %v\n", err)
+			return 1
 		}
-		schemaB, err = fetchSchemaFromAPI(context.Background(), *databaseID)
+
+		if *databaseID != "" {
+			baseSource = fmt.Sprintf("base=API (database-id=%s)", *databaseID)
+		} else {
+			baseSource = "base=API (configured credentials)"
+		}
+		baseSchema, err = fetchSchemaFromAPI(context.Background(), *databaseID)
 		if err != nil {
 			fmt.Fprintf(Stderr, "failed to fetch schema from API: %v\n", err)
 			return 1
 		}
 	}
 
-	diff := schemas.DiffSchemas(schemaA, schemaB)
+	diff := schemas.DiffSchemas(baseSchema, updatedSchema)
 
 	if *jsonOut {
 		data, err := json.MarshalIndent(diff, "", "  ")
@@ -75,7 +89,7 @@ func (c *DiffCommand) Run(args []string) int {
 		return 0
 	}
 
-	fmt.Fprintf(Stdout, "Comparing schemas (base=%s, %s)\n", *pathA, updatedSource)
+	fmt.Fprintf(Stdout, "Comparing schemas (%s, %s)\n", baseSource, updatedSource)
 
 	summary := summarizeDiff(diff)
 	if summary == "" {

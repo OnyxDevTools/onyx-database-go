@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyxdb.New(ctx, onyxdb.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func main() {
 	coreClient := db.Core()
 
 	adminUsers, err := db.Users().
-		Where(onyxdb.Within("id", coreClient.From(onyxdb.Tables.UserRole).Select("userId").Where(onyxdb.Eq("roleId", "role-admin")))).
+		Where(onyx.Within("id", coreClient.From(onyx.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)
@@ -30,7 +30,7 @@ func main() {
 	fmt.Println("Users with admin role:", adminUsers)
 
 	rolesWithPermission, err := db.Roles().
-		Where(onyxdb.Within("id", coreClient.From(onyxdb.Tables.RolePermission).Select("roleId").Where(onyxdb.Eq("permissionId", "perm-manage-users")))).
+		Where(onyx.Within("id", coreClient.From(onyx.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)

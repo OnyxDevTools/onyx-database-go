@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	core := db.Core()
 
-	original, err := db.GetSchema(ctx, nil)
+	original, err := core.GetSchema(ctx, nil)
 	if err != nil {
 		log.Fatalf("failed to fetch schema: %v", err)
 	}
@@ -34,17 +35,17 @@ func main() {
 	}
 
 	withTemp := addTable(original, temp)
-	if err := db.ValidateSchema(ctx, withTemp); err != nil {
+	if err := core.ValidateSchema(ctx, withTemp); err != nil {
 		log.Fatalf("schema validation failed: %v", err)
 	}
 	if !hasTable(original, temp.Name) && hasTable(withTemp, temp.Name) {
 		fmt.Printf("diff: %s added\n", temp.Name)
 	}
 
-	if err := db.PublishSchema(ctx, withTemp); err != nil {
+	if err := core.PublishSchema(ctx, withTemp); err != nil {
 		log.Fatalf("publish with temp failed: %v", err)
 	}
-	published, err := db.GetSchema(ctx, nil)
+	published, err := core.GetSchema(ctx, nil)
 	if err != nil {
 		log.Fatalf("failed to fetch schema after publish: %v", err)
 	}
@@ -54,13 +55,13 @@ func main() {
 	fmt.Printf("%s added and published\n", temp.Name)
 
 	withoutTemp := removeTable(published, temp.Name)
-	if err := db.ValidateSchema(ctx, withoutTemp); err != nil {
+	if err := core.ValidateSchema(ctx, withoutTemp); err != nil {
 		log.Fatalf("schema validation (remove temp) failed: %v", err)
 	}
-	if err := db.PublishSchema(ctx, withoutTemp); err != nil {
+	if err := core.PublishSchema(ctx, withoutTemp); err != nil {
 		log.Fatalf("publish without temp failed: %v", err)
 	}
-	finalSchema, err := db.GetSchema(ctx, nil)
+	finalSchema, err := core.GetSchema(ctx, nil)
 	if err != nil {
 		log.Fatalf("failed to fetch schema after removal: %v", err)
 	}

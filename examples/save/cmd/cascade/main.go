@@ -7,27 +7,27 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	client, err := onyxdb.New(ctx, onyxdb.Config{})
+	client, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	now := time.Now().UTC()
 	userID := "example_user2"
-	user := onyxdb.User{
+	user := onyx.User{
 		Id:        userID,
 		Username:  "cascade",
 		Email:     "cascade@example.com",
 		IsActive:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
-		Profile: onyxdb.UserProfile{
+		Profile: onyx.UserProfile{
 			Id:        "profile_001",
 			UserId:    userID,
 			FirstName: "Test",
@@ -39,7 +39,7 @@ func main() {
 	}
 
 	// Cascade save using a CascadeSpec; Users().Save returns the saved graph.
-	spec := onyxdb.Cascade("profile:UserProfile(userId,id)")
+	spec := onyx.Cascade("profile:UserProfile(userId,id)")
 	saved, err := client.Users().Save(ctx, user, spec)
 	if err != nil {
 		log.Fatal(err)

@@ -17,12 +17,6 @@
           "maxSize": 36,
           "isNullable": false
         },
-         {
-          "name": "asdf",
-          "type": "String",
-          "maxSize": 36,
-          "isNullable": false
-        },
         {
           "name": "username",
           "type": "String",

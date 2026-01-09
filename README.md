@@ -8,7 +8,7 @@ Go SDK and CLIs for Onyx Database, mirroring the TypeScript client with a contra
 - `internal/` — shared helpers kept out of the public API.
 - `cmd/onyx-schema-go/` — schema CLI: validate, diff, normalize, get, publish.
 - `cmd/onyx-gen-go/` — codegen CLI: Go structs/table consts/helpers from `onyx.schema.json` or the API.
-- `examples/` — runnable samples and README snippets that compile under the `docs` build tag.
+- `examples/` — runnable samples and README snippets that build as normal binaries.
 - `codex-tasks/` — task manifest (`tasks.yaml`) plus per-task guides.
 
 ## Install
@@ -54,37 +54,141 @@ go install ./cmd/onyx-gen-go
   - Publish (API): `onyx-schema-go publish` if valid, will publish your remote database with the local one
 
 - Codegen CLI:
-  - File source: `onyx-gen-go --out /examples/onyx/models.go --package model`
+- File source: `onyx-gen-go --out ./gen/onyx --package onyx`
+
+- Repository structure and purpose:
+
+```
+├── AGENTS.md                      # Codex-specific guidance for this repo
+├── cmd                            # Command-line tools
+│   ├── onyx-gen-go                # Go client/code generator
+│   │   ├── doc.go                 # Package docs
+│   │   ├── generator              # Generator logic and tests
+│   │   ├── main.go                # CLI entrypoint
+│   │   └── main_test.go           # CLI wiring tests
+│   └── onyx-schema-go             # Schema CLI (diff/validate/get/publish)
+│       ├── commands               # Subcommand implementations and tests
+│       ├── doc.go                 # Package docs
+│       └── main.go                # CLI entrypoint
+├── contract                       # Public contract types and helpers (stdlib-only)
+├── examples                       # End-to-end usage examples (query/save/schema/secrets/streams)
+│   ├── cmd                        # Misc example entrypoints (e.g., seeding)
+│   ├── delete/query/...           # Delete/query examples
+│   ├── document                   # Document CRUD examples
+│   ├── query                      # Query examples (filters, paging, aggregates, etc.)
+│   ├── save                       # Save/batch/cascade examples
+│   ├── schema                     # Schema client examples
+│   ├── secrets                    # Secrets client examples
+│   └── stream                     # Streaming examples (create/update/delete/listen)
+├── gen/onyx                       # Generated typed client/models (deterministic output)
+├── impl                           # Internal implementation of the Onyx client/runtime
+│   ├── batch.go, cascade.go,...   # CRUD, query execution, schema, secrets internals
+│   └── resolver                   # Resolver cache and resolution logic
+├── internal                       # Internal-only utilities (HTTP client, schema tools)
+├── onyx                           # Public Go SDK surface (init, helpers, condition builders)
+├── contract/STABILITY.md          # Contract stability promises
+├── onyx.schema.json               # Local schema used for generation/diff
+├── onyx-database.json             # Example database config
+├── scripts/run-examples.sh        # Helper to run all examples
+├── LICENSE                        # License
+└── RELEASING.md                   # Release process notes
+```
   - API source: `onyx-gen-go --source api`
 
 If you prefer not to install, prefix commands with `go run ./cmd/<cli> ...`.
 
 ## Examples
 
-The Go examples mirror the TypeScript examples and are gated by the `docs` build tag so they stay out of normal builds. They rely on `ONYX_DATABASE_ID`, `ONYX_DATABASE_BASE_URL`, `ONYX_DATABASE_API_KEY`, and `ONYX_DATABASE_API_SECRET` (see `examples/shared/config.go` for defaults you can override).
+The Go examples mirror the TypeScript examples and build as normal binaries. They rely on `ONYX_DATABASE_ID`, `ONYX_DATABASE_BASE_URL`, `ONYX_DATABASE_API_KEY`, and `ONYX_DATABASE_API_SECRET` (see `examples/shared/config.go` for defaults you can override).
 
-- Compile-check everything: `go test -tags docs ./examples/...`
-- Run a specific sample: wrap the desired function in a tiny `main` and execute with the `docs` tag. Example:
+- Compile-check everything: `go test ./examples/...`
+- Run a specific sample: `go run ./examples/query/cmd/list` (or any other example under `examples/...`).
 
+## Generated SDK quickstart
+
+Use the generator to emit a typed client into `./gen/onyx`, then initialize and run CRUD.
+
+1) Install the generator (local or global):
 ```bash
-cat > /tmp/run_example.go <<'EOF'
+go install ./cmd/onyx-gen-go
+# or once published: go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-gen-go@latest
+```
+
+2) Generate the SDK (from schema file or API):
+```bash
+# From local schema
+onyx-gen-go --schema ./onyx.schema.json --out ./gen/onyx --package onyx
+
+# From the API
+onyx-gen-go --source api --database-id "$ONYX_DATABASE_ID" --out ./gen/onyx --package onyx
+```
+
+3) Initialize the generated client:
+```go
 package main
 
 import (
 	"context"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/examples/query"
+	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
 )
 
 func main() {
-	if err := query.Basic(context.Background()); err != nil {
+	ctx := context.Background()
+	db, err := onyx.New(ctx, onyx.Config{
+		DatabaseID:      "db_123",
+		DatabaseBaseURL: "https://api.onyx.dev",
+		APIKey:          "key",
+		APISecret:       "secret",
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
+	// use db.Users(), db.Roles(), etc.
 }
-EOF
+```
 
-go run -tags docs /tmp/run_example.go
+4) Simple CRUD with the generated client:
+```go
+// Create
+u, err := db.Users().Save(ctx, onyx.User{
+	Id:       "user_1",
+	Email:    "user@example.com",
+	Username: "User One",
+})
+if err != nil { log.Fatal(err) }
+
+// Read
+users, err := db.Users().
+	Where(onyx.Contains("email", "@example.com")).
+	Limit(10).
+	List(ctx)
+if err != nil { log.Fatal(err) }
+
+// Update (type-safe updates)
+updates := onyx.NewUserUpdates().SetUsername("Updated Name")
+count, err := db.Users().
+	Where(onyx.Eq("id", u.Id)).
+	SetUserUpdates(updates).
+	Update(ctx)
+if err != nil { log.Fatal(err) }
+_ = count // rows affected
+
+// Delete
+_, err = db.Users().DeleteByID(ctx, u.Id)
+if err != nil { log.Fatal(err) }
+
+// Paging
+pages := db.Users().Pages(ctx)
+for pages.Next() {
+	page, err := pages.Page()
+	if err != nil { log.Fatal(err) }
+	for _, user := range page.Items {
+		log.Println(user.Id)
+	}
+}
+if err := pages.Err(); err != nil { log.Fatal(err) }
 ```
 
 ## Test and coverage
@@ -149,14 +253,15 @@ The fluent query API mirrors the TS builder, supporting filters, projections, ne
 
 ```go
 ctx := context.Background()
-client := mustInit(ctx) // helper that wraps onyx.Init
+db, err := onyx.Init(ctx, onyx.Config{/* ... */})
+if err != nil { log.Fatal(err) }
 
-page, err := db.From("User").
+page, err := db.Users().
     Select("id", "email", "profile.avatarUrl").
     Where(onyx.Contains("email", "@example.com")).
     And(onyx.Gte("createdAt", "2024-01-01T00:00:00Z")).
     Resolve("roles", "profile").
-    OrderBy(onyx.Desc("createdAt")).
+    OrderBy("createdAt", false).
     Limit(25).
     Page(ctx, "") // empty cursor = first page
 if err != nil { log.Fatal(err) }
@@ -165,11 +270,10 @@ for _, user := range page.Items {
     fmt.Println(user)
 }
 
-iter, err := db.From("Event").Stream(ctx)
+iter, err := db.Users().Stream(ctx)
 if err != nil { log.Fatal(err) }
 for iter.Next() {
-    evt := iter.Value()
-    // handle event incrementally
+    // handle each streamed item
 }
 if err := iter.Err(); err != nil { log.Fatal(err) }
 ```
@@ -178,9 +282,9 @@ if err := iter.Err(); err != nil { log.Fatal(err) }
 
 Use `Resolve` with dotted paths to hydrate related records just like the TS client:
 ```go
-post, err := db.From("Post").
-    Where(onyx.Eq("id", "post_123")).
-    Resolve("author.profile", "comments.author").
+users, err := db.Users().
+    Where(onyx.Eq("id", "user_123")).
+    Resolve("profile", "roles.permissions").
     Limit(1).
     List(ctx)
 if err != nil { log.Fatal(err) }
@@ -207,7 +311,8 @@ The Go SDK mirrors the TS helpers for auxiliary APIs as well:
 
 ```go
 ctx := context.Background()
-client := mustInit(ctx)
+db, err := onyx.Init(ctx, onyx.Config{/* ... */})
+if err != nil { log.Fatal(err) }
 
 doc, err := db.Documents().Get(ctx, "doc_123")
 if err != nil { log.Fatal(err) }
@@ -218,7 +323,7 @@ if _, err := db.Documents().Save(ctx, doc); err != nil {
 }
 
 secret := onyx.Secret{Key: "API_KEY", Value: "abc"}
-if _, err := db.PutSecret(ctx, secret); err != nil {
+if _, err := db.Secrets().Set(ctx, secret); err != nil {
     log.Fatal(err)
 }
 ```
@@ -242,15 +347,10 @@ If `--database-id` is omitted, the CLI resolves credentials from env vars or con
 
 Generate strongly-typed models, table constants, and helpers with deterministic output that only import `contract` (plus `time` when timestamps are requested):
 ```bash
-onyx-gen-go --schema ./onyx.schema.json --out ./models/onyx.go --package models --tables User,Order --timestamps time
+onyx-gen-go --schema ./onyx.schema.json --out ./gen/onyx --package onyx --tables User,Order --timestamps time
 
 # Pull the schema from the API and emit the same helpers
-onyx-gen-go --source api --database-id db_123 --out ./models/onyx.go --package models
+onyx-gen-go --source api --database-id db_123 --out ./gen/onyx --package onyx
 ```
 
-Generated helpers let you write `q := FromUser(client).Where(onyx.Eq("id", userID))` while keeping the public API aligned with the TS db.
-
-## Working with the task pack
-- Tasks are dependency-aware: P0 setup → P1 contract freeze → P2 CLIs → P3 SDK core → P4 docs/CI/release/parity.
-- Start with `P1_CONTRACT_10_FREEZE_V1` before SDK work; P2/P3 tasks can run in parallel when dependencies allow.
-- Use the per-task markdown files in `codex-tasks/tasks/` for acceptance criteria and implementation notes.
+Generated helpers expose typed accessors like `db.Users().Where(onyx.Eq("id", userID)).List(ctx)` while keeping the public API aligned with the TS client.
