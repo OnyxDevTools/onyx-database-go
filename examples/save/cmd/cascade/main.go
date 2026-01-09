@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if saved.Id == "" {
-		log.Println("warning: expected saved user id")
+		log.Fatalf("warning: expected saved user id")
 	}
 	fmt.Println("Saved user with cascade.")
 
@@ -58,7 +58,7 @@ func main() {
 		outProfile, _ := json.MarshalIndent(saved.Profile, "", "  ")
 		fmt.Printf("saved profile: %s\n", string(outProfile))
 	} else {
-		log.Println("warning: expected profile to be returned in save response")
+		log.Fatalf("warning: expected profile to be returned in save response")
 	}
 	log.Println("example: completed")
 }

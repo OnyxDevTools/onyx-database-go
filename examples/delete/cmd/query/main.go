@@ -40,7 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if deletedCount == 0 {
-		log.Println("warning: expected to delete seeded user")
+		log.Fatalf("warning: expected to delete seeded user")
 	}
 
 	fmt.Printf("Deleted %d record(s).\n", deletedCount)

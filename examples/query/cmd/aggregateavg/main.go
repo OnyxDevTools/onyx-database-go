@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if stats == nil {
-		log.Println("warning: expected aggregate stats")
+		log.Fatalf("warning: expected aggregate stats")
 	}
 
 	out, _ := json.MarshalIndent(stats, "", "  ")

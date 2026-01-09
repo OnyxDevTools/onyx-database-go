@@ -2,25 +2,28 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	db := onyxclient.NewClient(core)
 
-	iter, err := db.From("User").Stream(ctx)
+	iter, err := db.ListUsers().Stream(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if iter == nil {
-		log.Println("warning: expected stream iterator")
+		log.Fatalf("warning: expected stream iterator")
 		return
 	}
 	defer func() {
@@ -37,7 +40,10 @@ func main() {
 	for iter.Next() {
 		// ignore records; this example just shows closing the stream.
 	}
-	if err := iter.Err(); err != nil {
+	if err := iter.Err(); err != nil &&
+		!errors.Is(err, context.Canceled) &&
+		!errors.Is(err, context.DeadlineExceeded) &&
+		err.Error() != "http2: response body closed" {
 		log.Fatal(err)
 	}
 	log.Println("example: completed")

@@ -134,7 +134,7 @@ func renderModels(schema onyx.Schema, pkg, timestampFormat string) []byte {
 				if i > 0 {
 					buf.WriteString(", ")
 				}
-				buf.WriteString(fmt.Sprintf("%q", r))
+				buf.WriteString(fmt.Sprintf("%q", r.Name))
 			}
 			buf.WriteString("},\n")
 		}
@@ -150,8 +150,8 @@ func renderModels(schema onyx.Schema, pkg, timestampFormat string) []byte {
 			fmt.Fprintf(&buf, "\t%s %s `json:\"%s,omitempty\"`\n", fieldName, goType, f.Name)
 		}
 		for _, r := range t.Resolvers {
-			fieldName := toExported(r)
-			fmt.Fprintf(&buf, "\t%s any `json:\"%s,omitempty\"`\n", fieldName, r)
+			fieldName := toExported(r.Name)
+			fmt.Fprintf(&buf, "\t%s any `json:\"%s,omitempty\"`\n", fieldName, r.Name)
 		}
 		buf.WriteString("}\n\n")
 	}
@@ -192,6 +192,7 @@ func renderClient(schema onyx.Schema, pkg string) []byte {
 		fmt.Fprintf(&buf, "func (q %s) Select(fields ...string) %s { q.q = q.q.Select(fields...); return q }\n", queryName, queryName)
 		fmt.Fprintf(&buf, "func (q %s) GroupBy(fields ...string) %s { q.q = q.q.GroupBy(fields...); return q }\n", queryName, queryName)
 		fmt.Fprintf(&buf, "func (q %s) SetUpdates(updates map[string]any) %s { q.q = q.q.SetUpdates(updates); return q }\n", queryName, queryName)
+		fmt.Fprintf(&buf, "func (q %s) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }\n", queryName)
 		fmt.Fprintf(&buf, "func (q %s) List(ctx context.Context) ([]%s, error) {\n\tres := onyx.List(ctx, q.q)\n\tvar out []%s\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", queryName, typeName, typeName)
 		fmt.Fprintf(&buf, "func (q %s) ListMaps(ctx context.Context) ([]map[string]any, error) {\n\tres := onyx.List(ctx, q.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", queryName)
 		fmt.Fprintf(&buf, "func (q %s) ListAggregates(ctx context.Context) ([]map[string]any, error) {\n\tres := onyx.List(ctx, q.q)\n\tvar out []map[string]any\n\tif err := res.Decode(&out); err != nil {\n\t\treturn nil, err\n\t}\n\treturn out, nil\n}\n\n", queryName)

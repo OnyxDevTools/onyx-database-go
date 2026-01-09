@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if users == nil {
-		log.Println("warning: expected users response")
+		log.Fatalf("warning: expected users response")
 	}
 
 	for _, u := range users {

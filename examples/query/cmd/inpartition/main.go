@@ -50,7 +50,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if logs == nil {
-		log.Println("warning: expected audit log response")
+		log.Fatalf("warning: expected audit log response")
 	}
 
 	out, _ := json.MarshalIndent(logs, "", "  ")

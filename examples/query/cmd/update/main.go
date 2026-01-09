@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if updated < 0 {
-		log.Println("warning: expected update count")
+		log.Fatalf("warning: expected update count")
 	}
 
 	fmt.Printf("Updated %d record(s).\n", updated)

@@ -151,6 +151,13 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 				lines = append(lines, fmt.Sprintf("  - %s: %s", f.Name, changes))
 			}
 		}
+		if len(td.ModifiedResolvers) > 0 {
+			lines = append(lines, "  Modified resolvers:")
+			for _, r := range td.ModifiedResolvers {
+				changes := describeResolverChange(r.From, r.To)
+				lines = append(lines, fmt.Sprintf("  - %s: %s", r.Name, changes))
+			}
+		}
 		if len(td.AddedResolvers) > 0 {
 			lines = append(lines, "  Added resolvers:")
 			for _, r := range td.AddedResolvers {
@@ -179,6 +186,27 @@ func describeFieldChange(a, b onyx.Field) string {
 	}
 	if a.Nullable != b.Nullable {
 		parts = append(parts, fmt.Sprintf("nullable %t -> %t", a.Nullable, b.Nullable))
+	}
+	return strings.Join(parts, "; ")
+}
+
+func describeResolverChange(a, b onyx.Resolver) string {
+	var parts []string
+	if a.Resolver != b.Resolver {
+		parts = append(parts, "definition changed")
+	}
+	if len(a.Meta) != len(b.Meta) {
+		parts = append(parts, "meta changed")
+	} else {
+		for k, v := range a.Meta {
+			if vb, ok := b.Meta[k]; !ok || vb != v {
+				parts = append(parts, "meta changed")
+				break
+			}
+		}
+	}
+	if len(parts) == 0 {
+		return "unchanged"
 	}
 	return strings.Join(parts, "; ")
 }

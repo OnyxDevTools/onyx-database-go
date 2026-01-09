@@ -21,6 +21,7 @@ type TableDiff struct {
 	ModifiedFields   []FieldDiff      `json:"modifiedFields,omitempty"`
 	AddedResolvers   []string         `json:"addedResolvers,omitempty"`
 	RemovedResolvers []string         `json:"removedResolvers,omitempty"`
+	ModifiedResolvers []ResolverDiff  `json:"modifiedResolvers,omitempty"`
 }
 
 // SchemaDiff reports differences between schemas.
@@ -28,6 +29,13 @@ type SchemaDiff struct {
 	AddedTables   []contract.Table `json:"addedTables,omitempty"`
 	RemovedTables []contract.Table `json:"removedTables,omitempty"`
 	TableDiffs    []TableDiff      `json:"tableDiffs,omitempty"`
+}
+
+// ResolverDiff captures a resolver change.
+type ResolverDiff struct {
+	Name string             `json:"name"`
+	From contract.Resolver  `json:"from"`
+	To   contract.Resolver  `json:"to"`
 }
 
 // DiffSchemas compares two schemas and reports structural differences.
@@ -103,17 +111,25 @@ func diffTable(a, b contract.Table) *TableDiff {
 		}
 	}
 
-	resolverMapA := map[string]struct{}{}
+	resolverMapA := map[string]contract.Resolver{}
 	for _, r := range a.Resolvers {
-		resolverMapA[r] = struct{}{}
+		resolverMapA[r.Name] = r
 	}
-	resolverMapB := map[string]struct{}{}
+	resolverMapB := map[string]contract.Resolver{}
 	for _, r := range b.Resolvers {
-		resolverMapB[r] = struct{}{}
+		resolverMapB[r.Name] = r
 	}
 	for r := range resolverMapA {
 		if _, ok := resolverMapB[r]; !ok {
 			td.AddedResolvers = append(td.AddedResolvers, r)
+			continue
+		}
+		if resolverChanged(resolverMapA[r], resolverMapB[r]) {
+			td.ModifiedResolvers = append(td.ModifiedResolvers, ResolverDiff{
+				Name: r,
+				From: resolverMapA[r],
+				To:   resolverMapB[r],
+			})
 		}
 	}
 	for r := range resolverMapB {
@@ -125,10 +141,16 @@ func diffTable(a, b contract.Table) *TableDiff {
 	sort.Slice(td.AddedFields, func(i, j int) bool { return td.AddedFields[i].Name < td.AddedFields[j].Name })
 	sort.Slice(td.RemovedFields, func(i, j int) bool { return td.RemovedFields[i].Name < td.RemovedFields[j].Name })
 	sort.Slice(td.ModifiedFields, func(i, j int) bool { return td.ModifiedFields[i].Name < td.ModifiedFields[j].Name })
+	sort.Slice(td.ModifiedResolvers, func(i, j int) bool { return td.ModifiedResolvers[i].Name < td.ModifiedResolvers[j].Name })
 	sort.Strings(td.AddedResolvers)
 	sort.Strings(td.RemovedResolvers)
 
-	if len(td.AddedFields) == 0 && len(td.RemovedFields) == 0 && len(td.ModifiedFields) == 0 && len(td.AddedResolvers) == 0 && len(td.RemovedResolvers) == 0 {
+	if len(td.AddedFields) == 0 &&
+		len(td.RemovedFields) == 0 &&
+		len(td.ModifiedFields) == 0 &&
+		len(td.AddedResolvers) == 0 &&
+		len(td.RemovedResolvers) == 0 &&
+		len(td.ModifiedResolvers) == 0 {
 		return nil
 	}
 
@@ -137,4 +159,19 @@ func diffTable(a, b contract.Table) *TableDiff {
 
 func fieldChanged(a, b contract.Field) bool {
 	return a.Type != b.Type || a.Nullable != b.Nullable
+}
+
+func resolverChanged(a, b contract.Resolver) bool {
+	if a.Resolver != b.Resolver {
+		return true
+	}
+	if len(a.Meta) != len(b.Meta) {
+		return true
+	}
+	for k, v := range a.Meta {
+		if vb, ok := b.Meta[k]; !ok || vb != v {
+			return true
+		}
+	}
+	return false
 }

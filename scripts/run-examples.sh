@@ -39,6 +39,11 @@ passed=0
 failed=0
 line_width=40
 marker="example: completed"
+green=$'\033[32m'
+red=$'\033[31m'
+reset=$'\033[0m'
+declare -a failed_names=()
+declare -a failed_logs=()
 
 for entry in "${examples[@]}"; do
   name=${entry%%:*}
@@ -50,6 +55,8 @@ for entry in "${examples[@]}"; do
     ((passed++))
   else
     ((failed++))
+    failed_names+=("$name")
+    failed_logs+=("$output")
   fi
 
   dots_count=$((line_width - ${#name} - ${#status}))
@@ -57,14 +64,29 @@ for entry in "${examples[@]}"; do
     dots_count=1
   fi
   dots=$(printf '%*s' "$dots_count" '' | tr ' ' '.')
-  printf '%s%s%s\n' "$name" "$dots" "$status"
+  color="$red"
+  if [[ "$status" == "PASS" ]]; then
+    color="$green"
+  fi
+  printf '%s%s%s%s%s\n' "$name" "$dots" "$color" "$status" "$reset"
 done
+
+if ((failed > 0)); then
+  echo
+  echo "failed logs"
+  echo "-----------"
+  for i in "${!failed_names[@]}"; do
+    echo "[$((i+1))] ${failed_names[$i]}"
+    echo "${failed_logs[$i]}"
+    echo "-----------"
+  done
+fi
 
 echo
 echo "totals"
 echo "------"
-printf 'PASSED: %d\n' "$passed"
-printf 'FAILED: %d\n' "$failed"
+printf 'PASSED: %s%d%s\n' "$green" "$passed" "$reset"
+printf 'FAILED: %s%d%s\n' "$red" "$failed" "$reset"
 
 if ((failed > 0)); then
   exit 1

@@ -38,6 +38,7 @@ func (q AuditLogQuery) Limit(n int) AuditLogQuery { q.q = q.q.Limit(n); return q
 func (q AuditLogQuery) Select(fields ...string) AuditLogQuery { q.q = q.q.Select(fields...); return q }
 func (q AuditLogQuery) GroupBy(fields ...string) AuditLogQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q AuditLogQuery) SetUpdates(updates map[string]any) AuditLogQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q AuditLogQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q AuditLogQuery) List(ctx context.Context) ([]AuditLog, error) {
 	res := onyx.List(ctx, q.q)
 	var out []AuditLog
@@ -166,6 +167,7 @@ func (q PermissionQuery) Limit(n int) PermissionQuery { q.q = q.q.Limit(n); retu
 func (q PermissionQuery) Select(fields ...string) PermissionQuery { q.q = q.q.Select(fields...); return q }
 func (q PermissionQuery) GroupBy(fields ...string) PermissionQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q PermissionQuery) SetUpdates(updates map[string]any) PermissionQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q PermissionQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q PermissionQuery) List(ctx context.Context) ([]Permission, error) {
 	res := onyx.List(ctx, q.q)
 	var out []Permission
@@ -294,6 +296,7 @@ func (q RoleQuery) Limit(n int) RoleQuery { q.q = q.q.Limit(n); return q }
 func (q RoleQuery) Select(fields ...string) RoleQuery { q.q = q.q.Select(fields...); return q }
 func (q RoleQuery) GroupBy(fields ...string) RoleQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q RoleQuery) SetUpdates(updates map[string]any) RoleQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q RoleQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q RoleQuery) List(ctx context.Context) ([]Role, error) {
 	res := onyx.List(ctx, q.q)
 	var out []Role
@@ -422,6 +425,7 @@ func (q RolePermissionQuery) Limit(n int) RolePermissionQuery { q.q = q.q.Limit(
 func (q RolePermissionQuery) Select(fields ...string) RolePermissionQuery { q.q = q.q.Select(fields...); return q }
 func (q RolePermissionQuery) GroupBy(fields ...string) RolePermissionQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q RolePermissionQuery) SetUpdates(updates map[string]any) RolePermissionQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q RolePermissionQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q RolePermissionQuery) List(ctx context.Context) ([]RolePermission, error) {
 	res := onyx.List(ctx, q.q)
 	var out []RolePermission
@@ -550,6 +554,7 @@ func (q UserQuery) Limit(n int) UserQuery { q.q = q.q.Limit(n); return q }
 func (q UserQuery) Select(fields ...string) UserQuery { q.q = q.q.Select(fields...); return q }
 func (q UserQuery) GroupBy(fields ...string) UserQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q UserQuery) SetUpdates(updates map[string]any) UserQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q UserQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserQuery) List(ctx context.Context) ([]User, error) {
 	res := onyx.List(ctx, q.q)
 	var out []User
@@ -678,6 +683,7 @@ func (q UserProfileQuery) Limit(n int) UserProfileQuery { q.q = q.q.Limit(n); re
 func (q UserProfileQuery) Select(fields ...string) UserProfileQuery { q.q = q.q.Select(fields...); return q }
 func (q UserProfileQuery) GroupBy(fields ...string) UserProfileQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q UserProfileQuery) SetUpdates(updates map[string]any) UserProfileQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q UserProfileQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserProfileQuery) List(ctx context.Context) ([]UserProfile, error) {
 	res := onyx.List(ctx, q.q)
 	var out []UserProfile
@@ -806,6 +812,7 @@ func (q UserRoleQuery) Limit(n int) UserRoleQuery { q.q = q.q.Limit(n); return q
 func (q UserRoleQuery) Select(fields ...string) UserRoleQuery { q.q = q.q.Select(fields...); return q }
 func (q UserRoleQuery) GroupBy(fields ...string) UserRoleQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q UserRoleQuery) SetUpdates(updates map[string]any) UserRoleQuery { q.q = q.q.SetUpdates(updates); return q }
+func (q UserRoleQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserRoleQuery) List(ctx context.Context) ([]UserRole, error) {
 	res := onyx.List(ctx, q.q)
 	var out []UserRole

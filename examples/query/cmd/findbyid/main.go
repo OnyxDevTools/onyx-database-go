@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if results == nil {
-		log.Println("warning: expected query response")
+		log.Fatalf("warning: expected query response")
 	}
 
 	if len(results) == 0 {
@@ -36,7 +36,7 @@ func main() {
 		return
 	}
 	if results[0].Id == "" {
-		log.Println("warning: expected user id")
+		log.Fatalf("warning: expected user id")
 	}
 
 	out, _ := json.MarshalIndent(results[0], "", "  ")

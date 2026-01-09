@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if firstPage.Items == nil {
-		log.Println("warning: expected page items")
+		log.Fatalf("warning: expected page items")
 	}
 	fmt.Println("Page 1:", usernames(firstPage.Items))
 
@@ -35,7 +35,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if secondPage.Items == nil {
-			log.Println("warning: expected second page items")
+			log.Fatalf("warning: expected second page items")
 		}
 		fmt.Println("Page 2:", usernames(secondPage.Items))
 	}

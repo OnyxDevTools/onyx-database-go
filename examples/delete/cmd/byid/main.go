@@ -34,7 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if saved.Id == "" {
-		log.Println("warning: expected saved user id")
+		log.Fatalf("warning: expected saved user id")
 	}
 
 	fmt.Printf("Saved user: %+v\n", saved)
@@ -44,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if deleted == 0 {
-		log.Println("warning: expected to delete saved user")
+		log.Fatalf("warning: expected to delete saved user")
 	}
 	fmt.Printf("Deleted %d record(s).\n", deleted)
 

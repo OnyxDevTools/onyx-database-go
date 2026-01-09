@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if stats == nil {
-		log.Println("warning: expected grouped aggregates")
+		log.Fatalf("warning: expected grouped aggregates")
 	}
 
 	out, _ := json.MarshalIndent(stats, "", "  ")

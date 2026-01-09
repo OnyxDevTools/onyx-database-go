@@ -5,6 +5,13 @@ import (
 	"sort"
 )
 
+func normalizeResolvers(res []Resolver) []Resolver {
+	out := make([]Resolver, len(res))
+	copy(out, res)
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
 // ParseSchemaJSON parses a schema document from JSON bytes.
 func ParseSchemaJSON(data []byte) (Schema, error) {
 	var s Schema
@@ -50,10 +57,7 @@ func NormalizeSchema(s Schema) Schema {
 		normalized.Tables[i].Fields = fields
 
 		if len(normalized.Tables[i].Resolvers) > 0 {
-			resolvers := make([]string, len(normalized.Tables[i].Resolvers))
-			copy(resolvers, normalized.Tables[i].Resolvers)
-			sort.Strings(resolvers)
-			normalized.Tables[i].Resolvers = resolvers
+			normalized.Tables[i].Resolvers = normalizeResolvers(normalized.Tables[i].Resolvers)
 		}
 		if len(normalized.Tables[i].Indexes) > 0 {
 			indexes := make([]Index, len(normalized.Tables[i].Indexes))
@@ -110,8 +114,14 @@ func schemaFromEntities(items []any) Schema {
 			for _, r := range res {
 				if rm, ok := r.(map[string]any); ok {
 					if name, ok := rm["name"].(string); ok {
-						table.Resolvers = append(table.Resolvers, name)
+						table.Resolvers = append(table.Resolvers, Resolver{
+							Name:     name,
+							Resolver: stringValue(rm["resolver"]),
+							Meta:     mapValue(rm["meta"]),
+						})
 					}
+				} else if name, ok := r.(string); ok {
+					table.Resolvers = append(table.Resolvers, Resolver{Name: name})
 				}
 			}
 		}
@@ -171,10 +181,14 @@ func schemaFromTablesArray(items []any) Schema {
 			for _, r := range res {
 				switch v := r.(type) {
 				case string:
-					t.Resolvers = append(t.Resolvers, v)
+					t.Resolvers = append(t.Resolvers, Resolver{Name: v})
 				case map[string]any:
 					if name, ok := v["name"].(string); ok {
-						t.Resolvers = append(t.Resolvers, name)
+						t.Resolvers = append(t.Resolvers, Resolver{
+							Name:     name,
+							Resolver: stringValue(v["resolver"]),
+							Meta:     mapValue(v["meta"]),
+						})
 					}
 				}
 			}
@@ -219,4 +233,11 @@ func boolValue(v any) bool {
 		return b
 	}
 	return false
+}
+
+func mapValue(v any) map[string]any {
+	if m, ok := v.(map[string]any); ok {
+		return m
+	}
+	return nil
 }

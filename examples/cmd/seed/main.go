@@ -24,7 +24,7 @@ func main() {
 		model.User{Id: "user_cara", Email: "cara@example.com", Username: "cara", IsActive: false},
 	}
 	if len(users) == 0 {
-		log.Println("warning: expected seed users")
+		log.Fatalf("warning: expected seed users")
 	}
 	if err := db.BatchSave(ctx, model.Tables.User, users, 50); err != nil {
 		log.Fatal(err)
@@ -37,7 +37,7 @@ func main() {
 		model.Role{Id: "role_editor", Name: "editor"},
 	}
 	if len(roles) == 0 {
-		log.Println("warning: expected seed roles")
+		log.Fatalf("warning: expected seed roles")
 	}
 	if err := db.BatchSave(ctx, model.Tables.Role, roles, 50); err != nil {
 		log.Fatal(err)
@@ -50,7 +50,7 @@ func main() {
 		model.UserRole{Id: "ur_cara_editor", UserId: "user_cara", RoleId: "role_editor"},
 	}
 	if len(links) == 0 {
-		log.Println("warning: expected seed user roles")
+		log.Fatalf("warning: expected seed user roles")
 	}
 	if err := db.BatchSave(ctx, model.Tables.UserRole, links, 50); err != nil {
 		log.Fatal(err)
