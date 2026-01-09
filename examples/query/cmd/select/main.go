@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	users, err := db.ListUsers().
+	users, err := db.Users(ctx).
 		Select("username", "email").
 		Limit(2).
 		ListMaps(ctx)

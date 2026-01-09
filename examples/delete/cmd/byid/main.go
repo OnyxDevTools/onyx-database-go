@@ -21,7 +21,7 @@ func main() {
 
 	targetID := "user-id-1"
 	now := time.Now().UTC()
-	saved, err := db.SaveUser(ctx, onyxclient.User{
+	saved, err := db.Users(ctx).Save(onyxclient.User{
 		Id:        targetID,
 		Asdf:      "tmp",
 		Username:  "delete_me",
@@ -39,14 +39,10 @@ func main() {
 
 	fmt.Printf("Saved user: %+v\n", saved)
 
-	deleted, err := db.DeleteUser(ctx, targetID)
-	if err != nil {
+	if err := db.Users(ctx).DeleteByID(targetID); err != nil {
 		log.Fatal(err)
 	}
-	if deleted == 0 {
-		log.Fatalf("warning: expected to delete saved user")
-	}
-	fmt.Printf("Deleted %d record(s).\n", deleted)
+	fmt.Println("Deleted saved user.")
 
 	fmt.Println("Done.")
 	log.Println("example: completed")

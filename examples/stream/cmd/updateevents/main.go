@@ -27,7 +27,7 @@ func main() {
 	streamDB := onyxclient.NewClient(streamCore)
 	writeDB := onyxclient.NewClient(writeCore)
 
-	iter, err := streamDB.ListUsers().Stream(streamCtx)
+	iter, err := streamDB.Users(streamCtx).Stream(streamCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, err := writeDB.SaveUser(ctx, onyxclient.User{
+		_, err := writeDB.Users(ctx).Save(onyxclient.User{
 			Id:        "stream_user_update",
 			Username:  "update-user",
 			Email:     "update@example.com",
@@ -58,7 +58,7 @@ func main() {
 		time.Sleep(200 * time.Millisecond)
 		updated := time.Now().UTC()
 		lastLogin := updated
-		_, err = writeDB.SaveUser(ctx, onyxclient.User{
+		_, err = writeDB.Users(ctx).Save(onyxclient.User{
 			Id:          "stream_user_update",
 			Username:    "update-user-updated",
 			Email:       "update@example.com",

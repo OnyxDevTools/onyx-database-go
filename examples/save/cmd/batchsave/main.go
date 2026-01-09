@@ -47,7 +47,7 @@ func main() {
 	// Fetch a small sample with a timeout so debug sessions don't hang if the network is slow.
 	listCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if fetched, err := client.ListUsers().Limit(5).List(listCtx); err == nil {
+	if fetched, err := client.Users(listCtx).Limit(5).List(listCtx); err == nil {
 		var decoded []onyxclient.User
 		if b, marshalErr := json.Marshal(fetched); marshalErr == nil {
 			_ = json.Unmarshal(b, &decoded)

@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	stats, err := db.ListUserProfiles().
+	stats, err := db.UserProfiles(ctx).
 		Select("avg(age)").
 		ListAggregates(ctx)
 	if err != nil {

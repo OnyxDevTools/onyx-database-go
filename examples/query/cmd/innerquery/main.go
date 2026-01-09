@@ -20,7 +20,7 @@ func main() {
 
 	coreClient := db.Core()
 
-	adminUsers, err := db.ListUsers().
+	adminUsers, err := db.Users(ctx).
 		Where(onyx.Within("id", coreClient.From(onyxclient.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
 		List(ctx)
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 	}
 	fmt.Println("Users with admin role:", adminUsers)
 
-	rolesWithPermission, err := db.ListRoles().
+	rolesWithPermission, err := db.Roles(ctx).
 		Where(onyx.Within("id", coreClient.From(onyxclient.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
 		List(ctx)
 	if err != nil {

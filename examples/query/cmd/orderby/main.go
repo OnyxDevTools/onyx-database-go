@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	users, err := db.ListUsers().
+	users, err := db.Users(ctx).
 		Select("id", "email", "createdAt").
 		OrderBy("createdAt", false).
 		Limit(3).

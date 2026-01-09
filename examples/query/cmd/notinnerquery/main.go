@@ -19,7 +19,7 @@ func main() {
 	db := onyxclient.NewClient(core)
 	coreClient := db.Core()
 
-	users, err := db.ListUsers().
+	users, err := db.Users(ctx).
 		Select("id").
 		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
 		ListMaps(ctx)
@@ -31,7 +31,7 @@ func main() {
 	}
 	fmt.Println("Users without admin role:", users)
 
-	roles, err := db.ListRoles().
+	roles, err := db.Roles(ctx).
 		Select("id").
 		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
 		ListMaps(ctx)

@@ -19,7 +19,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	logs, err := db.ListAuditLogs().
+	logs, err := db.AuditLogs(ctx).
 		Select("actorId", "action", "targetId", "status", "dateTime").
 		Where(onyx.Eq("actorId", "admin-user-1")).
 		And(onyx.Eq("action", "DELETE")).

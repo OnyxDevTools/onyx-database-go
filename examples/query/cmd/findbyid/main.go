@@ -20,7 +20,7 @@ func main() {
 	db := onyxclient.NewClient(core)
 
 	id := "example-user-1"
-	results, err := db.ListUsers().
+	results, err := db.Users(ctx).
 		Where(onyx.Eq("id", id)).
 		Limit(1).
 		List(ctx)

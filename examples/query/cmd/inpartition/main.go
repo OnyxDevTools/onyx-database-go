@@ -21,7 +21,7 @@ func main() {
 	db := onyxclient.NewClient(core)
 
 	now := time.Now().UTC()
-	_, err = db.SaveAuditLog(ctx, onyxclient.AuditLog{
+	_, err = db.AuditLogs(ctx).Save(onyxclient.AuditLog{
 		Id:       "audit-id-a",
 		TenantId: strPtr("tenantA"),
 		DateTime: now,
@@ -32,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = db.SaveAuditLog(ctx, onyxclient.AuditLog{
+	_, err = db.AuditLogs(ctx).Save(onyxclient.AuditLog{
 		Id:       "audit-id-b",
 		TenantId: strPtr("tenantB"),
 		DateTime: now,
@@ -43,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logs, err := db.ListAuditLogs().
+	logs, err := db.AuditLogs(ctx).
 		Where(onyx.Eq("tenantId", "tenantA")).
 		List(ctx)
 	if err != nil {

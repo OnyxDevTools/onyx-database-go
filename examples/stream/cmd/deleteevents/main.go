@@ -27,7 +27,7 @@ func main() {
 	streamDB := onyxclient.NewClient(streamCore)
 	writeDB := onyxclient.NewClient(writeCore)
 
-	iter, err := streamDB.ListUsers().Stream(streamCtx)
+	iter, err := streamDB.Users(streamCtx).Stream(streamCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, err := writeDB.SaveUser(ctx, onyxclient.User{
+		_, err := writeDB.Users(ctx).Save(onyxclient.User{
 			Id:        "stream_user_delete",
 			Username:  "delete-user",
 			Email:     "delete@example.com",
@@ -57,7 +57,7 @@ func main() {
 			log.Printf("save error: %v", err)
 		}
 		time.Sleep(200 * time.Millisecond)
-		if _, err := writeDB.DeleteUser(ctx, "stream_user_delete"); err != nil {
+		if err := writeDB.Users(ctx).DeleteByID("stream_user_delete"); err != nil {
 			log.Printf("delete error: %v", err)
 		}
 	}()

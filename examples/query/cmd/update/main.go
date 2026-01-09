@@ -18,7 +18,7 @@ func main() {
 	}
 	db := onyxclient.NewClient(core)
 
-	updated, err := db.ListUsers().
+	updated, err := db.Users(ctx).
 		Where(onyx.Eq("id", "example-user-1")).
 		SetUpdates(map[string]any{"isActive": false}).
 		Update(ctx)

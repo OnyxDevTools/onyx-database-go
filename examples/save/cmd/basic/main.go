@@ -30,7 +30,7 @@ func main() {
 		UpdatedAt: now,
 	}
 
-	saved, err := db.SaveUser(ctx, user)
+	saved, err := db.Users(ctx).Save(user)
 	if err != nil {
 		log.Fatal(err)
 	}
