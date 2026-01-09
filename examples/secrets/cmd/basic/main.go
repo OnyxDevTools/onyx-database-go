@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -17,7 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 	secrets := db.Secrets()
 
 	secretKey := fmt.Sprintf("example-secret-%d", time.Now().UnixMilli())

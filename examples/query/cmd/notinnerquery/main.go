@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -16,12 +15,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 	coreClient := db.Core()
 
 	users, err := db.ListUsers().
 		Select("id").
-		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
+		Where(onyx.NotWithin("id", coreClient.From(onyx.Tables.UserRole).Select("userId").Where(onyx.Eq("roleId", "role-admin")))).
 		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)
@@ -33,7 +32,7 @@ func main() {
 
 	roles, err := db.ListRoles().
 		Select("id").
-		Where(onyx.NotWithin("id", coreClient.From(onyxclient.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
+		Where(onyx.NotWithin("id", coreClient.From(onyx.Tables.RolePermission).Select("roleId").Where(onyx.Eq("permissionId", "perm-manage-users")))).
 		ListMaps(ctx)
 	if err != nil {
 		log.Fatal(err)

@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -16,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	q := db.ListUsers().OrderBy("username", false).Limit(2)
 
@@ -42,7 +41,7 @@ func main() {
 	log.Println("example: completed")
 }
 
-func usernames(items []onyxclient.User) []string {
+func usernames(items []onyx.User) []string {
 	var names []string
 	for _, u := range items {
 		names = append(names, u.Username)

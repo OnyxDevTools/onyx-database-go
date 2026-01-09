@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -17,11 +16,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	targetID := "user-id-1"
 	now := time.Now().UTC()
-	saved, err := db.SaveUser(ctx, onyxclient.User{
+	saved, err := db.SaveUser(ctx, onyx.User{
 		Id:        targetID,
 		Asdf:      "tmp",
 		Username:  "delete_me",

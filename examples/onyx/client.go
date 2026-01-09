@@ -5,29 +5,29 @@ package onyx
 import (
 	"context"
 	"encoding/json"
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/core"
 )
 
-type Client struct{ core onyx.Client }
+type Client struct{ core core.Client }
 
-func NewClient(core onyx.Client) Client { return Client{core: core} }
+func NewClient(core core.Client) Client { return Client{core: core} }
 
-func (c Client) Core() onyx.Client { return c.core }
+func (c Client) Core() core.Client { return c.core }
 
-type AuditLogQuery struct{ q onyx.Query }
+type AuditLogQuery struct{ q core.Query }
 
-func (q AuditLogQuery) Where(cond onyx.Condition) AuditLogQuery { q.q = q.q.Where(cond); return q }
-func (q AuditLogQuery) And(cond onyx.Condition) AuditLogQuery   { q.q = q.q.And(cond); return q }
-func (q AuditLogQuery) Or(cond onyx.Condition) AuditLogQuery    { q.q = q.q.Or(cond); return q }
+func (q AuditLogQuery) Where(cond core.Condition) AuditLogQuery { q.q = q.q.Where(cond); return q }
+func (q AuditLogQuery) And(cond core.Condition) AuditLogQuery   { q.q = q.q.And(cond); return q }
+func (q AuditLogQuery) Or(cond core.Condition) AuditLogQuery    { q.q = q.q.Or(cond); return q }
 func (q AuditLogQuery) Resolve(resolvers ...string) AuditLogQuery {
 	q.q = q.q.Resolve(resolvers...)
 	return q
 }
 func (q AuditLogQuery) OrderBy(field string, asc bool) AuditLogQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -38,7 +38,7 @@ func (q AuditLogQuery) GroupBy(fields ...string) AuditLogQuery {
 	return q
 }
 func (q AuditLogQuery) List(ctx context.Context) ([]AuditLog, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []AuditLog
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (q AuditLogQuery) List(ctx context.Context) ([]AuditLog, error) {
 }
 
 func (q AuditLogQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (q AuditLogQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q AuditLogQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -69,13 +69,13 @@ func (c Client) ListAuditLogs() AuditLogQuery {
 }
 
 type AuditLogDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d AuditLogDelete) Where(cond onyx.Condition) AuditLogDelete { d.q = d.q.Where(cond); return d }
-func (d AuditLogDelete) And(cond onyx.Condition) AuditLogDelete   { d.q = d.q.And(cond); return d }
-func (d AuditLogDelete) Or(cond onyx.Condition) AuditLogDelete    { d.q = d.q.Or(cond); return d }
+func (d AuditLogDelete) Where(cond core.Condition) AuditLogDelete { d.q = d.q.Where(cond); return d }
+func (d AuditLogDelete) And(cond core.Condition) AuditLogDelete   { d.q = d.q.And(cond); return d }
+func (d AuditLogDelete) Or(cond core.Condition) AuditLogDelete    { d.q = d.q.Or(cond); return d }
 func (d AuditLogDelete) Resolve(resolvers ...string) AuditLogDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -106,20 +106,20 @@ func (c Client) DeleteAuditLog(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type PermissionQuery struct{ q onyx.Query }
+type PermissionQuery struct{ q core.Query }
 
-func (q PermissionQuery) Where(cond onyx.Condition) PermissionQuery { q.q = q.q.Where(cond); return q }
-func (q PermissionQuery) And(cond onyx.Condition) PermissionQuery   { q.q = q.q.And(cond); return q }
-func (q PermissionQuery) Or(cond onyx.Condition) PermissionQuery    { q.q = q.q.Or(cond); return q }
+func (q PermissionQuery) Where(cond core.Condition) PermissionQuery { q.q = q.q.Where(cond); return q }
+func (q PermissionQuery) And(cond core.Condition) PermissionQuery   { q.q = q.q.And(cond); return q }
+func (q PermissionQuery) Or(cond core.Condition) PermissionQuery    { q.q = q.q.Or(cond); return q }
 func (q PermissionQuery) Resolve(resolvers ...string) PermissionQuery {
 	q.q = q.q.Resolve(resolvers...)
 	return q
 }
 func (q PermissionQuery) OrderBy(field string, asc bool) PermissionQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -133,7 +133,7 @@ func (q PermissionQuery) GroupBy(fields ...string) PermissionQuery {
 	return q
 }
 func (q PermissionQuery) List(ctx context.Context) ([]Permission, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []Permission
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (q PermissionQuery) List(ctx context.Context) ([]Permission, error) {
 }
 
 func (q PermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func (q PermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error)
 }
 
 func (q PermissionQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -164,16 +164,16 @@ func (c Client) ListPermissions() PermissionQuery {
 }
 
 type PermissionDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d PermissionDelete) Where(cond onyx.Condition) PermissionDelete {
+func (d PermissionDelete) Where(cond core.Condition) PermissionDelete {
 	d.q = d.q.Where(cond)
 	return d
 }
-func (d PermissionDelete) And(cond onyx.Condition) PermissionDelete { d.q = d.q.And(cond); return d }
-func (d PermissionDelete) Or(cond onyx.Condition) PermissionDelete  { d.q = d.q.Or(cond); return d }
+func (d PermissionDelete) And(cond core.Condition) PermissionDelete { d.q = d.q.And(cond); return d }
+func (d PermissionDelete) Or(cond core.Condition) PermissionDelete  { d.q = d.q.Or(cond); return d }
 func (d PermissionDelete) Resolve(resolvers ...string) PermissionDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -204,17 +204,17 @@ func (c Client) DeletePermission(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type RoleQuery struct{ q onyx.Query }
+type RoleQuery struct{ q core.Query }
 
-func (q RoleQuery) Where(cond onyx.Condition) RoleQuery   { q.q = q.q.Where(cond); return q }
-func (q RoleQuery) And(cond onyx.Condition) RoleQuery     { q.q = q.q.And(cond); return q }
-func (q RoleQuery) Or(cond onyx.Condition) RoleQuery      { q.q = q.q.Or(cond); return q }
+func (q RoleQuery) Where(cond core.Condition) RoleQuery   { q.q = q.q.Where(cond); return q }
+func (q RoleQuery) And(cond core.Condition) RoleQuery     { q.q = q.q.And(cond); return q }
+func (q RoleQuery) Or(cond core.Condition) RoleQuery      { q.q = q.q.Or(cond); return q }
 func (q RoleQuery) Resolve(resolvers ...string) RoleQuery { q.q = q.q.Resolve(resolvers...); return q }
 func (q RoleQuery) OrderBy(field string, asc bool) RoleQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -222,7 +222,7 @@ func (q RoleQuery) Limit(n int) RoleQuery              { q.q = q.q.Limit(n); ret
 func (q RoleQuery) Select(fields ...string) RoleQuery  { q.q = q.q.Select(fields...); return q }
 func (q RoleQuery) GroupBy(fields ...string) RoleQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q RoleQuery) List(ctx context.Context) ([]Role, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []Role
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -231,7 +231,7 @@ func (q RoleQuery) List(ctx context.Context) ([]Role, error) {
 }
 
 func (q RoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func (q RoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q RoleQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -253,13 +253,13 @@ func (c Client) ListRoles() RoleQuery {
 }
 
 type RoleDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d RoleDelete) Where(cond onyx.Condition) RoleDelete { d.q = d.q.Where(cond); return d }
-func (d RoleDelete) And(cond onyx.Condition) RoleDelete   { d.q = d.q.And(cond); return d }
-func (d RoleDelete) Or(cond onyx.Condition) RoleDelete    { d.q = d.q.Or(cond); return d }
+func (d RoleDelete) Where(cond core.Condition) RoleDelete { d.q = d.q.Where(cond); return d }
+func (d RoleDelete) And(cond core.Condition) RoleDelete   { d.q = d.q.And(cond); return d }
+func (d RoleDelete) Or(cond core.Condition) RoleDelete    { d.q = d.q.Or(cond); return d }
 func (d RoleDelete) Resolve(resolvers ...string) RoleDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -290,17 +290,17 @@ func (c Client) DeleteRole(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type RolePermissionQuery struct{ q onyx.Query }
+type RolePermissionQuery struct{ q core.Query }
 
-func (q RolePermissionQuery) Where(cond onyx.Condition) RolePermissionQuery {
+func (q RolePermissionQuery) Where(cond core.Condition) RolePermissionQuery {
 	q.q = q.q.Where(cond)
 	return q
 }
-func (q RolePermissionQuery) And(cond onyx.Condition) RolePermissionQuery {
+func (q RolePermissionQuery) And(cond core.Condition) RolePermissionQuery {
 	q.q = q.q.And(cond)
 	return q
 }
-func (q RolePermissionQuery) Or(cond onyx.Condition) RolePermissionQuery {
+func (q RolePermissionQuery) Or(cond core.Condition) RolePermissionQuery {
 	q.q = q.q.Or(cond)
 	return q
 }
@@ -310,9 +310,9 @@ func (q RolePermissionQuery) Resolve(resolvers ...string) RolePermissionQuery {
 }
 func (q RolePermissionQuery) OrderBy(field string, asc bool) RolePermissionQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -326,7 +326,7 @@ func (q RolePermissionQuery) GroupBy(fields ...string) RolePermissionQuery {
 	return q
 }
 func (q RolePermissionQuery) List(ctx context.Context) ([]RolePermission, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []RolePermission
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (q RolePermissionQuery) List(ctx context.Context) ([]RolePermission, error)
 }
 
 func (q RolePermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ func (q RolePermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, er
 }
 
 func (q RolePermissionQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -357,19 +357,19 @@ func (c Client) ListRolePermissions() RolePermissionQuery {
 }
 
 type RolePermissionDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d RolePermissionDelete) Where(cond onyx.Condition) RolePermissionDelete {
+func (d RolePermissionDelete) Where(cond core.Condition) RolePermissionDelete {
 	d.q = d.q.Where(cond)
 	return d
 }
-func (d RolePermissionDelete) And(cond onyx.Condition) RolePermissionDelete {
+func (d RolePermissionDelete) And(cond core.Condition) RolePermissionDelete {
 	d.q = d.q.And(cond)
 	return d
 }
-func (d RolePermissionDelete) Or(cond onyx.Condition) RolePermissionDelete {
+func (d RolePermissionDelete) Or(cond core.Condition) RolePermissionDelete {
 	d.q = d.q.Or(cond)
 	return d
 }
@@ -403,17 +403,17 @@ func (c Client) DeleteRolePermission(ctx context.Context, id string) (int, error
 	return 1, nil
 }
 
-type UserQuery struct{ q onyx.Query }
+type UserQuery struct{ q core.Query }
 
-func (q UserQuery) Where(cond onyx.Condition) UserQuery   { q.q = q.q.Where(cond); return q }
-func (q UserQuery) And(cond onyx.Condition) UserQuery     { q.q = q.q.And(cond); return q }
-func (q UserQuery) Or(cond onyx.Condition) UserQuery      { q.q = q.q.Or(cond); return q }
+func (q UserQuery) Where(cond core.Condition) UserQuery   { q.q = q.q.Where(cond); return q }
+func (q UserQuery) And(cond core.Condition) UserQuery     { q.q = q.q.And(cond); return q }
+func (q UserQuery) Or(cond core.Condition) UserQuery      { q.q = q.q.Or(cond); return q }
 func (q UserQuery) Resolve(resolvers ...string) UserQuery { q.q = q.q.Resolve(resolvers...); return q }
 func (q UserQuery) OrderBy(field string, asc bool) UserQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -421,7 +421,7 @@ func (q UserQuery) Limit(n int) UserQuery              { q.q = q.q.Limit(n); ret
 func (q UserQuery) Select(fields ...string) UserQuery  { q.q = q.q.Select(fields...); return q }
 func (q UserQuery) GroupBy(fields ...string) UserQuery { q.q = q.q.GroupBy(fields...); return q }
 func (q UserQuery) List(ctx context.Context) ([]User, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []User
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -430,7 +430,7 @@ func (q UserQuery) List(ctx context.Context) ([]User, error) {
 }
 
 func (q UserQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -439,7 +439,7 @@ func (q UserQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q UserQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -452,13 +452,13 @@ func (c Client) ListUsers() UserQuery {
 }
 
 type UserDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d UserDelete) Where(cond onyx.Condition) UserDelete { d.q = d.q.Where(cond); return d }
-func (d UserDelete) And(cond onyx.Condition) UserDelete   { d.q = d.q.And(cond); return d }
-func (d UserDelete) Or(cond onyx.Condition) UserDelete    { d.q = d.q.Or(cond); return d }
+func (d UserDelete) Where(cond core.Condition) UserDelete { d.q = d.q.Where(cond); return d }
+func (d UserDelete) And(cond core.Condition) UserDelete   { d.q = d.q.And(cond); return d }
+func (d UserDelete) Or(cond core.Condition) UserDelete    { d.q = d.q.Or(cond); return d }
 func (d UserDelete) Resolve(resolvers ...string) UserDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -489,23 +489,23 @@ func (c Client) DeleteUser(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type UserProfileQuery struct{ q onyx.Query }
+type UserProfileQuery struct{ q core.Query }
 
-func (q UserProfileQuery) Where(cond onyx.Condition) UserProfileQuery {
+func (q UserProfileQuery) Where(cond core.Condition) UserProfileQuery {
 	q.q = q.q.Where(cond)
 	return q
 }
-func (q UserProfileQuery) And(cond onyx.Condition) UserProfileQuery { q.q = q.q.And(cond); return q }
-func (q UserProfileQuery) Or(cond onyx.Condition) UserProfileQuery  { q.q = q.q.Or(cond); return q }
+func (q UserProfileQuery) And(cond core.Condition) UserProfileQuery { q.q = q.q.And(cond); return q }
+func (q UserProfileQuery) Or(cond core.Condition) UserProfileQuery  { q.q = q.q.Or(cond); return q }
 func (q UserProfileQuery) Resolve(resolvers ...string) UserProfileQuery {
 	q.q = q.q.Resolve(resolvers...)
 	return q
 }
 func (q UserProfileQuery) OrderBy(field string, asc bool) UserProfileQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -519,7 +519,7 @@ func (q UserProfileQuery) GroupBy(fields ...string) UserProfileQuery {
 	return q
 }
 func (q UserProfileQuery) List(ctx context.Context) ([]UserProfile, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []UserProfile
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -528,7 +528,7 @@ func (q UserProfileQuery) List(ctx context.Context) ([]UserProfile, error) {
 }
 
 func (q UserProfileQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -537,7 +537,7 @@ func (q UserProfileQuery) ListMaps(ctx context.Context) ([]map[string]any, error
 }
 
 func (q UserProfileQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -550,16 +550,16 @@ func (c Client) ListUserProfiles() UserProfileQuery {
 }
 
 type UserProfileDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d UserProfileDelete) Where(cond onyx.Condition) UserProfileDelete {
+func (d UserProfileDelete) Where(cond core.Condition) UserProfileDelete {
 	d.q = d.q.Where(cond)
 	return d
 }
-func (d UserProfileDelete) And(cond onyx.Condition) UserProfileDelete { d.q = d.q.And(cond); return d }
-func (d UserProfileDelete) Or(cond onyx.Condition) UserProfileDelete  { d.q = d.q.Or(cond); return d }
+func (d UserProfileDelete) And(cond core.Condition) UserProfileDelete { d.q = d.q.And(cond); return d }
+func (d UserProfileDelete) Or(cond core.Condition) UserProfileDelete  { d.q = d.q.Or(cond); return d }
 func (d UserProfileDelete) Resolve(resolvers ...string) UserProfileDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -590,20 +590,20 @@ func (c Client) DeleteUserProfile(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type UserRoleQuery struct{ q onyx.Query }
+type UserRoleQuery struct{ q core.Query }
 
-func (q UserRoleQuery) Where(cond onyx.Condition) UserRoleQuery { q.q = q.q.Where(cond); return q }
-func (q UserRoleQuery) And(cond onyx.Condition) UserRoleQuery   { q.q = q.q.And(cond); return q }
-func (q UserRoleQuery) Or(cond onyx.Condition) UserRoleQuery    { q.q = q.q.Or(cond); return q }
+func (q UserRoleQuery) Where(cond core.Condition) UserRoleQuery { q.q = q.q.Where(cond); return q }
+func (q UserRoleQuery) And(cond core.Condition) UserRoleQuery   { q.q = q.q.And(cond); return q }
+func (q UserRoleQuery) Or(cond core.Condition) UserRoleQuery    { q.q = q.q.Or(cond); return q }
 func (q UserRoleQuery) Resolve(resolvers ...string) UserRoleQuery {
 	q.q = q.q.Resolve(resolvers...)
 	return q
 }
 func (q UserRoleQuery) OrderBy(field string, asc bool) UserRoleQuery {
 	if asc {
-		q.q = q.q.OrderBy(onyx.Asc(field))
+		q.q = q.q.OrderBy(core.Asc(field))
 	} else {
-		q.q = q.q.OrderBy(onyx.Desc(field))
+		q.q = q.q.OrderBy(core.Desc(field))
 	}
 	return q
 }
@@ -614,7 +614,7 @@ func (q UserRoleQuery) GroupBy(fields ...string) UserRoleQuery {
 	return q
 }
 func (q UserRoleQuery) List(ctx context.Context) ([]UserRole, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []UserRole
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -623,7 +623,7 @@ func (q UserRoleQuery) List(ctx context.Context) ([]UserRole, error) {
 }
 
 func (q UserRoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -632,7 +632,7 @@ func (q UserRoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q UserRoleQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -645,13 +645,13 @@ func (c Client) ListUserRoles() UserRoleQuery {
 }
 
 type UserRoleDelete struct {
-	q   onyx.Query
+	q   core.Query
 	ctx context.Context
 }
 
-func (d UserRoleDelete) Where(cond onyx.Condition) UserRoleDelete { d.q = d.q.Where(cond); return d }
-func (d UserRoleDelete) And(cond onyx.Condition) UserRoleDelete   { d.q = d.q.And(cond); return d }
-func (d UserRoleDelete) Or(cond onyx.Condition) UserRoleDelete    { d.q = d.q.Or(cond); return d }
+func (d UserRoleDelete) Where(cond core.Condition) UserRoleDelete { d.q = d.q.Where(cond); return d }
+func (d UserRoleDelete) And(cond core.Condition) UserRoleDelete   { d.q = d.q.And(cond); return d }
+func (d UserRoleDelete) Or(cond core.Condition) UserRoleDelete    { d.q = d.q.Or(cond); return d }
 func (d UserRoleDelete) Resolve(resolvers ...string) UserRoleDelete {
 	d.q = d.q.Resolve(resolvers...)
 	return d
@@ -690,15 +690,15 @@ func decodeSaved(saved map[string]any, out any) error {
 	return json.Unmarshal(b, out)
 }
 
-type DocumentsClient struct{ core onyx.DocumentClient }
+type DocumentsClient struct{ core core.DocumentClient }
 
 func (c Client) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }
 
-func (d DocumentsClient) List(ctx context.Context) ([]onyx.Document, error) { return d.core.List(ctx) }
-func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) {
+func (d DocumentsClient) List(ctx context.Context) ([]core.Document, error) { return d.core.List(ctx) }
+func (d DocumentsClient) Get(ctx context.Context, id string) (core.Document, error) {
 	return d.core.Get(ctx, id)
 }
-func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) {
+func (d DocumentsClient) Save(ctx context.Context, doc core.Document) (core.Document, error) {
 	return d.core.Save(ctx, doc)
 }
 func (d DocumentsClient) Delete(ctx context.Context, id string) error { return d.core.Delete(ctx, id) }

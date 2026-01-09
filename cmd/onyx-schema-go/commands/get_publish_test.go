@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func TestGetCommandWritesSchema(t *testing.T) {
@@ -138,3 +139,4 @@ func (s *stubClient) PutSecret(ctx context.Context, secret onyx.Secret) (onyx.Se
 	return secret, nil
 }
 func (s *stubClient) DeleteSecret(ctx context.Context, key string) error { return nil }
+func (s *stubClient) Typed() onyxclient.Client                           { return onyxclient.NewClient(s) }

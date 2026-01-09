@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -19,18 +18,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client := onyxclient.NewClient(core)
+	client := core.Typed()
 
 	now := time.Now().UTC()
 	userID := "example_user2"
-	user := onyxclient.User{
+	user := onyx.User{
 		Id:        userID,
 		Username:  "cascade",
 		Email:     "cascade@example.com",
 		IsActive:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
-		Profile: onyxclient.UserProfile{
+		Profile: onyx.UserProfile{
 			Id:        "profile_001",
 			UserId:    userID,
 			FirstName: "Test",

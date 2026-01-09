@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -18,7 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 	docs := db.Documents()
 
 	payload := map[string]any{"message": "hello"}

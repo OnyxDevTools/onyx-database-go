@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -17,7 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	spec := onyx.NewCascadeBuilder().
 		Graph("profile").
@@ -27,14 +26,14 @@ func main() {
 		Build()
 
 	now := time.Now().UTC()
-	user := onyxclient.User{
+	user := onyx.User{
 		Id:        "cb-user-1",
 		Username:  "Cascade Builder",
 		Email:     "cascade-builder@example.com",
 		IsActive:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
-		Profile: onyxclient.UserProfile{
+		Profile: onyx.UserProfile{
 			Id:        "cb-profile-1",
 			UserId:    "cb-user-1",
 			FirstName: "Cascade",

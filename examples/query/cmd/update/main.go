@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -16,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	updated, err := db.ListUsers().
 		Where(onyx.Eq("id", "example-user-1")).

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -18,11 +17,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	// Seed data so resolver-based search has results.
 	roleID := "resolver-role-admin"
-	role := onyxclient.Role{
+	role := onyx.Role{
 		Id:          roleID,
 		Name:        "Admin",
 		Description: strPtr("Administrators with full access"),
@@ -33,8 +32,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	permRead := onyxclient.Permission{Id: "resolver-perm-read", Name: "user.read", Description: strPtr("get user(s)")}
-	permWrite := onyxclient.Permission{Id: "resolver-perm-write", Name: "user.write", Description: strPtr("Create, update, and delete users")}
+	permRead := onyx.Permission{Id: "resolver-perm-read", Name: "user.read", Description: strPtr("get user(s)")}
+	permWrite := onyx.Permission{Id: "resolver-perm-write", Name: "user.write", Description: strPtr("Create, update, and delete users")}
 	_, err = db.SavePermission(ctx, permRead)
 	if err != nil {
 		log.Fatal(err)
@@ -45,11 +44,11 @@ func main() {
 	}
 
 	rolePerms := []any{
-		onyxclient.RolePermission{Id: "resolver-rp-read", RoleId: roleID, PermissionId: permRead.Id},
-		onyxclient.RolePermission{Id: "resolver-rp-write", RoleId: roleID, PermissionId: permWrite.Id},
+		onyx.RolePermission{Id: "resolver-rp-read", RoleId: roleID, PermissionId: permRead.Id},
+		onyx.RolePermission{Id: "resolver-rp-write", RoleId: roleID, PermissionId: permWrite.Id},
 	}
 	for _, rp := range rolePerms {
-		_, err := db.SaveRolePermission(ctx, rp.(onyxclient.RolePermission))
+		_, err := db.SaveRolePermission(ctx, rp.(onyx.RolePermission))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -57,7 +56,7 @@ func main() {
 
 	userID := "resolver-admin-user"
 	now := time.Now().UTC()
-	user := onyxclient.User{
+	user := onyx.User{
 		Id:        userID,
 		Username:  "admin-user-1",
 		Email:     "admin@example.com",
@@ -70,7 +69,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	userRole := onyxclient.UserRole{
+	userRole := onyx.UserRole{
 		Id:     "resolver-admin-user-role",
 		UserId: userID,
 		RoleId: roleID,

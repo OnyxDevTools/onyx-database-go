@@ -5,42 +5,55 @@ package onyxclient
 import (
 	"context"
 	"encoding/json"
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/core"
 )
 
-type Client struct { core onyx.Client }
+type Client struct{ core core.Client }
 
-func NewClient(core onyx.Client) Client { return Client{core: core} }
+func NewClient(core core.Client) Client { return Client{core: core} }
 
-func (c Client) Core() onyx.Client { return c.core }
+func (c Client) Core() core.Client { return c.core }
 
 type AuditLogPage struct {
-	Items []AuditLog `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []AuditLog `json:"items"`
+	NextCursor string     `json:"nextCursor,omitempty"`
 }
 
 type AuditLogMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type AuditLogQuery struct { q onyx.Query }
+type AuditLogQuery struct{ q core.Query }
 
-func (q AuditLogQuery) Where(cond onyx.Condition) AuditLogQuery { q.q = q.q.Where(cond); return q }
-func (q AuditLogQuery) And(cond onyx.Condition) AuditLogQuery { q.q = q.q.And(cond); return q }
-func (q AuditLogQuery) Or(cond onyx.Condition) AuditLogQuery { q.q = q.q.Or(cond); return q }
-func (q AuditLogQuery) Resolve(resolvers ...string) AuditLogQuery { q.q = q.q.Resolve(resolvers...); return q }
-func (q AuditLogQuery) OrderBy(field string, asc bool) AuditLogQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+func (q AuditLogQuery) Where(cond core.Condition) AuditLogQuery { q.q = q.q.Where(cond); return q }
+func (q AuditLogQuery) And(cond core.Condition) AuditLogQuery   { q.q = q.q.And(cond); return q }
+func (q AuditLogQuery) Or(cond core.Condition) AuditLogQuery    { q.q = q.q.Or(cond); return q }
+func (q AuditLogQuery) Resolve(resolvers ...string) AuditLogQuery {
+	q.q = q.q.Resolve(resolvers...)
 	return q
 }
-func (q AuditLogQuery) Limit(n int) AuditLogQuery { q.q = q.q.Limit(n); return q }
+func (q AuditLogQuery) OrderBy(field string, asc bool) AuditLogQuery {
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
+	return q
+}
+func (q AuditLogQuery) Limit(n int) AuditLogQuery             { q.q = q.q.Limit(n); return q }
 func (q AuditLogQuery) Select(fields ...string) AuditLogQuery { q.q = q.q.Select(fields...); return q }
-func (q AuditLogQuery) GroupBy(fields ...string) AuditLogQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q AuditLogQuery) SetUpdates(updates map[string]any) AuditLogQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q AuditLogQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q AuditLogQuery) GroupBy(fields ...string) AuditLogQuery {
+	q.q = q.q.GroupBy(fields...)
+	return q
+}
+func (q AuditLogQuery) SetUpdates(updates map[string]any) AuditLogQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q AuditLogQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q AuditLogQuery) List(ctx context.Context) ([]AuditLog, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []AuditLog
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -49,7 +62,7 @@ func (q AuditLogQuery) List(ctx context.Context) ([]AuditLog, error) {
 }
 
 func (q AuditLogQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -58,7 +71,7 @@ func (q AuditLogQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q AuditLogQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -92,20 +105,26 @@ func (c Client) ListAuditLogs() AuditLogQuery {
 	return AuditLogQuery{q: c.core.From(Tables.AuditLog)}
 }
 
-type AuditLogDelete struct { q onyx.Query; ctx context.Context }
+type AuditLogDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d AuditLogDelete) Where(cond onyx.Condition) AuditLogDelete { d.q = d.q.Where(cond); return d }
-func (d AuditLogDelete) And(cond onyx.Condition) AuditLogDelete { d.q = d.q.And(cond); return d }
-func (d AuditLogDelete) Or(cond onyx.Condition) AuditLogDelete { d.q = d.q.Or(cond); return d }
-func (d AuditLogDelete) Resolve(resolvers ...string) AuditLogDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d AuditLogDelete) Where(cond core.Condition) AuditLogDelete { d.q = d.q.Where(cond); return d }
+func (d AuditLogDelete) And(cond core.Condition) AuditLogDelete   { d.q = d.q.And(cond); return d }
+func (d AuditLogDelete) Or(cond core.Condition) AuditLogDelete    { d.q = d.q.Or(cond); return d }
+func (d AuditLogDelete) Resolve(resolvers ...string) AuditLogDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d AuditLogDelete) Limit(n int) AuditLogDelete { d.q = d.q.Limit(n); return d }
-func (d AuditLogDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d AuditLogDelete) Delete() (int, error)       { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteAuditLogs(ctx context.Context) AuditLogDelete {
 	return AuditLogDelete{q: c.core.From(Tables.AuditLog), ctx: ctx}
 }
 
-func (c Client) SaveAuditLog(ctx context.Context, item AuditLog, cascades ...onyx.CascadeSpec) (AuditLog, error) {
+func (c Client) SaveAuditLog(ctx context.Context, item AuditLog, cascades ...core.CascadeSpec) (AuditLog, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -133,43 +152,66 @@ func (c Client) DeleteAuditLog(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type AuditLogsService struct { core onyx.Client }
+type AuditLogsService struct{ core core.Client }
 
 func (c Client) AuditLogs() AuditLogsService { return AuditLogsService{core: c.core} }
 
-type AuditLogCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type AuditLogCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s AuditLogsService) Cascade(spec onyx.CascadeSpec) AuditLogCascade { return AuditLogCascade{core: s.core, spec: spec} }
+func (s AuditLogsService) Cascade(spec core.CascadeSpec) AuditLogCascade {
+	return AuditLogCascade{core: s.core, spec: spec}
+}
 
-func (c AuditLogCascade) Save(ctx context.Context, item AuditLog) error { return c.core.Cascade(c.spec).Save(ctx, Tables.AuditLog, item) }
+func (c AuditLogCascade) Save(ctx context.Context, item AuditLog) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.AuditLog, item)
+}
 
 type PermissionPage struct {
-	Items []Permission `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []Permission `json:"items"`
+	NextCursor string       `json:"nextCursor,omitempty"`
 }
 
 type PermissionMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type PermissionQuery struct { q onyx.Query }
+type PermissionQuery struct{ q core.Query }
 
-func (q PermissionQuery) Where(cond onyx.Condition) PermissionQuery { q.q = q.q.Where(cond); return q }
-func (q PermissionQuery) And(cond onyx.Condition) PermissionQuery { q.q = q.q.And(cond); return q }
-func (q PermissionQuery) Or(cond onyx.Condition) PermissionQuery { q.q = q.q.Or(cond); return q }
-func (q PermissionQuery) Resolve(resolvers ...string) PermissionQuery { q.q = q.q.Resolve(resolvers...); return q }
+func (q PermissionQuery) Where(cond core.Condition) PermissionQuery { q.q = q.q.Where(cond); return q }
+func (q PermissionQuery) And(cond core.Condition) PermissionQuery   { q.q = q.q.And(cond); return q }
+func (q PermissionQuery) Or(cond core.Condition) PermissionQuery    { q.q = q.q.Or(cond); return q }
+func (q PermissionQuery) Resolve(resolvers ...string) PermissionQuery {
+	q.q = q.q.Resolve(resolvers...)
+	return q
+}
 func (q PermissionQuery) OrderBy(field string, asc bool) PermissionQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
 	return q
 }
 func (q PermissionQuery) Limit(n int) PermissionQuery { q.q = q.q.Limit(n); return q }
-func (q PermissionQuery) Select(fields ...string) PermissionQuery { q.q = q.q.Select(fields...); return q }
-func (q PermissionQuery) GroupBy(fields ...string) PermissionQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q PermissionQuery) SetUpdates(updates map[string]any) PermissionQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q PermissionQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q PermissionQuery) Select(fields ...string) PermissionQuery {
+	q.q = q.q.Select(fields...)
+	return q
+}
+func (q PermissionQuery) GroupBy(fields ...string) PermissionQuery {
+	q.q = q.q.GroupBy(fields...)
+	return q
+}
+func (q PermissionQuery) SetUpdates(updates map[string]any) PermissionQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q PermissionQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q PermissionQuery) List(ctx context.Context) ([]Permission, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []Permission
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -178,7 +220,7 @@ func (q PermissionQuery) List(ctx context.Context) ([]Permission, error) {
 }
 
 func (q PermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -187,7 +229,7 @@ func (q PermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error)
 }
 
 func (q PermissionQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -221,20 +263,29 @@ func (c Client) ListPermissions() PermissionQuery {
 	return PermissionQuery{q: c.core.From(Tables.Permission)}
 }
 
-type PermissionDelete struct { q onyx.Query; ctx context.Context }
+type PermissionDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d PermissionDelete) Where(cond onyx.Condition) PermissionDelete { d.q = d.q.Where(cond); return d }
-func (d PermissionDelete) And(cond onyx.Condition) PermissionDelete { d.q = d.q.And(cond); return d }
-func (d PermissionDelete) Or(cond onyx.Condition) PermissionDelete { d.q = d.q.Or(cond); return d }
-func (d PermissionDelete) Resolve(resolvers ...string) PermissionDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d PermissionDelete) Where(cond core.Condition) PermissionDelete {
+	d.q = d.q.Where(cond)
+	return d
+}
+func (d PermissionDelete) And(cond core.Condition) PermissionDelete { d.q = d.q.And(cond); return d }
+func (d PermissionDelete) Or(cond core.Condition) PermissionDelete  { d.q = d.q.Or(cond); return d }
+func (d PermissionDelete) Resolve(resolvers ...string) PermissionDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d PermissionDelete) Limit(n int) PermissionDelete { d.q = d.q.Limit(n); return d }
-func (d PermissionDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d PermissionDelete) Delete() (int, error)         { return d.q.Delete(d.ctx) }
 
 func (c Client) DeletePermissions(ctx context.Context) PermissionDelete {
 	return PermissionDelete{q: c.core.From(Tables.Permission), ctx: ctx}
 }
 
-func (c Client) SavePermission(ctx context.Context, item Permission, cascades ...onyx.CascadeSpec) (Permission, error) {
+func (c Client) SavePermission(ctx context.Context, item Permission, cascades ...core.CascadeSpec) (Permission, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -262,43 +313,57 @@ func (c Client) DeletePermission(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type PermissionsService struct { core onyx.Client }
+type PermissionsService struct{ core core.Client }
 
 func (c Client) Permissions() PermissionsService { return PermissionsService{core: c.core} }
 
-type PermissionCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type PermissionCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s PermissionsService) Cascade(spec onyx.CascadeSpec) PermissionCascade { return PermissionCascade{core: s.core, spec: spec} }
+func (s PermissionsService) Cascade(spec core.CascadeSpec) PermissionCascade {
+	return PermissionCascade{core: s.core, spec: spec}
+}
 
-func (c PermissionCascade) Save(ctx context.Context, item Permission) error { return c.core.Cascade(c.spec).Save(ctx, Tables.Permission, item) }
+func (c PermissionCascade) Save(ctx context.Context, item Permission) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.Permission, item)
+}
 
 type RolePage struct {
-	Items []Role `json:"items"`
+	Items      []Role `json:"items"`
 	NextCursor string `json:"nextCursor,omitempty"`
 }
 
 type RoleMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type RoleQuery struct { q onyx.Query }
+type RoleQuery struct{ q core.Query }
 
-func (q RoleQuery) Where(cond onyx.Condition) RoleQuery { q.q = q.q.Where(cond); return q }
-func (q RoleQuery) And(cond onyx.Condition) RoleQuery { q.q = q.q.And(cond); return q }
-func (q RoleQuery) Or(cond onyx.Condition) RoleQuery { q.q = q.q.Or(cond); return q }
+func (q RoleQuery) Where(cond core.Condition) RoleQuery   { q.q = q.q.Where(cond); return q }
+func (q RoleQuery) And(cond core.Condition) RoleQuery     { q.q = q.q.And(cond); return q }
+func (q RoleQuery) Or(cond core.Condition) RoleQuery      { q.q = q.q.Or(cond); return q }
 func (q RoleQuery) Resolve(resolvers ...string) RoleQuery { q.q = q.q.Resolve(resolvers...); return q }
 func (q RoleQuery) OrderBy(field string, asc bool) RoleQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
 	return q
 }
-func (q RoleQuery) Limit(n int) RoleQuery { q.q = q.q.Limit(n); return q }
-func (q RoleQuery) Select(fields ...string) RoleQuery { q.q = q.q.Select(fields...); return q }
+func (q RoleQuery) Limit(n int) RoleQuery              { q.q = q.q.Limit(n); return q }
+func (q RoleQuery) Select(fields ...string) RoleQuery  { q.q = q.q.Select(fields...); return q }
 func (q RoleQuery) GroupBy(fields ...string) RoleQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q RoleQuery) SetUpdates(updates map[string]any) RoleQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q RoleQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q RoleQuery) SetUpdates(updates map[string]any) RoleQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q RoleQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q RoleQuery) List(ctx context.Context) ([]Role, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []Role
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -307,7 +372,7 @@ func (q RoleQuery) List(ctx context.Context) ([]Role, error) {
 }
 
 func (q RoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -316,7 +381,7 @@ func (q RoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q RoleQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -350,20 +415,26 @@ func (c Client) ListRoles() RoleQuery {
 	return RoleQuery{q: c.core.From(Tables.Role)}
 }
 
-type RoleDelete struct { q onyx.Query; ctx context.Context }
+type RoleDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d RoleDelete) Where(cond onyx.Condition) RoleDelete { d.q = d.q.Where(cond); return d }
-func (d RoleDelete) And(cond onyx.Condition) RoleDelete { d.q = d.q.And(cond); return d }
-func (d RoleDelete) Or(cond onyx.Condition) RoleDelete { d.q = d.q.Or(cond); return d }
-func (d RoleDelete) Resolve(resolvers ...string) RoleDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d RoleDelete) Where(cond core.Condition) RoleDelete { d.q = d.q.Where(cond); return d }
+func (d RoleDelete) And(cond core.Condition) RoleDelete   { d.q = d.q.And(cond); return d }
+func (d RoleDelete) Or(cond core.Condition) RoleDelete    { d.q = d.q.Or(cond); return d }
+func (d RoleDelete) Resolve(resolvers ...string) RoleDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d RoleDelete) Limit(n int) RoleDelete { d.q = d.q.Limit(n); return d }
-func (d RoleDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d RoleDelete) Delete() (int, error)   { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteRoles(ctx context.Context) RoleDelete {
 	return RoleDelete{q: c.core.From(Tables.Role), ctx: ctx}
 }
 
-func (c Client) SaveRole(ctx context.Context, item Role, cascades ...onyx.CascadeSpec) (Role, error) {
+func (c Client) SaveRole(ctx context.Context, item Role, cascades ...core.CascadeSpec) (Role, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -391,43 +462,77 @@ func (c Client) DeleteRole(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type RolesService struct { core onyx.Client }
+type RolesService struct{ core core.Client }
 
 func (c Client) Roles() RolesService { return RolesService{core: c.core} }
 
-type RoleCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type RoleCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s RolesService) Cascade(spec onyx.CascadeSpec) RoleCascade { return RoleCascade{core: s.core, spec: spec} }
+func (s RolesService) Cascade(spec core.CascadeSpec) RoleCascade {
+	return RoleCascade{core: s.core, spec: spec}
+}
 
-func (c RoleCascade) Save(ctx context.Context, item Role) error { return c.core.Cascade(c.spec).Save(ctx, Tables.Role, item) }
+func (c RoleCascade) Save(ctx context.Context, item Role) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.Role, item)
+}
 
 type RolePermissionPage struct {
-	Items []RolePermission `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []RolePermission `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
 type RolePermissionMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type RolePermissionQuery struct { q onyx.Query }
+type RolePermissionQuery struct{ q core.Query }
 
-func (q RolePermissionQuery) Where(cond onyx.Condition) RolePermissionQuery { q.q = q.q.Where(cond); return q }
-func (q RolePermissionQuery) And(cond onyx.Condition) RolePermissionQuery { q.q = q.q.And(cond); return q }
-func (q RolePermissionQuery) Or(cond onyx.Condition) RolePermissionQuery { q.q = q.q.Or(cond); return q }
-func (q RolePermissionQuery) Resolve(resolvers ...string) RolePermissionQuery { q.q = q.q.Resolve(resolvers...); return q }
+func (q RolePermissionQuery) Where(cond core.Condition) RolePermissionQuery {
+	q.q = q.q.Where(cond)
+	return q
+}
+func (q RolePermissionQuery) And(cond core.Condition) RolePermissionQuery {
+	q.q = q.q.And(cond)
+	return q
+}
+func (q RolePermissionQuery) Or(cond core.Condition) RolePermissionQuery {
+	q.q = q.q.Or(cond)
+	return q
+}
+func (q RolePermissionQuery) Resolve(resolvers ...string) RolePermissionQuery {
+	q.q = q.q.Resolve(resolvers...)
+	return q
+}
 func (q RolePermissionQuery) OrderBy(field string, asc bool) RolePermissionQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
 	return q
 }
 func (q RolePermissionQuery) Limit(n int) RolePermissionQuery { q.q = q.q.Limit(n); return q }
-func (q RolePermissionQuery) Select(fields ...string) RolePermissionQuery { q.q = q.q.Select(fields...); return q }
-func (q RolePermissionQuery) GroupBy(fields ...string) RolePermissionQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q RolePermissionQuery) SetUpdates(updates map[string]any) RolePermissionQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q RolePermissionQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q RolePermissionQuery) Select(fields ...string) RolePermissionQuery {
+	q.q = q.q.Select(fields...)
+	return q
+}
+func (q RolePermissionQuery) GroupBy(fields ...string) RolePermissionQuery {
+	q.q = q.q.GroupBy(fields...)
+	return q
+}
+func (q RolePermissionQuery) SetUpdates(updates map[string]any) RolePermissionQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q RolePermissionQuery) Stream(ctx context.Context) (core.Iterator, error) {
+	return q.q.Stream(ctx)
+}
 func (q RolePermissionQuery) List(ctx context.Context) ([]RolePermission, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []RolePermission
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -436,7 +541,7 @@ func (q RolePermissionQuery) List(ctx context.Context) ([]RolePermission, error)
 }
 
 func (q RolePermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -445,7 +550,7 @@ func (q RolePermissionQuery) ListMaps(ctx context.Context) ([]map[string]any, er
 }
 
 func (q RolePermissionQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -479,20 +584,35 @@ func (c Client) ListRolePermissions() RolePermissionQuery {
 	return RolePermissionQuery{q: c.core.From(Tables.RolePermission)}
 }
 
-type RolePermissionDelete struct { q onyx.Query; ctx context.Context }
+type RolePermissionDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d RolePermissionDelete) Where(cond onyx.Condition) RolePermissionDelete { d.q = d.q.Where(cond); return d }
-func (d RolePermissionDelete) And(cond onyx.Condition) RolePermissionDelete { d.q = d.q.And(cond); return d }
-func (d RolePermissionDelete) Or(cond onyx.Condition) RolePermissionDelete { d.q = d.q.Or(cond); return d }
-func (d RolePermissionDelete) Resolve(resolvers ...string) RolePermissionDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d RolePermissionDelete) Where(cond core.Condition) RolePermissionDelete {
+	d.q = d.q.Where(cond)
+	return d
+}
+func (d RolePermissionDelete) And(cond core.Condition) RolePermissionDelete {
+	d.q = d.q.And(cond)
+	return d
+}
+func (d RolePermissionDelete) Or(cond core.Condition) RolePermissionDelete {
+	d.q = d.q.Or(cond)
+	return d
+}
+func (d RolePermissionDelete) Resolve(resolvers ...string) RolePermissionDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d RolePermissionDelete) Limit(n int) RolePermissionDelete { d.q = d.q.Limit(n); return d }
-func (d RolePermissionDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d RolePermissionDelete) Delete() (int, error)             { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteRolePermissions(ctx context.Context) RolePermissionDelete {
 	return RolePermissionDelete{q: c.core.From(Tables.RolePermission), ctx: ctx}
 }
 
-func (c Client) SaveRolePermission(ctx context.Context, item RolePermission, cascades ...onyx.CascadeSpec) (RolePermission, error) {
+func (c Client) SaveRolePermission(ctx context.Context, item RolePermission, cascades ...core.CascadeSpec) (RolePermission, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -520,43 +640,57 @@ func (c Client) DeleteRolePermission(ctx context.Context, id string) (int, error
 	return 1, nil
 }
 
-type RolePermissionsService struct { core onyx.Client }
+type RolePermissionsService struct{ core core.Client }
 
 func (c Client) RolePermissions() RolePermissionsService { return RolePermissionsService{core: c.core} }
 
-type RolePermissionCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type RolePermissionCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s RolePermissionsService) Cascade(spec onyx.CascadeSpec) RolePermissionCascade { return RolePermissionCascade{core: s.core, spec: spec} }
+func (s RolePermissionsService) Cascade(spec core.CascadeSpec) RolePermissionCascade {
+	return RolePermissionCascade{core: s.core, spec: spec}
+}
 
-func (c RolePermissionCascade) Save(ctx context.Context, item RolePermission) error { return c.core.Cascade(c.spec).Save(ctx, Tables.RolePermission, item) }
+func (c RolePermissionCascade) Save(ctx context.Context, item RolePermission) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.RolePermission, item)
+}
 
 type UserPage struct {
-	Items []User `json:"items"`
+	Items      []User `json:"items"`
 	NextCursor string `json:"nextCursor,omitempty"`
 }
 
 type UserMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UserQuery struct { q onyx.Query }
+type UserQuery struct{ q core.Query }
 
-func (q UserQuery) Where(cond onyx.Condition) UserQuery { q.q = q.q.Where(cond); return q }
-func (q UserQuery) And(cond onyx.Condition) UserQuery { q.q = q.q.And(cond); return q }
-func (q UserQuery) Or(cond onyx.Condition) UserQuery { q.q = q.q.Or(cond); return q }
+func (q UserQuery) Where(cond core.Condition) UserQuery   { q.q = q.q.Where(cond); return q }
+func (q UserQuery) And(cond core.Condition) UserQuery     { q.q = q.q.And(cond); return q }
+func (q UserQuery) Or(cond core.Condition) UserQuery      { q.q = q.q.Or(cond); return q }
 func (q UserQuery) Resolve(resolvers ...string) UserQuery { q.q = q.q.Resolve(resolvers...); return q }
 func (q UserQuery) OrderBy(field string, asc bool) UserQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
 	return q
 }
-func (q UserQuery) Limit(n int) UserQuery { q.q = q.q.Limit(n); return q }
-func (q UserQuery) Select(fields ...string) UserQuery { q.q = q.q.Select(fields...); return q }
+func (q UserQuery) Limit(n int) UserQuery              { q.q = q.q.Limit(n); return q }
+func (q UserQuery) Select(fields ...string) UserQuery  { q.q = q.q.Select(fields...); return q }
 func (q UserQuery) GroupBy(fields ...string) UserQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q UserQuery) SetUpdates(updates map[string]any) UserQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q UserQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q UserQuery) SetUpdates(updates map[string]any) UserQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q UserQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserQuery) List(ctx context.Context) ([]User, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []User
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -565,7 +699,7 @@ func (q UserQuery) List(ctx context.Context) ([]User, error) {
 }
 
 func (q UserQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -574,7 +708,7 @@ func (q UserQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q UserQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -608,20 +742,26 @@ func (c Client) ListUsers() UserQuery {
 	return UserQuery{q: c.core.From(Tables.User)}
 }
 
-type UserDelete struct { q onyx.Query; ctx context.Context }
+type UserDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d UserDelete) Where(cond onyx.Condition) UserDelete { d.q = d.q.Where(cond); return d }
-func (d UserDelete) And(cond onyx.Condition) UserDelete { d.q = d.q.And(cond); return d }
-func (d UserDelete) Or(cond onyx.Condition) UserDelete { d.q = d.q.Or(cond); return d }
-func (d UserDelete) Resolve(resolvers ...string) UserDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d UserDelete) Where(cond core.Condition) UserDelete { d.q = d.q.Where(cond); return d }
+func (d UserDelete) And(cond core.Condition) UserDelete   { d.q = d.q.And(cond); return d }
+func (d UserDelete) Or(cond core.Condition) UserDelete    { d.q = d.q.Or(cond); return d }
+func (d UserDelete) Resolve(resolvers ...string) UserDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d UserDelete) Limit(n int) UserDelete { d.q = d.q.Limit(n); return d }
-func (d UserDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d UserDelete) Delete() (int, error)   { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteUsers(ctx context.Context) UserDelete {
 	return UserDelete{q: c.core.From(Tables.User), ctx: ctx}
 }
 
-func (c Client) SaveUser(ctx context.Context, item User, cascades ...onyx.CascadeSpec) (User, error) {
+func (c Client) SaveUser(ctx context.Context, item User, cascades ...core.CascadeSpec) (User, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -649,43 +789,69 @@ func (c Client) DeleteUser(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type UsersService struct { core onyx.Client }
+type UsersService struct{ core core.Client }
 
 func (c Client) Users() UsersService { return UsersService{core: c.core} }
 
-type UserCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type UserCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s UsersService) Cascade(spec onyx.CascadeSpec) UserCascade { return UserCascade{core: s.core, spec: spec} }
+func (s UsersService) Cascade(spec core.CascadeSpec) UserCascade {
+	return UserCascade{core: s.core, spec: spec}
+}
 
-func (c UserCascade) Save(ctx context.Context, item User) error { return c.core.Cascade(c.spec).Save(ctx, Tables.User, item) }
+func (c UserCascade) Save(ctx context.Context, item User) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.User, item)
+}
 
 type UserProfilePage struct {
-	Items []UserProfile `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []UserProfile `json:"items"`
+	NextCursor string        `json:"nextCursor,omitempty"`
 }
 
 type UserProfileMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UserProfileQuery struct { q onyx.Query }
+type UserProfileQuery struct{ q core.Query }
 
-func (q UserProfileQuery) Where(cond onyx.Condition) UserProfileQuery { q.q = q.q.Where(cond); return q }
-func (q UserProfileQuery) And(cond onyx.Condition) UserProfileQuery { q.q = q.q.And(cond); return q }
-func (q UserProfileQuery) Or(cond onyx.Condition) UserProfileQuery { q.q = q.q.Or(cond); return q }
-func (q UserProfileQuery) Resolve(resolvers ...string) UserProfileQuery { q.q = q.q.Resolve(resolvers...); return q }
+func (q UserProfileQuery) Where(cond core.Condition) UserProfileQuery {
+	q.q = q.q.Where(cond)
+	return q
+}
+func (q UserProfileQuery) And(cond core.Condition) UserProfileQuery { q.q = q.q.And(cond); return q }
+func (q UserProfileQuery) Or(cond core.Condition) UserProfileQuery  { q.q = q.q.Or(cond); return q }
+func (q UserProfileQuery) Resolve(resolvers ...string) UserProfileQuery {
+	q.q = q.q.Resolve(resolvers...)
+	return q
+}
 func (q UserProfileQuery) OrderBy(field string, asc bool) UserProfileQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
 	return q
 }
 func (q UserProfileQuery) Limit(n int) UserProfileQuery { q.q = q.q.Limit(n); return q }
-func (q UserProfileQuery) Select(fields ...string) UserProfileQuery { q.q = q.q.Select(fields...); return q }
-func (q UserProfileQuery) GroupBy(fields ...string) UserProfileQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q UserProfileQuery) SetUpdates(updates map[string]any) UserProfileQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q UserProfileQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q UserProfileQuery) Select(fields ...string) UserProfileQuery {
+	q.q = q.q.Select(fields...)
+	return q
+}
+func (q UserProfileQuery) GroupBy(fields ...string) UserProfileQuery {
+	q.q = q.q.GroupBy(fields...)
+	return q
+}
+func (q UserProfileQuery) SetUpdates(updates map[string]any) UserProfileQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q UserProfileQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserProfileQuery) List(ctx context.Context) ([]UserProfile, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []UserProfile
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -694,7 +860,7 @@ func (q UserProfileQuery) List(ctx context.Context) ([]UserProfile, error) {
 }
 
 func (q UserProfileQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -703,7 +869,7 @@ func (q UserProfileQuery) ListMaps(ctx context.Context) ([]map[string]any, error
 }
 
 func (q UserProfileQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -737,20 +903,29 @@ func (c Client) ListUserProfiles() UserProfileQuery {
 	return UserProfileQuery{q: c.core.From(Tables.UserProfile)}
 }
 
-type UserProfileDelete struct { q onyx.Query; ctx context.Context }
+type UserProfileDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d UserProfileDelete) Where(cond onyx.Condition) UserProfileDelete { d.q = d.q.Where(cond); return d }
-func (d UserProfileDelete) And(cond onyx.Condition) UserProfileDelete { d.q = d.q.And(cond); return d }
-func (d UserProfileDelete) Or(cond onyx.Condition) UserProfileDelete { d.q = d.q.Or(cond); return d }
-func (d UserProfileDelete) Resolve(resolvers ...string) UserProfileDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d UserProfileDelete) Where(cond core.Condition) UserProfileDelete {
+	d.q = d.q.Where(cond)
+	return d
+}
+func (d UserProfileDelete) And(cond core.Condition) UserProfileDelete { d.q = d.q.And(cond); return d }
+func (d UserProfileDelete) Or(cond core.Condition) UserProfileDelete  { d.q = d.q.Or(cond); return d }
+func (d UserProfileDelete) Resolve(resolvers ...string) UserProfileDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d UserProfileDelete) Limit(n int) UserProfileDelete { d.q = d.q.Limit(n); return d }
-func (d UserProfileDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d UserProfileDelete) Delete() (int, error)          { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteUserProfiles(ctx context.Context) UserProfileDelete {
 	return UserProfileDelete{q: c.core.From(Tables.UserProfile), ctx: ctx}
 }
 
-func (c Client) SaveUserProfile(ctx context.Context, item UserProfile, cascades ...onyx.CascadeSpec) (UserProfile, error) {
+func (c Client) SaveUserProfile(ctx context.Context, item UserProfile, cascades ...core.CascadeSpec) (UserProfile, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -778,43 +953,63 @@ func (c Client) DeleteUserProfile(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type UserProfilesService struct { core onyx.Client }
+type UserProfilesService struct{ core core.Client }
 
 func (c Client) UserProfiles() UserProfilesService { return UserProfilesService{core: c.core} }
 
-type UserProfileCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type UserProfileCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s UserProfilesService) Cascade(spec onyx.CascadeSpec) UserProfileCascade { return UserProfileCascade{core: s.core, spec: spec} }
+func (s UserProfilesService) Cascade(spec core.CascadeSpec) UserProfileCascade {
+	return UserProfileCascade{core: s.core, spec: spec}
+}
 
-func (c UserProfileCascade) Save(ctx context.Context, item UserProfile) error { return c.core.Cascade(c.spec).Save(ctx, Tables.UserProfile, item) }
+func (c UserProfileCascade) Save(ctx context.Context, item UserProfile) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.UserProfile, item)
+}
 
 type UserRolePage struct {
-	Items []UserRole `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []UserRole `json:"items"`
+	NextCursor string     `json:"nextCursor,omitempty"`
 }
 
 type UserRoleMapPage struct {
-	Items []map[string]any `json:"items"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Items      []map[string]any `json:"items"`
+	NextCursor string           `json:"nextCursor,omitempty"`
 }
 
-type UserRoleQuery struct { q onyx.Query }
+type UserRoleQuery struct{ q core.Query }
 
-func (q UserRoleQuery) Where(cond onyx.Condition) UserRoleQuery { q.q = q.q.Where(cond); return q }
-func (q UserRoleQuery) And(cond onyx.Condition) UserRoleQuery { q.q = q.q.And(cond); return q }
-func (q UserRoleQuery) Or(cond onyx.Condition) UserRoleQuery { q.q = q.q.Or(cond); return q }
-func (q UserRoleQuery) Resolve(resolvers ...string) UserRoleQuery { q.q = q.q.Resolve(resolvers...); return q }
-func (q UserRoleQuery) OrderBy(field string, asc bool) UserRoleQuery {
-	if asc { q.q = q.q.OrderBy(onyx.Asc(field)) } else { q.q = q.q.OrderBy(onyx.Desc(field)) }
+func (q UserRoleQuery) Where(cond core.Condition) UserRoleQuery { q.q = q.q.Where(cond); return q }
+func (q UserRoleQuery) And(cond core.Condition) UserRoleQuery   { q.q = q.q.And(cond); return q }
+func (q UserRoleQuery) Or(cond core.Condition) UserRoleQuery    { q.q = q.q.Or(cond); return q }
+func (q UserRoleQuery) Resolve(resolvers ...string) UserRoleQuery {
+	q.q = q.q.Resolve(resolvers...)
 	return q
 }
-func (q UserRoleQuery) Limit(n int) UserRoleQuery { q.q = q.q.Limit(n); return q }
+func (q UserRoleQuery) OrderBy(field string, asc bool) UserRoleQuery {
+	if asc {
+		q.q = q.q.OrderBy(core.Asc(field))
+	} else {
+		q.q = q.q.OrderBy(core.Desc(field))
+	}
+	return q
+}
+func (q UserRoleQuery) Limit(n int) UserRoleQuery             { q.q = q.q.Limit(n); return q }
 func (q UserRoleQuery) Select(fields ...string) UserRoleQuery { q.q = q.q.Select(fields...); return q }
-func (q UserRoleQuery) GroupBy(fields ...string) UserRoleQuery { q.q = q.q.GroupBy(fields...); return q }
-func (q UserRoleQuery) SetUpdates(updates map[string]any) UserRoleQuery { q.q = q.q.SetUpdates(updates); return q }
-func (q UserRoleQuery) Stream(ctx context.Context) (onyx.Iterator, error) { return q.q.Stream(ctx) }
+func (q UserRoleQuery) GroupBy(fields ...string) UserRoleQuery {
+	q.q = q.q.GroupBy(fields...)
+	return q
+}
+func (q UserRoleQuery) SetUpdates(updates map[string]any) UserRoleQuery {
+	q.q = q.q.SetUpdates(updates)
+	return q
+}
+func (q UserRoleQuery) Stream(ctx context.Context) (core.Iterator, error) { return q.q.Stream(ctx) }
 func (q UserRoleQuery) List(ctx context.Context) ([]UserRole, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []UserRole
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -823,7 +1018,7 @@ func (q UserRoleQuery) List(ctx context.Context) ([]UserRole, error) {
 }
 
 func (q UserRoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -832,7 +1027,7 @@ func (q UserRoleQuery) ListMaps(ctx context.Context) ([]map[string]any, error) {
 }
 
 func (q UserRoleQuery) ListAggregates(ctx context.Context) ([]map[string]any, error) {
-	res := onyx.List(ctx, q.q)
+	res := core.List(ctx, q.q)
 	var out []map[string]any
 	if err := res.Decode(&out); err != nil {
 		return nil, err
@@ -866,20 +1061,26 @@ func (c Client) ListUserRoles() UserRoleQuery {
 	return UserRoleQuery{q: c.core.From(Tables.UserRole)}
 }
 
-type UserRoleDelete struct { q onyx.Query; ctx context.Context }
+type UserRoleDelete struct {
+	q   core.Query
+	ctx context.Context
+}
 
-func (d UserRoleDelete) Where(cond onyx.Condition) UserRoleDelete { d.q = d.q.Where(cond); return d }
-func (d UserRoleDelete) And(cond onyx.Condition) UserRoleDelete { d.q = d.q.And(cond); return d }
-func (d UserRoleDelete) Or(cond onyx.Condition) UserRoleDelete { d.q = d.q.Or(cond); return d }
-func (d UserRoleDelete) Resolve(resolvers ...string) UserRoleDelete { d.q = d.q.Resolve(resolvers...); return d }
+func (d UserRoleDelete) Where(cond core.Condition) UserRoleDelete { d.q = d.q.Where(cond); return d }
+func (d UserRoleDelete) And(cond core.Condition) UserRoleDelete   { d.q = d.q.And(cond); return d }
+func (d UserRoleDelete) Or(cond core.Condition) UserRoleDelete    { d.q = d.q.Or(cond); return d }
+func (d UserRoleDelete) Resolve(resolvers ...string) UserRoleDelete {
+	d.q = d.q.Resolve(resolvers...)
+	return d
+}
 func (d UserRoleDelete) Limit(n int) UserRoleDelete { d.q = d.q.Limit(n); return d }
-func (d UserRoleDelete) Delete() (int, error) { return d.q.Delete(d.ctx) }
+func (d UserRoleDelete) Delete() (int, error)       { return d.q.Delete(d.ctx) }
 
 func (c Client) DeleteUserRoles(ctx context.Context) UserRoleDelete {
 	return UserRoleDelete{q: c.core.From(Tables.UserRole), ctx: ctx}
 }
 
-func (c Client) SaveUserRole(ctx context.Context, item UserRole, cascades ...onyx.CascadeSpec) (UserRole, error) {
+func (c Client) SaveUserRole(ctx context.Context, item UserRole, cascades ...core.CascadeSpec) (UserRole, error) {
 	relationships := make([]string, 0, len(cascades))
 	for _, spec := range cascades {
 		if spec != nil {
@@ -907,15 +1108,22 @@ func (c Client) DeleteUserRole(ctx context.Context, id string) (int, error) {
 	return 1, nil
 }
 
-type UserRolesService struct { core onyx.Client }
+type UserRolesService struct{ core core.Client }
 
 func (c Client) UserRoles() UserRolesService { return UserRolesService{core: c.core} }
 
-type UserRoleCascade struct { core onyx.Client; spec onyx.CascadeSpec }
+type UserRoleCascade struct {
+	core core.Client
+	spec core.CascadeSpec
+}
 
-func (s UserRolesService) Cascade(spec onyx.CascadeSpec) UserRoleCascade { return UserRoleCascade{core: s.core, spec: spec} }
+func (s UserRolesService) Cascade(spec core.CascadeSpec) UserRoleCascade {
+	return UserRoleCascade{core: s.core, spec: spec}
+}
 
-func (c UserRoleCascade) Save(ctx context.Context, item UserRole) error { return c.core.Cascade(c.spec).Save(ctx, Tables.UserRole, item) }
+func (c UserRoleCascade) Save(ctx context.Context, item UserRole) error {
+	return c.core.Cascade(c.spec).Save(ctx, Tables.UserRole, item)
+}
 
 func decodeSaved(saved map[string]any, out any) error {
 	b, err := json.Marshal(saved)
@@ -933,21 +1141,32 @@ func decodeList(items []map[string]any, out any) error {
 	return json.Unmarshal(b, out)
 }
 
-type DocumentsClient struct { core onyx.DocumentClient }
+type DocumentsClient struct{ core core.DocumentClient }
 
 func (c Client) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }
 
-func (d DocumentsClient) List(ctx context.Context) ([]onyx.Document, error) { return d.core.List(ctx) }
-func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) { return d.core.Get(ctx, id) }
-func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) { return d.core.Save(ctx, doc) }
+func (d DocumentsClient) List(ctx context.Context) ([]core.Document, error) { return d.core.List(ctx) }
+func (d DocumentsClient) Get(ctx context.Context, id string) (core.Document, error) {
+	return d.core.Get(ctx, id)
+}
+func (d DocumentsClient) Save(ctx context.Context, doc core.Document) (core.Document, error) {
+	return d.core.Save(ctx, doc)
+}
 func (d DocumentsClient) Delete(ctx context.Context, id string) error { return d.core.Delete(ctx, id) }
 
-type SecretsClient struct { core onyx.Client }
+type SecretsClient struct{ core core.Client }
 
 func (c Client) Secrets() SecretsClient { return SecretsClient{core: c.core} }
 
-func (s SecretsClient) List(ctx context.Context) ([]onyx.Secret, error) { return s.core.ListSecrets(ctx) }
-func (s SecretsClient) Get(ctx context.Context, key string) (onyx.Secret, error) { return s.core.GetSecret(ctx, key) }
-func (s SecretsClient) Set(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) { return s.core.PutSecret(ctx, secret) }
-func (s SecretsClient) Delete(ctx context.Context, key string) error { return s.core.DeleteSecret(ctx, key) }
-
+func (s SecretsClient) List(ctx context.Context) ([]core.Secret, error) {
+	return s.core.ListSecrets(ctx)
+}
+func (s SecretsClient) Get(ctx context.Context, key string) (core.Secret, error) {
+	return s.core.GetSecret(ctx, key)
+}
+func (s SecretsClient) Set(ctx context.Context, secret core.Secret) (core.Secret, error) {
+	return s.core.PutSecret(ctx, secret)
+}
+func (s SecretsClient) Delete(ctx context.Context, key string) error {
+	return s.core.DeleteSecret(ctx, key)
+}

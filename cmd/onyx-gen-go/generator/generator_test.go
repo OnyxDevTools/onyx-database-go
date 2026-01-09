@@ -86,7 +86,7 @@ func TestRunLoadsSchema(t *testing.T) {
 	if !strings.Contains(string(clientContent), "type Client struct") || !strings.Contains(string(clientContent), "ListUsers") {
 		t.Fatalf("expected client helpers, got:\n%s", string(clientContent))
 	}
-	if !strings.Contains(string(clientContent), "SaveUser(ctx context.Context, item User, cascades ...onyx.CascadeSpec) (User, error)") {
+	if !strings.Contains(string(clientContent), "SaveUser(ctx context.Context, item User, cascades ...core.CascadeSpec) (User, error)") {
 		t.Fatalf("expected typed save helper, got:\n%s", string(clientContent))
 	}
 	if !strings.Contains(string(clientContent), "DeleteUser(ctx context.Context, id string) (int, error)") {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -17,11 +16,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
+	db := core.Typed()
 
 	// Seed a record to ensure the delete has a target.
 	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
-	seed := onyxclient.User{
+	seed := onyx.User{
 		Id:        "obsolete_user_1",
 		Username:  "obsolete",
 		Email:     "obsolete@example.com",

@@ -15,13 +15,13 @@ type FieldDiff struct {
 
 // TableDiff captures changes within a table.
 type TableDiff struct {
-	Name             string           `json:"name"`
-	AddedFields      []contract.Field `json:"addedFields,omitempty"`
-	RemovedFields    []contract.Field `json:"removedFields,omitempty"`
-	ModifiedFields   []FieldDiff      `json:"modifiedFields,omitempty"`
-	AddedResolvers   []string         `json:"addedResolvers,omitempty"`
-	RemovedResolvers []string         `json:"removedResolvers,omitempty"`
-	ModifiedResolvers []ResolverDiff  `json:"modifiedResolvers,omitempty"`
+	Name              string           `json:"name"`
+	AddedFields       []contract.Field `json:"addedFields,omitempty"`
+	RemovedFields     []contract.Field `json:"removedFields,omitempty"`
+	ModifiedFields    []FieldDiff      `json:"modifiedFields,omitempty"`
+	AddedResolvers    []string         `json:"addedResolvers,omitempty"`
+	RemovedResolvers  []string         `json:"removedResolvers,omitempty"`
+	ModifiedResolvers []ResolverDiff   `json:"modifiedResolvers,omitempty"`
 }
 
 // SchemaDiff reports differences between schemas.
@@ -33,9 +33,9 @@ type SchemaDiff struct {
 
 // ResolverDiff captures a resolver change.
 type ResolverDiff struct {
-	Name string             `json:"name"`
-	From contract.Resolver  `json:"from"`
-	To   contract.Resolver  `json:"to"`
+	Name string            `json:"name"`
+	From contract.Resolver `json:"from"`
+	To   contract.Resolver `json:"to"`
 }
 
 // DiffSchemas compares two schemas and reports structural differences.

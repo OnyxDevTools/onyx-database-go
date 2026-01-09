@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
@@ -24,8 +23,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	streamDB := onyxclient.NewClient(streamCore)
-	writeDB := onyxclient.NewClient(writeCore)
+	streamDB := streamCore.Typed()
+	writeDB := writeCore.Typed()
 
 	iter, err := streamDB.ListUsers().Stream(streamCtx)
 	if err != nil {
@@ -44,7 +43,7 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, err := writeDB.SaveUser(ctx, onyxclient.User{
+		_, err := writeDB.SaveUser(ctx, onyx.User{
 			Id:        "stream_user_create",
 			Username:  "create-user",
 			Email:     "create@example.com",
