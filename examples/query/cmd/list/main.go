@@ -6,19 +6,17 @@ import (
 	"log"
 
 	model "github.com/OnyxDevTools/onyx-database-go/examples/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := model.New(ctx, model.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := model.NewClient(core)
 
-	users, err := db.Users(ctx).Limit(5).List(ctx)
+	users, err := db.Users().Limit(5).List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

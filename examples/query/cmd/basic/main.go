@@ -7,19 +7,18 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 
-	users, err := db.Users(ctx).
+	users, err := db.Users().
 		Where(onyx.Eq("isActive", true)).
 		Limit(5).
 		List(ctx)

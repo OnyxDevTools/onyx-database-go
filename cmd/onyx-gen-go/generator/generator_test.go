@@ -83,17 +83,23 @@ func TestRunLoadsSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected client file, read err: %v", err)
 	}
-	if !strings.Contains(string(clientContent), "type Client struct") || !strings.Contains(string(clientContent), "Users(ctx context.Context) UsersClient") {
+	if !strings.Contains(string(clientContent), "type DB struct") || !strings.Contains(string(clientContent), "Users() UsersClient") {
 		t.Fatalf("expected client helpers, got:\n%s", string(clientContent))
 	}
-	if !strings.Contains(string(clientContent), "Save(item User, cascades ...onyx.CascadeSpec) (User, error)") {
+	if !strings.Contains(string(clientContent), "New(ctx context.Context, cfg Config) (DB, error)") {
+		t.Fatalf("expected config-based constructor, got:\n%s", string(clientContent))
+	}
+	if !strings.Contains(string(clientContent), "Save(ctx context.Context, item User, cascades ...onyx.CascadeSpec) (User, error)") {
 		t.Fatalf("expected typed save helper, got:\n%s", string(clientContent))
 	}
-	if !strings.Contains(string(clientContent), "DeleteByID(id string) error") {
+	if !strings.Contains(string(clientContent), "DeleteByID(ctx context.Context, id string) error") {
 		t.Fatalf("expected typed delete-by-id helper, got:\n%s", string(clientContent))
 	}
-	if !strings.Contains(string(clientContent), "List(ctx context.Context) ([]User, error)") {
-		t.Fatalf("expected query list helper, got:\n%s", string(clientContent))
+	if !strings.Contains(string(clientContent), "Select(fields ...string) UsersMapClient") {
+		t.Fatalf("expected select to return map client, got:\n%s", string(clientContent))
+	}
+	if !strings.Contains(string(clientContent), "List(ctx context.Context) ([]map[string]any, error)") {
+		t.Fatalf("expected map list helper, got:\n%s", string(clientContent))
 	}
 }
 

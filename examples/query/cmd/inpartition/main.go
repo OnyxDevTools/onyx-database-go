@@ -8,20 +8,19 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 
 	now := time.Now().UTC()
-	_, err = db.AuditLogs(ctx).Save(onyxclient.AuditLog{
+	_, err = db.AuditLogs().Save(ctx, onyxdb.AuditLog{
 		Id:       "audit-id-a",
 		TenantId: strPtr("tenantA"),
 		DateTime: now,
@@ -32,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = db.AuditLogs(ctx).Save(onyxclient.AuditLog{
+	_, err = db.AuditLogs().Save(ctx, onyxdb.AuditLog{
 		Id:       "audit-id-b",
 		TenantId: strPtr("tenantB"),
 		DateTime: now,
@@ -43,7 +42,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	logs, err := db.AuditLogs(ctx).
+	logs, err := db.AuditLogs().
 		Where(onyx.Eq("tenantId", "tenantA")).
 		List(ctx)
 	if err != nil {

@@ -26,7 +26,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 	schemaPath := fs.String("schema", "./onyx.schema.json", "path to the onyx.schema.json file")
 	source := fs.String("source", "file", "schema source: file or api")
 	databaseID := fs.String("database-id", "", "database id used when --source=api")
-	outPath := fs.String("out", "./onyxclient", "output directory for generated files (models.go, client.go)")
+	outPath := fs.String("out", "./onyxdb", "output directory for generated files (models.go, client.go)")
 	packageName := fs.String("package", "", "package name for generated code (defaults to output directory name)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")

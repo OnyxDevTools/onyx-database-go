@@ -7,21 +7,20 @@ import (
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	core, err := onyx.Init(ctx, onyx.Config{})
+	db, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := onyxclient.NewClient(core)
 
 	// Seed a record to ensure the delete has a target.
 	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
-	seed := onyxclient.User{
+	seed := onyxdb.User{
 		Id:        "obsolete_user_1",
 		Username:  "obsolete",
 		Email:     "obsolete@example.com",
@@ -29,13 +28,13 @@ func main() {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	_, err = db.Users(ctx).Save(seed)
+	_, err = db.Users().Save(ctx, seed)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Match the TS example: delete users where username == "obsolete".
-	deletedCount, err := db.Users(ctx).Where(onyx.Eq("username", "obsolete")).Delete(ctx)
+	deletedCount, err := db.Users().Where(onyx.Eq("username", "obsolete")).Delete(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}

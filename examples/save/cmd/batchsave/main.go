@@ -7,24 +7,21 @@ import (
 	"log"
 	"time"
 
-	"github.com/OnyxDevTools/onyx-database-go/onyx"
-	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
+	"github.com/OnyxDevTools/onyx-database-go/onyxdb"
 )
 
 func main() {
 	ctx := context.Background()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	client, err := onyxdb.New(ctx, onyxdb.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	client := onyxclient.NewClient(db)
-
 	now := time.Now().UTC()
-	users := make([]onyxclient.User, 0, 5)
+	users := make([]onyxdb.User, 0, 5)
 	for i := 0; i < 5; i++ {
-		users = append(users, onyxclient.User{
+		users = append(users, onyxdb.User{
 			Id:        fmt.Sprintf("batch-user-%d", i),
 			Username:  fmt.Sprintf("Batch User %d", i),
 			Email:     fmt.Sprintf("batch%d@example.com", i),
@@ -37,7 +34,7 @@ func main() {
 	if len(users) == 0 {
 		log.Fatalf("warning: expected users to save")
 	}
-	if err := db.BatchSave(ctx, onyxclient.Tables.User, toAnySlice(users), 2); err != nil {
+	if err := client.Core().BatchSave(ctx, onyxdb.Tables.User, toAnySlice(users), 2); err != nil {
 		log.Fatal(err)
 	}
 
@@ -47,8 +44,8 @@ func main() {
 	// Fetch a small sample with a timeout so debug sessions don't hang if the network is slow.
 	listCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if fetched, err := client.Users(listCtx).Limit(5).List(listCtx); err == nil {
-		var decoded []onyxclient.User
+	if fetched, err := client.Users().Limit(5).List(listCtx); err == nil {
+		var decoded []onyxdb.User
 		if b, marshalErr := json.Marshal(fetched); marshalErr == nil {
 			_ = json.Unmarshal(b, &decoded)
 		}
