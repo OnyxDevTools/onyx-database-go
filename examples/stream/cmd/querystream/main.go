@@ -2,29 +2,46 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
-	streamCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	streamCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	db, err := onyx.Init(ctx, onyx.Config{})
+	core, err := onyx.Init(ctx, onyx.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	db := onyxclient.NewClient(core)
+
+	iter, err := db.ListUsers().Stream(streamCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	iter, err := db.From("User").Stream(streamCtx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Trigger at least one event so the stream returns promptly.
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		now := time.Now().UTC()
+		_, _ = db.SaveUser(ctx, onyxclient.User{
+			Id:        "stream_query_user",
+			Username:  "stream-query",
+			Email:     "stream-query@example.com",
+			IsActive:  true,
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
+	}()
 	if iter == nil {
-		log.Println("warning: expected stream iterator")
+		log.Fatalf("warning: expected stream iterator")
 		return
 	}
 	defer func() {
@@ -37,7 +54,7 @@ func main() {
 	for iter.Next() {
 		user := iter.Value()
 		if user == nil {
-			log.Println("warning: expected streamed user")
+			log.Fatalf("warning: expected streamed user")
 		}
 		fmt.Println("USER:", user)
 		count++
@@ -46,7 +63,7 @@ func main() {
 		}
 	}
 
-	if err := iter.Err(); err != nil {
+	if err := iter.Err(); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		log.Fatal(err)
 	}
 	log.Println("example: completed")

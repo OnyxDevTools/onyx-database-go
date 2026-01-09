@@ -105,7 +105,7 @@ func TestLoadSchemaRespectsSource(t *testing.T) {
 	if err != nil || len(fileSchema.Tables) != 1 {
 		t.Fatalf("loadSchema file err: %v schema: %+v", err, fileSchema)
 	}
-	if len(fileSchema.Tables[0].Resolvers) != 1 || fileSchema.Tables[0].Resolvers[0] != "roles" {
+	if len(fileSchema.Tables[0].Resolvers) != 1 || fileSchema.Tables[0].Resolvers[0].Name != "roles" {
 		t.Fatalf("expected resolver parsed, got %+v", fileSchema.Tables[0].Resolvers)
 	}
 

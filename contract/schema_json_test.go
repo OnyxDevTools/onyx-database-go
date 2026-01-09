@@ -27,7 +27,7 @@ func TestParseSchemaJSONTables(t *testing.T) {
 		t.Fatalf("expected id to be primary and non-nullable, got %+v", id)
 	}
 
-	if len(schema.Tables[0].Resolvers) != 1 || schema.Tables[0].Resolvers[0] != "profile" {
+	if len(schema.Tables[0].Resolvers) != 1 || schema.Tables[0].Resolvers[0].Name != "profile" {
 		t.Fatalf("expected resolver names, got %+v", schema.Tables[0].Resolvers)
 	}
 }
@@ -71,7 +71,7 @@ func TestParseSchemaJSONEntities(t *testing.T) {
 		t.Fatalf("expected primary id of type String, got %+v", id)
 	}
 
-	if len(schema.Tables[0].Resolvers) != 2 {
+	if len(schema.Tables[0].Resolvers) != 2 || schema.Tables[0].Resolvers[0].Name == "" {
 		t.Fatalf("expected resolver names, got %+v", schema.Tables[0].Resolvers)
 	}
 }

@@ -9,11 +9,18 @@ type Field struct {
 	Unique   bool   `json:"unique,omitempty"`
 }
 
+// Resolver represents a resolver definition on a table.
+type Resolver struct {
+	Name     string         `json:"name"`
+	Resolver string         `json:"resolver,omitempty"`
+	Meta     map[string]any `json:"meta,omitempty"`
+}
+
 // Table represents a database table with fields.
 type Table struct {
 	Name      string         `json:"name"`
 	Fields    []Field        `json:"fields"`
-	Resolvers []string       `json:"resolvers,omitempty"`
+	Resolvers []Resolver     `json:"resolvers,omitempty"`
 	Indexes   []Index        `json:"indexes,omitempty"`
 	Triggers  []string       `json:"triggers,omitempty"`
 	Meta      map[string]any `json:"meta,omitempty"`

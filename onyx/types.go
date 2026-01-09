@@ -17,6 +17,7 @@ type (
 	Schema         = contract.Schema
 	Table          = contract.Table
 	Field          = contract.Field
+	Resolver       = contract.Resolver
 	Document       = contract.Document
 	DocumentClient = contract.DocumentClient
 	Secret         = contract.Secret

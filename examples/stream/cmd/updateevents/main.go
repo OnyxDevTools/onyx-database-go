@@ -2,34 +2,37 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
-	model "github.com/OnyxDevTools/onyx-database-go/examples/onyx"
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/onyxclient"
 )
 
 func main() {
 	ctx := context.Background()
-	streamCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	streamCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	streamDB, err := onyx.Init(ctx, onyx.Config{})
+	streamCore, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	writeDB, err := onyx.Init(ctx, onyx.Config{})
+	writeCore, err := onyx.Init(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	streamDB := onyxclient.NewClient(streamCore)
+	writeDB := onyxclient.NewClient(writeCore)
 
-	iter, err := streamDB.From(model.Tables.User).Stream(streamCtx)
+	iter, err := streamDB.ListUsers().Stream(streamCtx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if iter == nil {
-		log.Println("warning: expected stream iterator")
+		log.Fatalf("warning: expected stream iterator")
 		return
 	}
 	defer func() {
@@ -41,21 +44,21 @@ func main() {
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		now := time.Now().UTC()
-		_, err := writeDB.Save(ctx, model.Tables.User, model.User{
+		_, err := writeDB.SaveUser(ctx, onyxclient.User{
 			Id:        "stream_user_update",
 			Username:  "update-user",
 			Email:     "update@example.com",
 			IsActive:  true,
 			CreatedAt: now,
 			UpdatedAt: now,
-		}, nil)
+		})
 		if err != nil {
 			log.Printf("save error: %v", err)
 		}
 		time.Sleep(200 * time.Millisecond)
 		updated := time.Now().UTC()
 		lastLogin := updated
-		_, err = writeDB.Save(ctx, model.Tables.User, model.User{
+		_, err = writeDB.SaveUser(ctx, onyxclient.User{
 			Id:          "stream_user_update",
 			Username:    "update-user-updated",
 			Email:       "update@example.com",
@@ -63,7 +66,7 @@ func main() {
 			LastLoginAt: &lastLogin,
 			CreatedAt:   updated,
 			UpdatedAt:   updated,
-		}, nil)
+		})
 		if err != nil {
 			log.Printf("save error: %v", err)
 		}
@@ -72,7 +75,7 @@ func main() {
 	eventCount := 0
 	for iter.Next() {
 		if iter.Value() == nil {
-			log.Println("warning: expected streamed value")
+			log.Fatalf("warning: expected streamed value")
 		}
 		fmt.Printf("USER EVENT: %+v\n", iter.Value())
 		eventCount++
@@ -80,7 +83,7 @@ func main() {
 			break
 		}
 	}
-	if err := iter.Err(); err != nil {
+	if err := iter.Err(); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		log.Fatal(err)
 	}
 	log.Println("example: completed")

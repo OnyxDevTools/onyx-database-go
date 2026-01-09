@@ -88,9 +88,9 @@ func main() {
 		log.Fatal(err)
 	}
 	if len(admins) == 0 {
-		log.Println("warning: expected admin users from resolver query")
+		log.Printf("warning: expected admin users from resolver query")
 	} else if admins[0].Roles == nil {
-		log.Println("warning: expected resolved roles")
+		log.Printf("warning: expected resolved roles")
 	}
 
 	out, _ := json.MarshalIndent(admins, "", "  ")

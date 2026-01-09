@@ -47,10 +47,10 @@ func main() {
 		log.Fatal(err)
 	}
 	if saved.Id == "" {
-		log.Println("warning: expected saved user id")
+		log.Fatalf("warning: expected saved user id")
 	}
 	if saved.Profile == nil {
-		log.Println("warning: expected saved profile")
+		log.Fatalf("warning: expected saved profile")
 	}
 	fmt.Println("Saved user with cascadeBuilder")
 	log.Println("example: completed")

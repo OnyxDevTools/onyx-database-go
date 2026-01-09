@@ -35,7 +35,7 @@ func main() {
 	}
 
 	if len(users) == 0 {
-		log.Println("warning: expected users to save")
+		log.Fatalf("warning: expected users to save")
 	}
 	if err := db.BatchSave(ctx, onyxclient.Tables.User, toAnySlice(users), 2); err != nil {
 		log.Fatal(err)

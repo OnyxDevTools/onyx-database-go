@@ -167,7 +167,14 @@ func toEntities(s contract.Schema) []schemaEntity {
 		}
 		if len(t.Resolvers) > 0 {
 			for _, r := range t.Resolvers {
-				ent.Resolvers = append(ent.Resolvers, map[string]any{"name": r})
+				entry := map[string]any{"name": r.Name}
+				if r.Resolver != "" {
+					entry["resolver"] = r.Resolver
+				}
+				if r.Meta != nil {
+					entry["meta"] = r.Meta
+				}
+				ent.Resolvers = append(ent.Resolvers, entry)
 			}
 		}
 		entities = append(entities, ent)
@@ -215,10 +222,14 @@ func schemaFromEntities(items []any) contract.Schema {
 			for _, r := range res {
 				switch rv := r.(type) {
 				case string:
-					table.Resolvers = append(table.Resolvers, rv)
+					table.Resolvers = append(table.Resolvers, contract.Resolver{Name: rv})
 				case map[string]any:
 					if name, ok := rv["name"].(string); ok {
-						table.Resolvers = append(table.Resolvers, name)
+						table.Resolvers = append(table.Resolvers, contract.Resolver{
+							Name:     name,
+							Resolver: stringValue(rv["resolver"]),
+							Meta:     mapValue(rv["meta"]),
+						})
 					}
 				}
 			}
@@ -256,10 +267,14 @@ func schemaFromTablesArray(items []any) contract.Schema {
 			for _, r := range res {
 				switch rv := r.(type) {
 				case string:
-					t.Resolvers = append(t.Resolvers, rv)
+					t.Resolvers = append(t.Resolvers, contract.Resolver{Name: rv})
 				case map[string]any:
 					if name, ok := rv["name"].(string); ok {
-						t.Resolvers = append(t.Resolvers, name)
+						t.Resolvers = append(t.Resolvers, contract.Resolver{
+							Name:     name,
+							Resolver: stringValue(rv["resolver"]),
+							Meta:     mapValue(rv["meta"]),
+						})
 					}
 				}
 			}
@@ -281,6 +296,13 @@ func boolValue(v any) bool {
 		return b
 	}
 	return false
+}
+
+func mapValue(v any) map[string]any {
+	if m, ok := v.(map[string]any); ok {
+		return m
+	}
+	return nil
 }
 
 func stripEntityText(v any) any {

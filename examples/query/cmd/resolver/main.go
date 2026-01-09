@@ -101,13 +101,13 @@ func main() {
 		log.Fatal(err)
 	}
 	if len(users) == 0 {
-		log.Println("warning: expected resolver user to be returned")
+		log.Fatalf("warning: expected resolver user to be returned")
 	} else {
 		if users[0].Profile == nil {
-			log.Println("warning: expected resolver profile")
+			log.Fatalf("warning: expected resolver profile")
 		}
 		if users[0].Roles == nil {
-			log.Println("warning: expected resolver roles")
+			log.Fatalf("warning: expected resolver roles")
 		}
 	}
 
