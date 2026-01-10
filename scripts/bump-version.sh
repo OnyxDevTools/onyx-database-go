@@ -8,6 +8,15 @@
 
 set -euo pipefail
 
+# Pin tools to the repo-local Go toolchain without mutating global shell/gvm state.
+REPO_ROOT="$(pwd)"
+GO_ROOT="/Users/cosborn/.gvm/gos/go1.22.8"
+export GOROOT="${GOROOT:-${GO_ROOT}}"
+export GOTOOLCHAIN="${GOTOOLCHAIN:-go1.22.8}"
+export GOMODCACHE="${GOMODCACHE:-${REPO_ROOT}/.cache/gomod}"
+export PATH="${REPO_ROOT}/bin:${GOROOT}/bin:${PATH}"
+mkdir -p "${GOMODCACHE}"
+
 abort() { echo "ERROR: $*" >&2; exit 1; }
 info()  { echo "==> $*"; }
 cmd()   { echo "+ $*"; "$@"; }
