@@ -1,8 +1,10 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
   push:
-    branches: ["*"]
+    branches:
+      - "**"
   pull_request:
 
 jobs:
@@ -17,6 +19,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Go vet
         run: go vet ./...
@@ -28,21 +31,24 @@ jobs:
         env:
           COVERAGE_THRESHOLD: "54.0"
         run: |
-          total=$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}' | sed 's/%//')
+          total="$(go tool cover -func=coverage.out | tail -n 1 | awk '{print $3}' | sed 's/%//')"
           echo "Total coverage is ${total}%"
-          TOTAL=$total python - <<'PY'
-import os
-import sys
 
-total = float(os.environ["TOTAL"])
-threshold = float(os.environ["COVERAGE_THRESHOLD"])
+          TOTAL_COVERAGE="${total}" python3 - <<'PY'
+          import os
+          import sys
 
-if total < threshold:
-    sys.stderr.write(f"Coverage {total:.1f}% is below the required {threshold:.1f}% minimum.\n")
-    sys.exit(1)
+          total = float(os.environ["TOTAL_COVERAGE"])
+          threshold = float(os.environ["COVERAGE_THRESHOLD"])
 
-print(f"Coverage {total:.1f}% meets the {threshold:.1f}% threshold.")
-PY
+          if total < threshold:
+              sys.stderr.write(
+                  f"Coverage {total:.1f}% is below the required {threshold:.1f}% minimum.\n"
+              )
+              sys.exit(1)
+
+          print(f"Coverage {total:.1f}% meets the {threshold:.1f}% threshold.")
+          PY
 
       - name: Upload coverage profile
         uses: actions/upload-artifact@v4
