@@ -14,14 +14,20 @@ func TestDocumentsAPI(t *testing.T) {
 		case "/data/db_test/document":
 			w.Header().Set("Content-Type", "application/json")
 			if r.Method == http.MethodPut {
-				w.Write([]byte(`{"documentId":"doc_1","data":{"foo":"bar"},"updatedAt":"now"}`))
+				if _, err := w.Write([]byte(`{"documentId":"doc_1","data":{"foo":"bar"},"updatedAt":"now"}`)); err != nil {
+					t.Fatalf("write response: %v", err)
+				}
 				return
 			}
-			w.Write([]byte(`[{"documentId":"doc_1","data":{"foo":"bar"}}]`))
+			if _, err := w.Write([]byte(`[{"documentId":"doc_1","data":{"foo":"bar"}}]`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		case "/data/db_test/document/doc_1":
 			if r.Method == http.MethodGet {
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"documentId":"doc_1","data":{"foo":"bar"}}`))
+				if _, err := w.Write([]byte(`{"documentId":"doc_1","data":{"foo":"bar"}}`)); err != nil {
+					t.Fatalf("write response: %v", err)
+				}
 			} else if r.Method == http.MethodDelete {
 				w.WriteHeader(http.StatusNoContent)
 			}
@@ -62,7 +68,9 @@ func TestDocumentClientValidationAndPreferredID(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"documentId":"doc_pref"}`))
+			if _, err := w.Write([]byte(`{"documentId":"doc_pref"}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		}
 	})
 
@@ -89,7 +97,9 @@ func TestDocumentClientValidationAndPreferredID(t *testing.T) {
 	c2 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"id":"only_id"}`))
+			if _, err := w.Write([]byte(`{"id":"only_id"}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		}
 	})
 	saved, err := c2.Documents().Save(context.Background(), contract.OnyxDocument{ID: "only_id"})
@@ -99,7 +109,9 @@ func TestDocumentClientValidationAndPreferredID(t *testing.T) {
 
 	c3 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"documentId":"trimmed"}`))
+		if _, err := w.Write([]byte(`{"documentId":"trimmed"}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 	docTrim, err := c3.Documents().Save(context.Background(), contract.OnyxDocument{DocumentID: "  trimmed  "})
 	if err != nil || docTrim.DocumentID != "trimmed" {

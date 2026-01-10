@@ -15,7 +15,9 @@ func TestDoStreamSuccess(t *testing.T) {
 		if r.Header.Get("x-onyx-key") != "k" {
 			t.Fatalf("missing signer header")
 		}
-		io.WriteString(w, "line1\n")
+		if _, err := io.WriteString(w, "line1\n"); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	t.Cleanup(srv.Close)
 
@@ -55,7 +57,9 @@ func TestDoStreamLogsResponses(t *testing.T) {
 	buf := &strings.Builder{}
 	logger := log.New(buf, "", 0)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{}"))
+		if _, err := w.Write([]byte("{}")); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	t.Cleanup(srv.Close)
 

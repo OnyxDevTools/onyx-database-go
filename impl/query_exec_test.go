@@ -26,7 +26,9 @@ func TestQueryList(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`[{"id":1}]`))
+		if _, err := w.Write([]byte(`[{"id":1}]`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	q := &query{client: c, table: "users"}
@@ -42,7 +44,9 @@ func TestQueryList(t *testing.T) {
 func TestQueryPage(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"items":[{"id":1}],"nextCursor":"abc"}`))
+		if _, err := w.Write([]byte(`{"items":[{"id":1}],"nextCursor":"abc"}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	q := &query{client: c, table: "users"}
@@ -57,7 +61,9 @@ func TestQueryPage(t *testing.T) {
 
 func TestQueryStream(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("{}\n{"))
+		if _, err := w.Write([]byte("{}\n{")); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	q := &query{client: c, table: "users"}
@@ -85,7 +91,9 @@ func TestQueryUpdate(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`1`))
+		if _, err := w.Write([]byte(`1`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	q := (&query{client: c, table: "users"}).SetUpdates(map[string]any{"email": "x"})
@@ -104,7 +112,9 @@ func TestQueryDelete(t *testing.T) {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`1`))
+		if _, err := w.Write([]byte(`1`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	q := &query{client: c, table: "users"}
@@ -128,10 +138,14 @@ func TestQueryPageWithParamsAndError(t *testing.T) {
 				t.Fatalf("unexpected query params: %s", raw)
 			}
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"code":"bad","message":"fail"}`))
+			if _, err := w.Write([]byte(`{"code":"bad","message":"fail"}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		default:
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"items":[{"id":2}]}`))
+			if _, err := w.Write([]byte(`{"items":[{"id":2}]}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		}
 	})
 

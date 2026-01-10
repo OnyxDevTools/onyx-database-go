@@ -17,10 +17,14 @@ func TestFetchSchemaSupportsHistoryAndNestedSchema(t *testing.T) {
 		call++
 		w.Header().Set("Content-Type", "application/json")
 		if call == 1 {
-			w.Write([]byte(`{"schemas":[{"entities":[{"name":"A","attributes":[{"name":"id","type":"String"}]}]}]}`))
+			if _, err := w.Write([]byte(`{"schemas":[{"entities":[{"name":"A","attributes":[{"name":"id","type":"String"}]}]}]}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 			return
 		}
-		w.Write([]byte(`{"schema":{"tables":[{"name":"B","fields":[{"name":"id","type":"String"}]}]}}`))
+		if _, err := w.Write([]byte(`{"schema":{"tables":[{"name":"B","fields":[{"name":"id","type":"String"}]}]}}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	t.Cleanup(srv.Close)
 

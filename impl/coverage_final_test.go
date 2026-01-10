@@ -211,7 +211,9 @@ func TestDocumentSaveFillsMissingIDs(t *testing.T) {
 			t.Fatalf("expected ids set from preferred document id, got %+v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"documentId":"doc123","id":""}`))
+		if _, err := w.Write([]byte(`{"documentId":"doc123","id":""}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	doc, err := c.Documents().Save(context.Background(), contract.OnyxDocument{DocumentID: "doc123"})
@@ -292,7 +294,9 @@ func TestFetchSchemaFallbackSchemasSuccess(t *testing.T) {
 			http.Error(w, `{"code":"missing","message":"no schema"}`, http.StatusNotFound)
 		case 2:
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"entities":[{"name":"A","attributes":[{"name":"id","type":"String"}]}]}`))
+			if _, err := w.Write([]byte(`{"entities":[{"name":"A","attributes":[{"name":"id","type":"String"}]}]}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		default:
 			t.Fatalf("unexpected call %d", call)
 		}
@@ -310,7 +314,9 @@ func TestFetchSchemaFallbackSchemasSuccess(t *testing.T) {
 func TestFetchSchemaSchemaObjectEntities(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"schema":{"entities":[{"name":"B","attributes":[{"name":"id","type":"String"}]}]}}`))
+		if _, err := w.Write([]byte(`{"schema":{"entities":[{"name":"B","attributes":[{"name":"id","type":"String"}]}]}}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 	schema, err := fetchSchema(context.Background(), c, nil)
 	if err != nil {
@@ -368,7 +374,9 @@ func TestFetchSchemaMarshalError(t *testing.T) {
 
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"unknown":1}`))
+		if _, err := w.Write([]byte(`{"unknown":1}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 	if _, err := fetchSchema(context.Background(), c, nil); err == nil {
 		t.Fatalf("expected marshal error to propagate")

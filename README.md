@@ -167,7 +167,7 @@ onyx-go gen
 
 is the same as running these default switches: 
 ```bash
-onyx-go gen --schema ./onyx.schema.json --out ./gen/onyx --package onyx
+onyx-go gen --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
 ```
 
 Generate from the onyx remote api:
@@ -210,26 +210,26 @@ users, err := db.Users().Limit(25).List(ctx)
 onyx-go schema info # using defaults
 onyx-go schema info --database-id "$ONYX_DATABASE_ID"
 
-# Fetch normalized schema from the API (writes ./onyx.schema.json by default)
-onyx-go schema get. # using defaults
-onyx-go schema get --out ./onyx.schema.json
+# Fetch normalized schema from the API (writes ./api/onyx.schema.json by default)
+onyx-go schema get # using defaults
+onyx-go schema get --out ./api/onyx.schema.json
 onyx-go schema get --tables User,Profile --print   # print subset to stdout
 
 # Validate or normalize a local schema file
 onyx-go schema validate # using defaults
-onyx-go schema validate --schema ./onyx.schema.json
+onyx-go schema validate --schema ./api/onyx.schema.json
 
 # Diff local vs API (or vs another file)
 onyx-go schema diff #using defaults
-onyx-go schema diff --a ./onyx.schema.json --b ./next.schema.json
-onyx-go schema diff --a ./onyx.schema.json --database-id "$ONYX_DATABASE_ID" --json
+onyx-go schema diff --a ./api/onyx.schema.json --b ./next.schema.json
+onyx-go schema diff --a ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID" --json
 
 # Publish changes (normalize + PUT /schemas/{dbId})
 onyx-go schema publish # using defaults
-onyx-go schema publish --schema ./onyx.schema.json --database-id "$ONYX_DATABASE_ID"
+onyx-go schema publish --schema ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID"
 ```
 
-Omit `--database-id` to rely on env vars or config files like `./onyx-database.json` or `~/.onyx/onyx-database.json` (a sample lives at `./examples/config/onyx-database.json`).
+Omit `--database-id` to rely on env vars or config files like `./config/onyx-database.json` or `~/.onyx/onyx-database.json` (a sample lives at `./examples/config/onyx-database.json`).
 
 ---
 

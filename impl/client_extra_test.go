@@ -29,7 +29,9 @@ func TestClientSchemaEndpoints(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		case "/schemas/db_test/history":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode([]contract.Schema{{Tables: []contract.Table{{Name: "T"}}}})
+			if err := json.NewEncoder(w).Encode([]contract.Schema{{Tables: []contract.Table{{Name: "T"}}}}); err != nil {
+				t.Fatalf("encode history: %v", err)
+			}
 		case "/schemas/db_test":
 			w.WriteHeader(http.StatusOK)
 		default:

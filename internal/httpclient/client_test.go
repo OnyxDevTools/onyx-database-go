@@ -27,7 +27,9 @@ func TestDoJSON(t *testing.T) {
 			t.Fatalf("unexpected body: %v", body)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ok":true}`))
+		if _, err := w.Write([]byte(`{"ok":true}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	defer srv.Close()
 
@@ -66,7 +68,9 @@ func TestLoggingToggle(t *testing.T) {
 func TestDoStream(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte("{}\n{}"))
+		if _, err := w.Write([]byte("{}\n{}")); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	defer srv.Close()
 
@@ -104,7 +108,9 @@ func TestParseErrorAndRedaction(t *testing.T) {
 func TestErrorMapping(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"code":"bad","message":"bad things","meta":{"hint":"x"}}`))
+		if _, err := w.Write([]byte(`{"code":"bad","message":"bad things","meta":{"hint":"x"}}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	defer srv.Close()
 

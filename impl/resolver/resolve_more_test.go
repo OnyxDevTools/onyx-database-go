@@ -112,9 +112,18 @@ func TestResolveFromFilesUnmarshalAndBaseURLFallback(t *testing.T) {
 		t.Fatalf("write root specific: %v", err)
 	}
 
-	cwd, _ := os.Getwd()
-	os.Chdir(tmp)
-	t.Cleanup(func() { os.Chdir(cwd) })
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("cwd: %v", err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("chdir tmp: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 
 	resolved, meta, err := Resolve(context.Background(), Config{DatabaseID: "db1"})
 	if err != nil {
@@ -158,9 +167,18 @@ func TestResolveUsesEnvOverrideWhenConfigMissing(t *testing.T) {
 func TestResolveRecordsEmptyFilePathWhenNoConfigUsed(t *testing.T) {
 	ClearCache()
 	tmp := t.TempDir()
-	cwd, _ := os.Getwd()
-	os.Chdir(tmp)
-	t.Cleanup(func() { os.Chdir(cwd) })
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("cwd: %v", err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("chdir tmp: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 
 	t.Setenv("ONYX_CONFIG_PATH", "")
 	t.Setenv("ONYX_DATABASE_ID", "env-id")

@@ -21,7 +21,9 @@ func TestFetchSchemaFallbacks(t *testing.T) {
 			http.Error(w, `{"code":"nope","message":"fail"}`, http.StatusInternalServerError)
 		default: // legacy /schema success with tables map
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"tables":{"users":{"fields":{"id":{"type":"string"}}}}}`))
+			if _, err := w.Write([]byte(`{"tables":{"users":{"fields":{"id":{"type":"string"}}}}}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		}
 	}))
 	t.Cleanup(srv.Close)

@@ -1,0 +1,7 @@
+run:
+  go: "1.22"
+  timeout: 5m
+  env:
+    - GOROOT=/Users/cosborn/.gvm/gos/go1.22.8
+    - PATH=/Users/cosborn/.gvm/gos/go1.22.8/bin:${PATH}
+    - GOTOOLCHAIN=go1.22.8

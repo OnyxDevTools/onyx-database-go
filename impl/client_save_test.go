@@ -12,7 +12,9 @@ func TestClientSaveWithRelationships(t *testing.T) {
 			t.Fatalf("expected relationships query, got %s", r.URL.RawQuery)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"id":"1"}`))
+		if _, err := w.Write([]byte(`{"id":"1"}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	resp, err := c.Save(context.Background(), "users", map[string]any{"id": "1"}, []string{"roles", "perms"})
@@ -33,7 +35,9 @@ func TestGetSchemaHistoryError(t *testing.T) {
 func TestGetSchemaViaFacade(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"tables":[{"name":"Users","fields":[{"name":"id","type":"string"}]}]}`))
+		if _, err := w.Write([]byte(`{"tables":[{"name":"Users","fields":[{"name":"id","type":"string"}]}]}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 	if _, err := c.Schema(context.Background()); err != nil {
 		t.Fatalf("schema facade err: %v", err)

@@ -19,6 +19,7 @@ func main() {
 }
 
 var exit = os.Exit
+var getwd = os.Getwd
 
 func runMain(args []string, stdout, stderr io.Writer) int {
 	return dispatch(args[1:], stdout, stderr)
@@ -74,7 +75,9 @@ func runGen(args []string, stdout, stderr io.Writer) int {
 	fs.Usage = func() {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
-		usageBuffer.WriteTo(stdout)
+		if err := writeUsageBuffer(&usageBuffer, stdout); err != nil {
+			fmt.Fprintf(stderr, "%v\n", err)
+		}
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -82,7 +85,10 @@ func runGen(args []string, stdout, stderr io.Writer) int {
 			fs.Usage()
 			return 0
 		}
-		usageBuffer.WriteTo(stderr)
+		fs.Usage()
+		if writeErr := writeUsageBuffer(&usageBuffer, stderr); writeErr != nil {
+			fmt.Fprintf(stderr, "%v\n", writeErr)
+		}
 		return 2
 	}
 
@@ -97,7 +103,10 @@ func runGen(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if err := generator.Run(opts); err != nil {
-		usageBuffer.WriteTo(stderr)
+		fs.Usage()
+		if writeErr := writeUsageBuffer(&usageBuffer, stderr); writeErr != nil {
+			fmt.Fprintf(stderr, "%v\n", writeErr)
+		}
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
@@ -123,7 +132,9 @@ func runGenInit(args []string, stdout, stderr io.Writer) int {
 	fs.Usage = func() {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
-		usageBuffer.WriteTo(stdout)
+		if err := writeUsageBuffer(&usageBuffer, stdout); err != nil {
+			fmt.Fprintf(stderr, "%v\n", err)
+		}
 	}
 
 	if err := fs.Parse(args); err != nil {
@@ -131,7 +142,10 @@ func runGenInit(args []string, stdout, stderr io.Writer) int {
 			fs.Usage()
 			return 0
 		}
-		usageBuffer.WriteTo(stderr)
+		fs.Usage()
+		if writeErr := writeUsageBuffer(&usageBuffer, stderr); writeErr != nil {
+			fmt.Fprintf(stderr, "%v\n", writeErr)
+		}
 		return 2
 	}
 
@@ -152,7 +166,11 @@ func runGenInit(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	cwd, _ := os.Getwd()
+	cwd, err := getwd()
+	if err != nil {
+		fmt.Fprintf(stderr, "getwd: %v\n", err)
+		return 1
+	}
 	printLayout(stdout, cwd, *anchorPath, cfg)
 	return 0
 }
@@ -242,6 +260,13 @@ func printLayout(w io.Writer, cwd, anchorPath string, cfg anchorConfig) {
 	fmt.Fprintln(w, "  3) Start writing code:")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "     user, err := db.Users().Save(ctx, onyx.User{})")
+}
+
+func writeUsageBuffer(buf *bytes.Buffer, dst io.Writer) error {
+	if _, err := buf.WriteTo(dst); err != nil {
+		return fmt.Errorf("write usage: %w", err)
+	}
+	return nil
 }
 
 func parseTables(raw string) []string {

@@ -12,7 +12,9 @@ func TestSchemaFetch(t *testing.T) {
 	schemaJSON := `{"tables":{"users":{"fields":{"id":{"type":"string"}}}}}`
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(schemaJSON))
+		if _, err := w.Write([]byte(schemaJSON)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 
 	schema, err := c.Schema(context.Background())

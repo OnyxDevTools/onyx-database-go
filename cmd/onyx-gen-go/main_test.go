@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,12 @@ func TestRunHelp(t *testing.T) {
 	}
 	if out.Len() == 0 {
 		t.Fatalf("expected usage output")
+	}
+
+	var stderr bytes.Buffer
+	errWriter := errorWriter{err: errors.New("boom")}
+	if err := run([]string{"-h"}, errWriter, &stderr); err == nil || !strings.Contains(err.Error(), "write usage: boom") {
+		t.Fatalf("expected write usage error, got %v stderr=%s", err, stderr.String())
 	}
 }
 
@@ -98,6 +105,11 @@ func TestRunFlagParseError(t *testing.T) {
 	if stderr.Len() == 0 {
 		t.Fatalf("expected usage output on parse error")
 	}
+
+	errWriter := errorWriter{err: errors.New("nope")}
+	if err := run([]string{"--bogus"}, &stdout, errWriter); err == nil || !strings.Contains(err.Error(), "write usage: nope") {
+		t.Fatalf("expected write usage error, got %v", err)
+	}
 }
 
 func TestMainExitCodes(t *testing.T) {
@@ -163,3 +175,29 @@ func TestParseTables(t *testing.T) {
 		})
 	}
 }
+
+func TestRunGeneratorError(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := run([]string{"--schema", filepath.Join(t.TempDir(), "missing.json")}, &stdout, &stderr)
+	if err == nil || !strings.Contains(err.Error(), "no such file") {
+		t.Fatalf("expected generator error, got %v", err)
+	}
+	if !strings.Contains(stderr.String(), "Usage of onyx-gen-go") {
+		t.Fatalf("expected usage output on generator error, got %s", stderr.String())
+	}
+}
+
+func TestRunGeneratorErrorWriteUsageFailure(t *testing.T) {
+	errWriter := errorWriter{err: errors.New("write-fail")}
+	err := run([]string{"--schema", filepath.Join(t.TempDir(), "missing.json")}, &bytes.Buffer{}, errWriter)
+	if err == nil || !strings.Contains(err.Error(), "write usage: write-fail") {
+		t.Fatalf("expected write usage failure, got %v", err)
+	}
+}
+
+type errorWriter struct {
+	err error
+}
+
+func (e errorWriter) Write([]byte) (int, error) { return 0, e.err }

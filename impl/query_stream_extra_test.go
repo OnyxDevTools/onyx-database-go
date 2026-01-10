@@ -10,7 +10,9 @@ import (
 
 func TestStreamIteratorValue(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, `{"id":1}`+"\n")
+		if _, err := io.WriteString(w, `{"id":1}`+"\n"); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	}))
 	t.Cleanup(srv.Close)
 

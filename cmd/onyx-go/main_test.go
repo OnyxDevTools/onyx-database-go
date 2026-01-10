@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -204,11 +205,30 @@ func TestMainExitCodes(t *testing.T) {
 func TestRunGenHelpAndInitErrors(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	errWriter := errorWriter{err: errors.New("boom")}
 
 	code := runGen([]string{"-h"}, &stdout, &stderr)
 	if code != 0 || !strings.Contains(stdout.String(), "Usage of onyx-go gen") {
 		t.Fatalf("expected help output, got code %d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 	}
+
+	code = runGen([]string{"-h"}, errWriter, &stderr)
+	if code != 0 || !strings.Contains(stderr.String(), "write usage: boom") {
+		t.Fatalf("expected usage write error, got code %d stderr=%s", code, stderr.String())
+	}
+	stderr.Reset()
+
+	code = runGen([]string{"--bogus"}, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("expected parse error branch, got code %d stderr=%s", code, stderr.String())
+	}
+	stderr.Reset()
+
+	code = runGen([]string{"--schema", filepath.Join(t.TempDir(), "missing.json")}, &stdout, &stderr)
+	if code != 1 || !strings.Contains(stderr.String(), "no such file") {
+		t.Fatalf("expected generator error branch, got code %d stderr=%s", code, stderr.String())
+	}
+	stderr.Reset()
 
 	tmp := t.TempDir()
 	// anchorPath points to directory so WriteFile should fail
@@ -222,6 +242,25 @@ func TestRunGenHelpAndInitErrors(t *testing.T) {
 	code = runGenInit([]string{"-h"}, &stdout, &stderr)
 	if code != 0 || !strings.Contains(stdout.String(), "Usage of onyx-go gen init") {
 		t.Fatalf("expected init help, got code=%d stdout=%s", code, stdout.String())
+	}
+
+	code = runGenInit([]string{"--bogus"}, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("expected parse error branch, got code %d stderr=%s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+
+	origGetwd := getwd
+	getwd = func() (string, error) {
+		return "", errors.New("getwd fail")
+	}
+	t.Cleanup(func() { getwd = origGetwd })
+
+	anchorPath := filepath.Join(t.TempDir(), "anchor.go")
+	code = runGenInit([]string{"--file", anchorPath, "--schema", filepath.Join(t.TempDir(), "schema.json")}, &stdout, &stderr)
+	if code != 1 || !strings.Contains(stderr.String(), "getwd") {
+		t.Fatalf("expected getwd error branch, got code %d stderr=%s", code, stderr.String())
 	}
 }
 
@@ -269,4 +308,80 @@ func TestPrintLayoutRelFallbacks(t *testing.T) {
 	if !strings.Contains(content, "gen/onyx") {
 		t.Fatalf("expected cleaned relative out path, got: %s", content)
 	}
+}
+
+type errorWriter struct {
+	err error
+}
+
+func (e errorWriter) Write([]byte) (int, error) {
+	return 0, e.err
+}
+
+type recordingErrorWriter struct {
+	err error
+	buf bytes.Buffer
+}
+
+func (w *recordingErrorWriter) Write(p []byte) (int, error) {
+	w.buf.Write(p)
+	return 0, w.err
+}
+
+func TestWriteUsageBufferError(t *testing.T) {
+	var buf bytes.Buffer
+	buf.WriteString("usage")
+	err := writeUsageBuffer(&buf, errorWriter{err: errors.New("boom")})
+	if err == nil || !strings.Contains(err.Error(), "boom") {
+		t.Fatalf("expected error from writeUsageBuffer, got %v", err)
+	}
+}
+
+func TestRunGenWriteUsageFailures(t *testing.T) {
+	t.Run("parse error usage write fails", func(t *testing.T) {
+		rec := &recordingErrorWriter{err: errors.New("fail")}
+		code := runGen([]string{"--bogus"}, errorWriter{err: errors.New("stdout-fail")}, rec)
+		if code != 2 {
+			t.Fatalf("expected parse error code, got %d", code)
+		}
+		if !strings.Contains(rec.buf.String(), "write usage: fail") {
+			t.Fatalf("expected usage error recorded, got %s", rec.buf.String())
+		}
+	})
+
+	t.Run("generator error usage write fails", func(t *testing.T) {
+		rec := &recordingErrorWriter{err: errors.New("fail")}
+		code := runGen([]string{"--schema", filepath.Join(t.TempDir(), "missing.json")}, errorWriter{err: errors.New("stdout-fail")}, rec)
+		if code != 1 {
+			t.Fatalf("expected generator error code, got %d", code)
+		}
+		if !strings.Contains(rec.buf.String(), "write usage: fail") {
+			t.Fatalf("expected usage error recorded, got %s", rec.buf.String())
+		}
+	})
+}
+
+func TestRunGenInitWriteUsageFailures(t *testing.T) {
+	t.Run("usage write fails", func(t *testing.T) {
+		recStdout := &recordingErrorWriter{err: errors.New("fail")}
+		var stderr bytes.Buffer
+		code := runGenInit([]string{"-h"}, recStdout, &stderr)
+		if code != 0 {
+			t.Fatalf("expected help code, got %d", code)
+		}
+		if !strings.Contains(stderr.String(), "write usage: fail") {
+			t.Fatalf("expected usage error recorded, got %s", stderr.String())
+		}
+	})
+
+	t.Run("parse error usage write fails", func(t *testing.T) {
+		recStderr := &recordingErrorWriter{err: errors.New("fail")}
+		code := runGenInit([]string{"--bogus"}, errorWriter{err: errors.New("stdout-fail")}, recStderr)
+		if code != 2 {
+			t.Fatalf("expected parse error code, got %d", code)
+		}
+		if !strings.Contains(recStderr.buf.String(), "write usage: fail") {
+			t.Fatalf("expected usage error recorded, got %s", recStderr.buf.String())
+		}
+	})
 }

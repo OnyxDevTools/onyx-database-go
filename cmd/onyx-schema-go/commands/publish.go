@@ -19,7 +19,7 @@ func (c *PublishCommand) Run(args []string) int {
 	fs := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	fs.SetOutput(Stderr)
 	databaseID := fs.String("database-id", "", "database id (optional if configured)")
-	schemaPath := fs.String("schema", "./onyx.schema.json", "path to schema JSON file")
+	schemaPath := fs.String("schema", defaultSchemaPath, "path to schema JSON file")
 
 	fs.Usage = func() {
 		fmt.Fprintf(Stdout, "Usage of %s:\n", c.Name())

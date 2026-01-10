@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/OnyxDevTools/onyx-database-go/onyx"
 )
@@ -20,7 +21,7 @@ func (c *GetCommand) Run(args []string) int {
 	fs := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	fs.SetOutput(Stderr)
 	databaseID := fs.String("database-id", "", "database id (optional; defaults to env/config such as onyx-database.json)")
-	outPath := fs.String("out", "onyx.schema.json", "path to write schema JSON (stdout when --print is set)")
+	outPath := fs.String("out", defaultSchemaPath, "path to write schema JSON (stdout when --print is set)")
 	printOnly := fs.Bool("print", false, "print schema to stdout without writing to disk")
 
 	fs.Usage = func() {
@@ -58,6 +59,13 @@ func (c *GetCommand) Run(args []string) int {
 			return 1
 		}
 		return 0
+	}
+
+	if dir := filepath.Dir(*outPath); dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			fmt.Fprintf(Stderr, "failed to create schema directory: %v\n", err)
+			return 1
+		}
 	}
 
 	if err := os.WriteFile(*outPath, data, 0o644); err != nil {

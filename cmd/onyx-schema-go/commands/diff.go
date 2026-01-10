@@ -20,7 +20,7 @@ func (c *DiffCommand) Description() string { return "diff two schema files" }
 func (c *DiffCommand) Run(args []string) int {
 	fs := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	fs.SetOutput(Stderr)
-	pathA := fs.String("a", "onyx.schema.json", "path to base schema JSON")
+	pathA := fs.String("a", defaultSchemaPath, "path to base schema JSON")
 	pathB := fs.String("b", "", "path to updated schema JSON")
 	databaseID := fs.String("database-id", "", "database id to fetch updated schema via API when --b is omitted")
 	jsonOut := fs.Bool("json", false, "emit machine-readable JSON diff")

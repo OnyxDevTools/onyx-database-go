@@ -26,7 +26,9 @@ func TestDocumentsListNilItems(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`null`))
+			if _, err := w.Write([]byte(`null`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		}
 	})
 	if docs, err := c.Documents().List(context.Background()); err != nil || docs != nil {

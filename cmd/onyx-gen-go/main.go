@@ -42,15 +42,25 @@ func run(args []string, stdout, stderr io.Writer) error {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
 	}
+	writeUsage := func(dst io.Writer) error {
+		if _, err := usageBuffer.WriteTo(dst); err != nil {
+			return fmt.Errorf("write usage: %w", err)
+		}
+		return nil
+	}
 
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			fs.Usage()
-			usageBuffer.WriteTo(stdout)
+			if err := writeUsage(stdout); err != nil {
+				return err
+			}
 			return nil
 		}
 		fs.Usage()
-		usageBuffer.WriteTo(stderr)
+		if err := writeUsage(stderr); err != nil {
+			return err
+		}
 		return err
 	}
 
@@ -66,7 +76,9 @@ func run(args []string, stdout, stderr io.Writer) error {
 
 	if err := generator.Run(opts); err != nil {
 		fs.Usage()
-		usageBuffer.WriteTo(stderr)
+		if err := writeUsage(stderr); err != nil {
+			return err
+		}
 		return err
 	}
 

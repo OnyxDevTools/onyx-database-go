@@ -60,17 +60,34 @@ func TestResolveFileSearchOrder(t *testing.T) {
 		t.Fatalf("mkdir config: %v", err)
 	}
 	configSpecific := filepath.Join(configDir, "onyx-database-db1.json")
-	os.WriteFile(configSpecific, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://config-specific","apiKey":"k","apiSecret":"s"}`), 0o644)
+	if err := os.WriteFile(configSpecific, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://config-specific","apiKey":"k","apiSecret":"s"}`), 0o644); err != nil {
+		t.Fatalf("write config specific: %v", err)
+	}
 	configGeneric := filepath.Join(configDir, "onyx-database.json")
-	os.WriteFile(configGeneric, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://config-generic","apiKey":"k2","apiSecret":"s2"}`), 0o644)
+	if err := os.WriteFile(configGeneric, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://config-generic","apiKey":"k2","apiSecret":"s2"}`), 0o644); err != nil {
+		t.Fatalf("write config generic: %v", err)
+	}
 	rootSpecific := filepath.Join(dir, "onyx-database-db1.json")
-	os.WriteFile(rootSpecific, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://root-specific","apiKey":"k3","apiSecret":"s3"}`), 0o644)
+	if err := os.WriteFile(rootSpecific, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://root-specific","apiKey":"k3","apiSecret":"s3"}`), 0o644); err != nil {
+		t.Fatalf("write root specific: %v", err)
+	}
 	rootGeneric := filepath.Join(dir, "onyx-database.json")
-	os.WriteFile(rootGeneric, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://root-generic","apiKey":"k4","apiSecret":"s4"}`), 0o644)
+	if err := os.WriteFile(rootGeneric, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://root-generic","apiKey":"k4","apiSecret":"s4"}`), 0o644); err != nil {
+		t.Fatalf("write root generic: %v", err)
+	}
 
-	cwd, _ := os.Getwd()
-	os.Chdir(dir)
-	t.Cleanup(func() { os.Chdir(cwd) })
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 
 	cfg, meta, err := Resolve(context.Background(), Config{DatabaseID: "db1"})
 	if err != nil {
@@ -87,7 +104,9 @@ func TestResolveFileSearchOrder(t *testing.T) {
 func TestResolveHonorsConfigPath(t *testing.T) {
 	dir := t.TempDir()
 	custom := filepath.Join(dir, "custom.json")
-	os.WriteFile(custom, []byte(`{"databaseId":"dbX","databaseBaseUrl":"https://custom","apiKey":"k","apiSecret":"s"}`), 0o644)
+	if err := os.WriteFile(custom, []byte(`{"databaseId":"dbX","databaseBaseUrl":"https://custom","apiKey":"k","apiSecret":"s"}`), 0o644); err != nil {
+		t.Fatalf("write custom config: %v", err)
+	}
 
 	cfg, _, err := Resolve(context.Background(), Config{ConfigPath: custom})
 	if err != nil {
@@ -110,9 +129,18 @@ func TestResolveConfigDirectoryFallback(t *testing.T) {
 		t.Fatalf("write config file: %v", err)
 	}
 
-	cwd, _ := os.Getwd()
-	os.Chdir(dir)
-	t.Cleanup(func() { os.Chdir(cwd) })
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 
 	// ensure env vars do not override file resolution
 	t.Setenv("ONYX_DATABASE_ID", "")
@@ -127,8 +155,14 @@ func TestResolveConfigDirectoryFallback(t *testing.T) {
 	if cfg.DatabaseBaseURL != "https://cfg" {
 		t.Fatalf("expected config dir file to be used, got %+v", cfg)
 	}
-	configFileAbs, _ := filepath.Abs(configFile)
-	configFileReal, _ := filepath.EvalSymlinks(configFileAbs)
+	configFileAbs, err := filepath.Abs(configFile)
+	if err != nil {
+		t.Fatalf("abs config file: %v", err)
+	}
+	configFileReal, err := filepath.EvalSymlinks(configFileAbs)
+	if err != nil {
+		t.Fatalf("eval symlinks: %v", err)
+	}
 	if filepath.Clean(meta.FilePath) != filepath.Clean(configFileReal) {
 		t.Fatalf("expected file path %s, got %s", configFileReal, meta.FilePath)
 	}

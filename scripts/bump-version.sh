@@ -67,8 +67,8 @@ info "Building..."
 cmd go build ./...
 
 info "Running examples (smoke test)..."
-EXAMPLE_CONFIG="examples/onyx-database.json"
-EXAMPLE_SCHEMA="examples/onyx.schema.json"
+EXAMPLE_CONFIG="examples/config/onyx-database.json"
+EXAMPLE_SCHEMA="examples/api/onyx.schema.json"
 [[ -f "${EXAMPLE_CONFIG}" ]] || abort "Missing ${EXAMPLE_CONFIG}."
 [[ -f "${EXAMPLE_SCHEMA}" ]] || abort "Missing ${EXAMPLE_SCHEMA}."
 ONYX_CONFIG_PATH="${EXAMPLE_CONFIG}" \

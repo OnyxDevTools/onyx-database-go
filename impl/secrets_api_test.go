@@ -13,14 +13,20 @@ func TestSecretsAPI(t *testing.T) {
 		switch r.URL.Path {
 		case "/database/db_test/secret":
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"records":[{"key":"API_KEY","value":"abc"}]}`))
+			if _, err := w.Write([]byte(`{"records":[{"key":"API_KEY","value":"abc"}]}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 		case "/database/db_test/secret/API_KEY":
 			if r.Method == http.MethodGet {
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"key":"API_KEY","value":"abc"}`))
+				if _, err := w.Write([]byte(`{"key":"API_KEY","value":"abc"}`)); err != nil {
+					t.Fatalf("write response: %v", err)
+				}
 			} else if r.Method == http.MethodPut {
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"key":"API_KEY","value":"abc","updatedAt":"now"}`))
+				if _, err := w.Write([]byte(`{"key":"API_KEY","value":"abc","updatedAt":"now"}`)); err != nil {
+					t.Fatalf("write response: %v", err)
+				}
 			} else if r.Method == http.MethodDelete {
 				w.WriteHeader(http.StatusNoContent)
 			}
@@ -80,7 +86,9 @@ func TestOnyxSecretAlias(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		calls++
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"records":[]}`))
+		if _, err := w.Write([]byte(`{"records":[]}`)); err != nil {
+			t.Fatalf("write response: %v", err)
+		}
 	})
 	if _, err := c.OnyxSecret().List(context.Background()); err != nil {
 		t.Fatalf("expected alias to delegate, got %v", err)

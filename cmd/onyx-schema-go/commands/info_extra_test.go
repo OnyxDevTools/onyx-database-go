@@ -13,7 +13,9 @@ func TestDefaultConnectInfoClient(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/database/db/schema" {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"tables":[]}`))
+			if _, err := w.Write([]byte(`{"tables":[]}`)); err != nil {
+				t.Fatalf("write response: %v", err)
+			}
 			return
 		}
 		http.NotFound(w, r)
