@@ -22,7 +22,7 @@ Go SDK and CLIs for **Onyx Cloud Database** with a contract-first design and sta
    - `databaseId`
    - `apiKey`
    - `apiSecret`
-3. **Install the CLI tool and sdk libraryr (Go 1.22+):
+3. **Install the CLI tool and sdk library** (Go 1.22+):
 
    ```bash
    go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
@@ -145,6 +145,8 @@ if err != nil { log.Fatal(err) }
 
 `ConfigPath` or `ONYX_CONFIG_PATH` can point to a JSON file. When unset, the resolver checks (in order):
 
+- `./config/onyx-database-<databaseId>.json`
+- `./config/onyx-database.json`
 - `./onyx-database-<databaseId>.json`
 - `./onyx-database.json`
 - `~/.onyx/onyx-database-<databaseId>.json`
@@ -419,7 +421,7 @@ fmt.Println("tables:", len(schema.Tables), "history entries:", len(history))
 
 ```go
 secClient := db.Secrets()
-_, _ = secClient.Set(ctx, onyx.Secret{Key: "api-key", Value: "super-secret"})
+_, _ = secClient.Set(ctx, onyx.OnyxSecret{Key: "api-key", Value: "super-secret"})
 secret, _ := secClient.Get(ctx, "api-key")
 fmt.Println(secret.Value)
 _ = secClient.Delete(ctx, "api-key")
@@ -428,7 +430,7 @@ _ = secClient.Delete(ctx, "api-key")
 ### Documents API
 
 ```go
-doc := onyx.Document{
+doc := onyx.OnyxDocument{
     DocumentID: "logo.png",
     Path:       "/brand/logo.png",
     MimeType:   "image/png",

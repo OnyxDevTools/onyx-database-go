@@ -18,10 +18,10 @@ type Client interface {
 	ValidateSchema(ctx context.Context, schema Schema) error
 	GetSchemaHistory(ctx context.Context) ([]Schema, error)
 
-	Documents() DocumentClient
+	Documents() OnyxDocumentsClient
 
-	ListSecrets(ctx context.Context) ([]Secret, error)
-	GetSecret(ctx context.Context, key string) (Secret, error)
-	PutSecret(ctx context.Context, secret Secret) (Secret, error)
+	ListSecrets(ctx context.Context) ([]OnyxSecret, error)
+	GetSecret(ctx context.Context, key string) (OnyxSecret, error)
+	PutSecret(ctx context.Context, secret OnyxSecret) (OnyxSecret, error)
 	DeleteSecret(ctx context.Context, key string) error
 }

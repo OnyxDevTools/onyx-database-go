@@ -16,13 +16,13 @@ import (
 
 // Options captures configuration for the Go code generator.
 type Options struct {
-	SchemaPath          string
-	Source              string
-	DatabaseID          string
-	OutPath             string // directory where generated files are written
-	PackageName         string
-	Tables              []string
-	TimestampFormat     string
+	SchemaPath      string
+	Source          string
+	DatabaseID      string
+	OutPath         string // directory where generated files are written
+	PackageName     string
+	Tables          []string
+	TimestampFormat string
 }
 
 // Run validates the provided options and performs generation.
@@ -160,8 +160,8 @@ func renderCommon(schema onyx.Schema, pkg string) []byte {
 	buf.WriteString("type Table = onyx.Table\n")
 	buf.WriteString("type Field = onyx.Field\n")
 	buf.WriteString("type Resolver = onyx.Resolver\n")
-	buf.WriteString("type Document = onyx.Document\n")
-	buf.WriteString("type Secret = onyx.Secret\n\n")
+	buf.WriteString("type OnyxDocument = onyx.OnyxDocument\n")
+	buf.WriteString("type OnyxSecret = onyx.OnyxSecret\n\n")
 
 	buf.WriteString("var Tables = struct {\n")
 	for _, t := range schema.Tables {
@@ -211,18 +211,18 @@ func renderCommon(schema onyx.Schema, pkg string) []byte {
 
 	buf.WriteString("func parseCount(v any) (int, error) {\n\tswitch n := v.(type) {\n\tcase int:\n\t\treturn n, nil\n\tcase int64:\n\t\treturn int(n), nil\n\tcase float64:\n\t\treturn int(n), nil\n\tcase json.Number:\n\t\tparsed, err := n.Int64()\n\t\tif err != nil {\n\t\t\treturn 0, err\n\t\t}\n\t\treturn int(parsed), nil\n\tdefault:\n\t\treturn 0, fmt.Errorf(\"cannot parse count from %T\", v)\n\t}\n}\n\n")
 
-	buf.WriteString("type DocumentsClient struct { core onyx.DocumentClient }\n\n")
+	buf.WriteString("type DocumentsClient struct { core onyx.OnyxDocumentsClient }\n\n")
 	buf.WriteString("func (c DB) Documents() DocumentsClient { return DocumentsClient{core: c.core.Documents()} }\n\n")
-	buf.WriteString("func (d DocumentsClient) List(ctx context.Context) ([]onyx.Document, error) { return d.core.List(ctx) }\n")
-	buf.WriteString("func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.Document, error) { return d.core.Get(ctx, id) }\n")
-	buf.WriteString("func (d DocumentsClient) Save(ctx context.Context, doc onyx.Document) (onyx.Document, error) { return d.core.Save(ctx, doc) }\n")
+	buf.WriteString("func (d DocumentsClient) List(ctx context.Context) ([]onyx.OnyxDocument, error) { return d.core.List(ctx) }\n")
+	buf.WriteString("func (d DocumentsClient) Get(ctx context.Context, id string) (onyx.OnyxDocument, error) { return d.core.Get(ctx, id) }\n")
+	buf.WriteString("func (d DocumentsClient) Save(ctx context.Context, doc onyx.OnyxDocument) (onyx.OnyxDocument, error) { return d.core.Save(ctx, doc) }\n")
 	buf.WriteString("func (d DocumentsClient) Delete(ctx context.Context, id string) error { return d.core.Delete(ctx, id) }\n\n")
 
 	buf.WriteString("type SecretsClient struct { core onyx.Client }\n\n")
 	buf.WriteString("func (c DB) Secrets() SecretsClient { return SecretsClient{core: c.core} }\n\n")
-	buf.WriteString("func (s SecretsClient) List(ctx context.Context) ([]onyx.Secret, error) { return s.core.ListSecrets(ctx) }\n")
-	buf.WriteString("func (s SecretsClient) Get(ctx context.Context, key string) (onyx.Secret, error) { return s.core.GetSecret(ctx, key) }\n")
-	buf.WriteString("func (s SecretsClient) Set(ctx context.Context, secret onyx.Secret) (onyx.Secret, error) { return s.core.PutSecret(ctx, secret) }\n")
+	buf.WriteString("func (s SecretsClient) List(ctx context.Context) ([]onyx.OnyxSecret, error) { return s.core.ListSecrets(ctx) }\n")
+	buf.WriteString("func (s SecretsClient) Get(ctx context.Context, key string) (onyx.OnyxSecret, error) { return s.core.GetSecret(ctx, key) }\n")
+	buf.WriteString("func (s SecretsClient) Set(ctx context.Context, secret onyx.OnyxSecret) (onyx.OnyxSecret, error) { return s.core.PutSecret(ctx, secret) }\n")
 	buf.WriteString("func (s SecretsClient) Delete(ctx context.Context, key string) error { return s.core.DeleteSecret(ctx, key) }\n\n")
 
 	return buf.Bytes()
