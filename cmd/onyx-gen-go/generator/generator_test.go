@@ -92,6 +92,24 @@ func TestRunLoadsSchema(t *testing.T) {
 	if !strings.Contains(string(userContent), "List(ctx context.Context) ([]map[string]any, error)") {
 		t.Fatalf("expected map list helper, got:\n%s", string(userContent))
 	}
+
+	generateContent, err := os.ReadFile(filepath.Join(outDir, "generate.go"))
+	if err != nil {
+		t.Fatalf("expected generate.go file, read err: %v", err)
+	}
+	if !strings.Contains(string(generateContent), "//go:generate onyx-go gen") {
+		t.Fatalf("expected go:generate anchor, got:\n%s", string(generateContent))
+	}
+	relSchema, _ := filepath.Rel(outDir, schemaPath)
+	if relSchema == "" {
+		relSchema = schemaPath
+	}
+	if !strings.Contains(string(generateContent), relSchema) {
+		t.Fatalf("expected schema path in generate anchor, got:\n%s", string(generateContent))
+	}
+	if !strings.Contains(string(generateContent), "--out .") {
+		t.Fatalf("expected regenerate-in-place out flag, got:\n%s", string(generateContent))
+	}
 }
 
 func TestLoadSchemaRespectsSource(t *testing.T) {
@@ -123,5 +141,27 @@ func TestLoadSchemaRespectsSource(t *testing.T) {
 	}
 	if !called {
 		t.Fatalf("expected api client to be used")
+	}
+}
+
+func TestRunRespectsDisableGenerateFile(t *testing.T) {
+	tmp := t.TempDir()
+	schemaPath := filepath.Join(tmp, "schema.json")
+	if err := os.WriteFile(schemaPath, []byte(`{"tables":[{"name":"User"}]}`), 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	outDir := filepath.Join(tmp, "onyx")
+	opts := Options{
+		SchemaPath:          schemaPath,
+		OutPath:             outDir,
+		PackageName:         "pkg",
+		DisableGenerateFile: true,
+	}
+	if err := Run(opts); err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, "generate.go")); err == nil {
+		t.Fatalf("generate.go should not be written when disabled")
 	}
 }

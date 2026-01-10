@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/OnyxDevTools/onyx-database-go/gen/onyx"
+	"github.com/OnyxDevTools/onyx-database-go/examples/gen/onyx"
 )
 
 // Seed populates a handful of rows used across the examples.

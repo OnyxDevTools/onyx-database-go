@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"github.com/OnyxDevTools/onyx-database-go/contract"
 	"github.com/OnyxDevTools/onyx-database-go/impl/resolver"
 	"github.com/OnyxDevTools/onyx-database-go/internal/httpclient"
+	"sync"
 )
 
 // Config mirrors contract.Config to avoid import churn.
@@ -24,12 +26,59 @@ type client struct {
 	sleep      func(time.Duration)
 }
 
+var (
+	httpClientCache = struct {
+		sync.Map
+	}{}
+)
+
 func (c *client) tablePath(table string) string {
 	return "/data/" + tableEscape(c.cfg.DatabaseID) + "/" + tableEscape(table)
 }
 
 func tableEscape(s string) string {
 	return url.PathEscape(s)
+}
+
+func getCachedHTTPClient(baseURL string, baseHTTP *http.Client, logRequests, logResponses bool, signer httpclient.Signer, logger *log.Logger) *httpclient.Client {
+	key := httpClientCacheKey(baseURL, baseHTTP, logRequests, logResponses, signer)
+	if cached, ok := httpClientCache.Load(key); ok {
+		return cached.(*httpclient.Client)
+	}
+
+	hc := httpclient.New(baseURL, baseHTTP, httpclient.Options{
+		Logger:       logger,
+		LogRequests:  logRequests,
+		LogResponses: logResponses,
+		Signer:       signer,
+	})
+
+	if existing, loaded := httpClientCache.LoadOrStore(key, hc); loaded {
+		return existing.(*httpclient.Client)
+	}
+	return hc
+}
+
+func httpClientCacheKey(baseURL string, baseHTTP *http.Client, logRequests, logResponses bool, signer httpclient.Signer) string {
+	var basePtr string
+	if baseHTTP != nil {
+		basePtr = fmt.Sprintf("%p", baseHTTP)
+	}
+	return strings.Join([]string{
+		baseURL,
+		basePtr,
+		fmt.Sprintf("%t", logRequests),
+		fmt.Sprintf("%t", logResponses),
+		signer.APIKey,
+		signer.APISecret,
+	}, "|")
+}
+
+func clearHTTPClientCache() {
+	httpClientCache.Range(func(k, v any) bool {
+		httpClientCache.Delete(k)
+		return true
+	})
 }
 
 // Init constructs a client using the provided configuration.
@@ -62,12 +111,7 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 		APISecret: resolved.APISecret,
 	}
 
-	hc := httpclient.New(resolved.DatabaseBaseURL, cfg.HTTPClient, httpclient.Options{
-		Logger:       logger,
-		LogRequests:  logRequests,
-		LogResponses: logResponses,
-		Signer:       signer,
-	})
+	hc := getCachedHTTPClient(resolved.DatabaseBaseURL, cfg.HTTPClient, logRequests, logResponses, signer, logger)
 
 	nowFn := time.Now
 	if cfg.Clock != nil {
@@ -92,6 +136,7 @@ func InitWithDatabaseID(ctx context.Context, databaseID string) (contract.Client
 // ClearConfigCache clears the resolver cache.
 func ClearConfigCache() {
 	resolver.ClearCache()
+	clearHTTPClientCache()
 }
 
 func (c *client) From(table string) contract.Query {
