@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/OnyxDevTools/onyx-database-go/branch/main/graph/badge.svg)](https://codecov.io/gh/OnyxDevTools/onyx-database-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/OnyxDevTools/onyx-database-go/onyx.svg)](https://pkg.go.dev/github.com/OnyxDevTools/onyx-database-go/onyx)
 
-Go SDK and CLIs for **Onyx Cloud Database** with a contract-first design and stable codegen. The SDK is stdlib-only, resolver/query surface, supports streaming, secrets, documents, and ships a generator for table-safe Go types.
+Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, builder-pattern API for querying and persisting data in Onyx from Node.js or edge runtimes like Cloudflare Workers. Ships ESM & CJS, includes a credential resolver, and an optional schema code generator that produces table-safe types and a tables enum.
 
 - Website: <https://onyx.dev/>
 - Cloud Console: <https://cloud.onyx.dev>
