@@ -45,7 +45,10 @@ reset=$'\033[0m'
 declare -a failed_names=()
 declare -a failed_logs=()
 
-pushd "$(dirname "${BASH_SOURCE[0]}")/../examples" >/dev/null
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+examples_root="${script_dir}/../examples"
+
+pushd "$examples_root" >/dev/null
 
 for entry in "${examples[@]}"; do
   name=${entry%%:*}

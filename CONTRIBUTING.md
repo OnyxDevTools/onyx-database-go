@@ -32,7 +32,7 @@ Build/install once from the repo root:
 cd examples
 go install ../cmd/onyx-go
 onyx-go gen init
-onyx-go gen
+go generate $ or onyx-go gen
 ../scripts/run-examples.sh
 ```
 
@@ -41,14 +41,12 @@ after you've geneted the go stubs there is now a
 go generate
 ```
 
-
-
 Schema CLI quick checks (root or examples, adjust paths as needed):
 ```bash
 onyx-go schema info
+onyx-go schema get --print
 onyx-go schema validate
 onyx-go schema diff
-onyx-go schema get
 ```
 
 Generator CLI (examples module paths):
@@ -57,4 +55,3 @@ onyx-go gen --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx -
 # or from the examples module:
 onyx-go gen --schema ./onyx.schema.json --out ./gen/onyx --package onyx
 ```
-

@@ -13,13 +13,13 @@ type documentClient struct {
 	client *client
 }
 
-func (c *client) Documents() contract.DocumentClient {
+func (c *client) Documents() contract.OnyxDocumentsClient {
 	return &documentClient{client: c}
 }
 
-func (d *documentClient) List(ctx context.Context) ([]contract.Document, error) {
+func (d *documentClient) List(ctx context.Context) ([]contract.OnyxDocument, error) {
 	path := d.basePath()
-	var docs []contract.Document
+	var docs []contract.OnyxDocument
 	if err := d.client.httpClient.DoJSON(ctx, http.MethodGet, path, nil, &docs); err != nil {
 		return nil, err
 	}
@@ -29,24 +29,24 @@ func (d *documentClient) List(ctx context.Context) ([]contract.Document, error) 
 	return docs, nil
 }
 
-func (d *documentClient) Get(ctx context.Context, id string) (contract.Document, error) {
+func (d *documentClient) Get(ctx context.Context, id string) (contract.OnyxDocument, error) {
 	docID := strings.TrimSpace(id)
 	if docID == "" {
-		return contract.Document{}, fmt.Errorf("document id is required")
+		return contract.OnyxDocument{}, fmt.Errorf("document id is required")
 	}
 
-	var doc contract.Document
+	var doc contract.OnyxDocument
 	path := d.basePath() + "/" + tableEscape(docID)
 	if err := d.client.httpClient.DoJSON(ctx, http.MethodGet, path, nil, &doc); err != nil {
-		return contract.Document{}, err
+		return contract.OnyxDocument{}, err
 	}
 	return normalizeDocumentIDs(doc), nil
 }
 
-func (d *documentClient) Save(ctx context.Context, doc contract.Document) (contract.Document, error) {
+func (d *documentClient) Save(ctx context.Context, doc contract.OnyxDocument) (contract.OnyxDocument, error) {
 	docID := preferredDocumentID(doc)
 	if docID == "" {
-		return contract.Document{}, fmt.Errorf("document id is required")
+		return contract.OnyxDocument{}, fmt.Errorf("document id is required")
 	}
 
 	payload := doc
@@ -58,9 +58,9 @@ func (d *documentClient) Save(ctx context.Context, doc contract.Document) (contr
 	}
 
 	path := d.basePath()
-	var saved contract.Document
+	var saved contract.OnyxDocument
 	if err := d.client.httpClient.DoJSON(ctx, http.MethodPut, path, payload, &saved); err != nil {
-		return contract.Document{}, err
+		return contract.OnyxDocument{}, err
 	}
 	return normalizeDocumentIDs(saved), nil
 }
@@ -79,14 +79,14 @@ func (d *documentClient) basePath() string {
 	return "/data/" + tableEscape(d.client.cfg.DatabaseID) + "/document"
 }
 
-func preferredDocumentID(doc contract.Document) string {
+func preferredDocumentID(doc contract.OnyxDocument) string {
 	if id := strings.TrimSpace(doc.DocumentID); id != "" {
 		return id
 	}
 	return strings.TrimSpace(doc.ID)
 }
 
-func normalizeDocumentIDs(doc contract.Document) contract.Document {
+func normalizeDocumentIDs(doc contract.OnyxDocument) contract.OnyxDocument {
 	if doc.DocumentID == "" {
 		doc.DocumentID = strings.TrimSpace(doc.ID)
 	}

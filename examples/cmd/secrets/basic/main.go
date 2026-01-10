@@ -38,7 +38,7 @@ func main() {
 		fmt.Println("Initial secrets list does not include the example key.")
 	}
 
-	saved, err := secrets.Set(ctx, onyx.Secret{Key: secretKey, Value: secretValue})
+	saved, err := secrets.Set(ctx, onyx.OnyxSecret{Key: secretKey, Value: secretValue})
 	if err != nil {
 		log.Fatal(err)
 	}

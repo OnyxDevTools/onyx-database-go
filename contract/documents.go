@@ -2,9 +2,9 @@ package contract
 
 import "context"
 
-// Document represents a stored document payload.
+// OnyxDocument represents a stored document payload.
 // The structure is intentionally flexible and mirrors the TS client shape.
-type Document struct {
+type OnyxDocument struct {
 	// Legacy ID used by earlier iterations of the Go SDK.
 	ID string `json:"id,omitempty"`
 	// Canonical identifier used by the TS client and HTTP API.
@@ -24,10 +24,14 @@ type Document struct {
 	UpdatedAt string `json:"updatedAt,omitempty"`
 }
 
-// DocumentClient exposes the Documents API surface.
-type DocumentClient interface {
-	List(ctx context.Context) ([]Document, error)
-	Get(ctx context.Context, id string) (Document, error)
-	Save(ctx context.Context, doc Document) (Document, error)
+// OnyxDocumentsClient exposes the Documents API surface.
+type OnyxDocumentsClient interface {
+	List(ctx context.Context) ([]OnyxDocument, error)
+	Get(ctx context.Context, id string) (OnyxDocument, error)
+	Save(ctx context.Context, doc OnyxDocument) (OnyxDocument, error)
 	Delete(ctx context.Context, id string) error
 }
+
+// Backward-compatible aliases to avoid breaking existing callers.
+type Document = OnyxDocument
+type DocumentClient = OnyxDocumentsClient

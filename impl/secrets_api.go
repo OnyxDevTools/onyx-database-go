@@ -12,13 +12,13 @@ type secretClient struct {
 	client *client
 }
 
-func (c *client) Secrets() contract.SecretClient { return &secretClient{client: c} }
+func (c *client) Secrets() contract.OnyxSecretsClient { return &secretClient{client: c} }
 
 type secretListResponse struct {
-	Records []contract.Secret `json:"records"`
+	Records []contract.OnyxSecret `json:"records"`
 }
 
-func (s *secretClient) List(ctx context.Context) ([]contract.Secret, error) {
+func (s *secretClient) List(ctx context.Context) ([]contract.OnyxSecret, error) {
 	var resp secretListResponse
 	path := "/database/" + tableEscape(s.client.cfg.DatabaseID) + "/secret"
 	if err := s.client.httpClient.DoJSON(ctx, http.MethodGet, path, nil, &resp); err != nil {
@@ -27,26 +27,26 @@ func (s *secretClient) List(ctx context.Context) ([]contract.Secret, error) {
 	return resp.Records, nil
 }
 
-func (s *secretClient) Get(ctx context.Context, key string) (contract.Secret, error) {
+func (s *secretClient) Get(ctx context.Context, key string) (contract.OnyxSecret, error) {
 	if key == "" {
-		return contract.Secret{}, fmt.Errorf("secret key is required")
+		return contract.OnyxSecret{}, fmt.Errorf("secret key is required")
 	}
-	var secret contract.Secret
+	var secret contract.OnyxSecret
 	path := "/database/" + tableEscape(s.client.cfg.DatabaseID) + "/secret/" + tableEscape(key)
 	if err := s.client.httpClient.DoJSON(ctx, http.MethodGet, path, nil, &secret); err != nil {
-		return contract.Secret{}, err
+		return contract.OnyxSecret{}, err
 	}
 	return secret, nil
 }
 
-func (s *secretClient) Set(ctx context.Context, secret contract.Secret) (contract.Secret, error) {
+func (s *secretClient) Set(ctx context.Context, secret contract.OnyxSecret) (contract.OnyxSecret, error) {
 	if secret.Key == "" {
-		return contract.Secret{}, fmt.Errorf("secret key is required")
+		return contract.OnyxSecret{}, fmt.Errorf("secret key is required")
 	}
 	path := "/database/" + tableEscape(s.client.cfg.DatabaseID) + "/secret/" + tableEscape(secret.Key)
-	var resp contract.Secret
+	var resp contract.OnyxSecret
 	if err := s.client.httpClient.DoJSON(ctx, http.MethodPut, path, secret, &resp); err != nil {
-		return contract.Secret{}, err
+		return contract.OnyxSecret{}, err
 	}
 	return resp, nil
 }
@@ -60,15 +60,15 @@ func (s *secretClient) Delete(ctx context.Context, key string) error {
 }
 
 // Facade-style helpers matching the TS SDK surface.
-func (c *client) ListSecrets(ctx context.Context) ([]contract.Secret, error) {
+func (c *client) ListSecrets(ctx context.Context) ([]contract.OnyxSecret, error) {
 	return c.Secrets().List(ctx)
 }
 
-func (c *client) GetSecret(ctx context.Context, key string) (contract.Secret, error) {
+func (c *client) GetSecret(ctx context.Context, key string) (contract.OnyxSecret, error) {
 	return c.Secrets().Get(ctx, key)
 }
 
-func (c *client) PutSecret(ctx context.Context, secret contract.Secret) (contract.Secret, error) {
+func (c *client) PutSecret(ctx context.Context, secret contract.OnyxSecret) (contract.OnyxSecret, error) {
 	return c.Secrets().Set(ctx, secret)
 }
 

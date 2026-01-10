@@ -107,7 +107,19 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 	if err != nil {
 		return ResolvedConfig{}, Meta{}, err
 	}
-	meta.FilePath = filePath
+	if filePath != "" {
+		if abs, err := filepath.Abs(filePath); err == nil {
+			if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+				meta.FilePath = resolved
+			} else {
+				meta.FilePath = abs
+			}
+		} else {
+			meta.FilePath = filePath
+		}
+	} else {
+		meta.FilePath = filePath
+	}
 
 	if resolved.DatabaseID == "" || resolved.DatabaseBaseURL == "" || resolved.APIKey == "" || resolved.APISecret == "" {
 		return ResolvedConfig{}, Meta{}, errors.New("missing required configuration values")
@@ -155,19 +167,15 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 			dbID = partial.DatabaseID
 		}
 
+		// Search order: config dir first, then project root variants.
+		if dbID != "" {
+			candidates = append(candidates, filepath.Join("config", fmt.Sprintf("onyx-database-%s.json", dbID)))
+		}
+		candidates = append(candidates, filepath.Join("config", "onyx-database.json"))
 		if dbID != "" {
 			candidates = append(candidates, fmt.Sprintf("./onyx-database-%s.json", dbID))
 		}
 		candidates = append(candidates, "./onyx-database.json")
-
-		homeDir, _ := os.UserHomeDir()
-		if homeDir != "" {
-			if dbID != "" {
-				candidates = append(candidates, filepath.Join(homeDir, ".onyx", fmt.Sprintf("onyx-database-%s.json", dbID)))
-			}
-			candidates = append(candidates, filepath.Join(homeDir, ".onyx", "onyx-database.json"))
-			candidates = append(candidates, filepath.Join(homeDir, "onyx-database.json"))
-		}
 	}
 
 	for _, candidate := range candidates {

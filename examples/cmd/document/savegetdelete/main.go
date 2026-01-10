@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	doc := onyx.Document{
+	doc := onyx.OnyxDocument{
 		DocumentID: "note.json",
 		Path:       "/notes/note.json",
 		MimeType:   "application/json",
