@@ -158,3 +158,66 @@ func TestParseSchemaJSONShapesAndErrors(t *testing.T) {
 		t.Fatalf("expected parse error")
 	}
 }
+
+func TestPageResultUnmarshalCursorFallback(t *testing.T) {
+	var p PageResult
+	if err := json.Unmarshal([]byte(`{"records":[{"id":1}],"nextCursor":"cursor-only"}`), &p); err != nil {
+		t.Fatalf("expected alt shape decode via nextCursor: %v", err)
+	}
+	if p.NextCursor != "cursor-only" || len(p.Items) != 1 {
+		t.Fatalf("unexpected page result: %+v", p)
+	}
+}
+
+func TestParseSchemaJSONEmptySchema(t *testing.T) {
+	schema, err := ParseSchemaJSON([]byte(`{"schema":{}}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(schema.Tables) != 0 {
+		t.Fatalf("expected empty schema, got %+v", schema)
+	}
+}
+
+func TestSchemaFromEntitiesSkipsInvalidEntries(t *testing.T) {
+	schema := schemaFromEntities([]any{
+		123,
+		map[string]any{
+			"name":       "Broken",
+			"identifier": map[string]any{"name": "id"},
+			"attributes": []any{"not-a-map"},
+			"resolvers":  []any{123},
+			"indexes":    []any{123},
+			"triggers":   []any{123},
+		},
+	})
+	if len(schema.Tables) != 1 || len(schema.Tables[0].Fields) != 0 {
+		t.Fatalf("expected skip of invalid entries, got %+v", schema.Tables)
+	}
+	if len(schema.Tables[0].Resolvers) != 0 || len(schema.Tables[0].Indexes) != 0 || len(schema.Tables[0].Triggers) != 0 {
+		t.Fatalf("expected no resolvers/indexes/triggers parsed from invalid types, got %+v", schema.Tables[0])
+	}
+}
+
+func TestSchemaFromTablesArraySkipsInvalidEntries(t *testing.T) {
+	schema := schemaFromTablesArray([]any{
+		123,
+		map[string]any{
+			"name":      "Docs",
+			"fields":    []any{123},
+			"resolvers": []any{123},
+			"indexes":   []any{123},
+			"triggers":  []any{123},
+		},
+	})
+	if len(schema.Tables) != 1 {
+		t.Fatalf("expected table parsed despite invalid siblings")
+	}
+	tbl := schema.Tables[0]
+	if len(tbl.Fields) != 0 {
+		t.Fatalf("expected invalid fields skipped, got %+v", tbl.Fields)
+	}
+	if len(tbl.Resolvers) != 0 || len(tbl.Indexes) != 0 || len(tbl.Triggers) != 0 {
+		t.Fatalf("expected invalid resolver/index/trigger entries skipped, got %+v", tbl)
+	}
+}

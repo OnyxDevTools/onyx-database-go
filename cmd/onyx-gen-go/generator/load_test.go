@@ -69,3 +69,26 @@ type stubSchemaClient struct {
 func (s *stubSchemaClient) Schema(ctx context.Context) (onyx.Schema, error) {
 	return s.schema, nil
 }
+
+func TestLoadSchemaFromFileParseError(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "schema.json")
+	if err := os.WriteFile(path, []byte("{"), 0o644); err != nil {
+		t.Fatalf("write invalid schema: %v", err)
+	}
+	if _, err := loadSchemaFromFile(path, nil); err == nil {
+		t.Fatalf("expected parse error")
+	}
+}
+
+func TestInitClientDefaultError(t *testing.T) {
+	orig := initClient
+	initClient = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		return orig(ctx, databaseID)
+	}
+	defer func() { initClient = orig }()
+
+	if _, err := initClient(context.Background(), "db_missing"); err == nil {
+		t.Fatalf("expected error from default init client when config missing")
+	}
+}

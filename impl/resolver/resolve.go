@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+var (
+	pathAbs            = filepath.Abs
+	evalSymlinks       = filepath.EvalSymlinks
+	readConfigEnv      = func(key string) string { return os.Getenv(key) }
+	resolveFromFilesFn = resolveFromFiles
+)
+
 // Config captures user-provided configuration values used during resolution.
 type Config struct {
 	DatabaseID      string
@@ -103,13 +110,13 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 	}
 
 	// File-based config is lowest precedence.
-	filePath, err := resolveFromFiles(ctx, partial, &resolved, &meta)
+	filePath, err := resolveFromFilesFn(ctx, partial, &resolved, &meta)
 	if err != nil {
 		return ResolvedConfig{}, Meta{}, err
 	}
 	if filePath != "" {
-		if abs, err := filepath.Abs(filePath); err == nil {
-			if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		if abs, err := pathAbs(filePath); err == nil {
+			if resolved, err := evalSymlinks(abs); err == nil {
 				meta.FilePath = resolved
 			} else {
 				meta.FilePath = abs
@@ -154,7 +161,7 @@ type fileConfig struct {
 func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedConfig, meta *Meta) (string, error) {
 	path := partial.ConfigPath
 	if path == "" {
-		path = os.Getenv("ONYX_CONFIG_PATH")
+		path = readConfigEnv("ONYX_CONFIG_PATH")
 	}
 	var chosenPath string
 

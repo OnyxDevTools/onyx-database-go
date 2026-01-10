@@ -17,6 +17,8 @@ var transientStatus = map[int]bool{
 	http.StatusGatewayTimeout:     true,
 }
 
+var testHookBeforeRetryWait func(context.Context)
+
 func batchSave(ctx context.Context, c *client, table string, entities []any, batchSize int) error {
 	if batchSize <= 0 {
 		batchSize = defaultBatchSize
@@ -41,6 +43,9 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 		if cerr, ok := err.(*contract.Error); ok {
 			if status, ok := cerr.Meta["status"].(int); ok && transientStatus[status] {
 				// single retry after small backoff
+				if testHookBeforeRetryWait != nil {
+					testHookBeforeRetryWait(ctx)
+				}
 				select {
 				case <-ctx.Done():
 					return ctx.Err()

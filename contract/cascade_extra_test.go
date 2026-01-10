@@ -13,3 +13,12 @@ func TestCascadeBuilderBuildsSpec(t *testing.T) {
 		t.Fatalf("expected cascade string")
 	}
 }
+
+func TestCascadeBuilderGraphTypeOnly(t *testing.T) {
+	spec := NewCascadeBuilder().
+		GraphType("Role").
+		Build()
+	if spec.String() != "Role" {
+		t.Fatalf("expected graph type only cascade, got %q", spec.String())
+	}
+}

@@ -224,3 +224,49 @@ func TestRunGenHelpAndInitErrors(t *testing.T) {
 		t.Fatalf("expected init help, got code=%d stdout=%s", code, stdout.String())
 	}
 }
+
+func TestBuildAnchorFileIncludesAPIFlags(t *testing.T) {
+	cfg := anchorConfig{
+		Source:          "api",
+		DatabaseID:      "db123",
+		SchemaPath:      "/abs/schema.json",
+		OutPath:         "/abs/out",
+		PackageName:     "pkg",
+		Tables:          []string{"users"},
+		TimestampFormat: "string",
+	}
+
+	content := buildAnchorFile(cfg)
+	assertContains := func(sub string) {
+		if !strings.Contains(content, sub) {
+			t.Fatalf("expected anchor content to include %q, got:\n%s", sub, content)
+		}
+	}
+	assertContains("--source api")
+	assertContains("--database-id db123")
+	assertContains("--schema /abs/schema.json")
+	assertContains("--out /abs/out")
+	assertContains("--package pkg")
+	assertContains("--timestamps string")
+	assertContains("--tables users")
+}
+
+func TestPrintLayoutRelFallbacks(t *testing.T) {
+	var out bytes.Buffer
+	cfg := anchorConfig{
+		SchemaPath: "/abs/api/onyx.schema.json",
+		OutPath:    "gen/onyx",
+	}
+
+	printLayout(&out, "", "/abs/generate.go", cfg)
+	content := out.String()
+	if !strings.Contains(content, "/abs/generate.go") {
+		t.Fatalf("expected absolute anchor path in output, got: %s", content)
+	}
+	if !strings.Contains(content, "onyx.schema.json") {
+		t.Fatalf("expected schema path in output, got: %s", content)
+	}
+	if !strings.Contains(content, "gen/onyx") {
+		t.Fatalf("expected cleaned relative out path, got: %s", content)
+	}
+}

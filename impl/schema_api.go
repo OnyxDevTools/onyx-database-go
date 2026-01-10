@@ -112,9 +112,7 @@ func fetchSchema(ctx context.Context, c *client, tables []string) (contract.Sche
 	return contract.ParseSchemaJSON(data)
 }
 
-func jsonMarshal(v any) ([]byte, error) {
-	return json.Marshal(v)
-}
+var jsonMarshal = json.Marshal
 
 // publishSchema sends the schema using the TS-style endpoint /schemas/{databaseId}.
 func publishSchema(ctx context.Context, c *client, schema contract.Schema, publish bool) error {

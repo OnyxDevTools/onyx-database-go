@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -80,7 +79,7 @@ func (c *DiffCommand) Run(args []string) int {
 	diff := schemas.DiffSchemas(baseSchema, updatedSchema)
 
 	if *jsonOut {
-		data, err := json.MarshalIndent(diff, "", "  ")
+		data, err := jsonMarshalIndent(diff, "", "  ")
 		if err != nil {
 			fmt.Fprintf(Stderr, "failed to render diff: %v\n", err)
 			return 1
@@ -108,22 +107,30 @@ func loadSchema(path string) (onyx.Schema, error) {
 	return onyx.ParseSchemaJSON(data)
 }
 
-var fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
-	var (
-		client onyx.Client
-		err    error
-	)
-
-	if databaseID != "" {
-		client, err = onyx.InitWithDatabaseID(ctx, databaseID)
-	} else {
-		client, err = onyx.Init(ctx, onyx.Config{})
+var (
+	schemaClientFactoryHandler = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		if databaseID != "" {
+			return onyx.InitWithDatabaseID(ctx, databaseID)
+		}
+		return onyx.Init(ctx, onyx.Config{})
 	}
-	if err != nil {
-		return onyx.Schema{}, err
+	schemaClientFactoryImpl = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		return schemaClientFactoryHandler(ctx, databaseID)
 	}
-	return client.Schema(ctx)
-}
+	schemaClientFactory = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		return schemaClientFactoryImpl(ctx, databaseID)
+	}
+	connectSchemaClient = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		return schemaClientFactory(ctx, databaseID)
+	}
+	fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
+		client, err := connectSchemaClient(ctx, databaseID)
+		if err != nil {
+			return onyx.Schema{}, err
+		}
+		return client.Schema(ctx)
+	}
+)
 
 func summarizeDiff(diff schemas.SchemaDiff) string {
 	var sections []string

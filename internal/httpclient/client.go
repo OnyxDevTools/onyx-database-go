@@ -29,6 +29,13 @@ type Client struct {
 	signer       Signer
 }
 
+var (
+	newRequestWithContext = http.NewRequestWithContext
+	signRequest           = func(s Signer, req *http.Request, body []byte) error {
+		return s.Sign(req, body)
+	}
+)
+
 // New constructs a Client.
 func New(baseURL string, httpClient *http.Client, opts Options) *Client {
 	if httpClient == nil {
@@ -85,13 +92,13 @@ func (c *Client) do(ctx context.Context, method, path string, reqBody any, strea
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, fullURL, &buf)
+	req, err := newRequestWithContext(ctx, method, fullURL, &buf)
 	if err != nil {
 		return nil, nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	if err := c.signer.Sign(req, buf.Bytes()); err != nil {
+	if err := signRequest(c.signer, req, buf.Bytes()); err != nil {
 		return nil, nil, err
 	}
 

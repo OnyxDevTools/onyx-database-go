@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -43,7 +42,7 @@ func (c *NormalizeCommand) Run(args []string) int {
 	}
 
 	normalized := onyx.NormalizeSchema(schema)
-	rendered, err := json.MarshalIndent(normalized, "", "  ")
+	rendered, err := jsonMarshalIndent(normalized, "", "  ")
 	if err != nil {
 		fmt.Fprintf(Stderr, "failed to encode schema: %v\n", err)
 		return 1

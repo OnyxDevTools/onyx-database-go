@@ -19,14 +19,7 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
 1. **Create a database** at <https://cloud.onyx.dev>. Define your schema (tables like `User`, `Role`, `Permission`) and create API keys. 
 
 2. **Capture connection parameters**:
-   You will need to setup an apiKey to connect to your database in the onyx console at <https://cloud.onyx.dev>.  After creting the apiKey, you can download the `onyx-database.json`. Save it to the `config` folder
-
-   They consiste of the following:
-
-   - `baseUrl` (e.g., `https://api.onyx.dev`)
-   - `databaseId`
-   - `apiKey`
-   - `apiSecret`
+   You will need to setup an apiKey to connect to your database in the onyx console at <https://cloud.onyx.dev>.  After creating the apiKey, you can download the `onyx-database.json`. Save it to the `config` folder
 
 3. **Install the client sdk and cli tool**
 
@@ -35,7 +28,7 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
    go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
    ```
 
-4. **Scaffold a go:generate anchor** (run in your project):
+4. **initialize your generator cofig (go:generate anchor)** :
 
    ```bash
    onyx-go gen init
@@ -103,8 +96,6 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
 
 This SDK resolves credentials automatically using the chain **explicit config ➜ environment variables ➜ `ONYX_CONFIG_PATH` file ➜ project config file ➜ home profile** _(Node.js only for file-based sources)_. Call `onyx.New(ctx, { DatabaseID: 'database-id' })` to target a specific database, or omit the `databaseId` to use the default. You can also pass credentials directly via config.. Reset caches between tests with `onyx.ClearConfigCache()`.
 
-`Config` fields: `DatabaseID`, `DatabaseBaseURL`, `APIKey`, `APISecret`, `CacheTTL`, `ConfigPath`, `LogRequests`, `LogResponses`, and optional `HTTPClient`, `Clock`, `Sleep` overrides for custom transport/testing. Setting `ONYX_DEBUG=true` forces request/response logging even if the flags are false.
-
 ### Option A) Environment variables
 
 Set credentials, then call `Init` if you use the raw sdk and handle marshalling and decoding yourself, or you can use the generated client which has a `New` method
@@ -167,14 +158,6 @@ Shape:
 ---
 
 ## Optional: generate Go types and table-safe clients
-
-`onyx-go gen` emits:
-- Plain Go structs for each table, JSON-tagged to match the API.
-- `Tables` constants and `Resolvers` map (when resolvers exist).
-- A typed `DB` wrapper with table-specific clients (`Users()`, `Roles()`, etc.), `Documents()`, `Secrets()`, `Core()`, and `Wrap(core)` for adapters.
-- Typed helpers: `FindByID`, `FindByEmail` (when an `email` field exists), `FindActiveUsers`/`CountActive` (when an `isActive` field exists), `SaveMany`, `DeleteByIDs`, paginated iterators, `WithTimeout`, `QueryHook`, and cascade support via `...onyx.CascadeSpec`.
-
-Stable ordering (set `ONYX_GEN_TIMESTAMP` to pin header text); imports only `github.com/OnyxDevTools/onyx-database-go/onyx` plus `time` when timestamps are time values.
 
 Generate from a file:
 

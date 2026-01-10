@@ -30,6 +30,7 @@ var (
 	httpClientCache = struct {
 		sync.Map
 	}{}
+	testHookAfterCacheLoad func()
 )
 
 func (c *client) tablePath(table string) string {
@@ -44,6 +45,10 @@ func getCachedHTTPClient(baseURL string, baseHTTP *http.Client, logRequests, log
 	key := httpClientCacheKey(baseURL, baseHTTP, logRequests, logResponses, signer)
 	if cached, ok := httpClientCache.Load(key); ok {
 		return cached.(*httpclient.Client)
+	}
+
+	if testHookAfterCacheLoad != nil {
+		testHookAfterCacheLoad()
 	}
 
 	hc := httpclient.New(baseURL, baseHTTP, httpclient.Options{

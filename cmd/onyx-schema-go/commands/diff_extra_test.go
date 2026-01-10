@@ -32,10 +32,12 @@ func TestDiffCommandIdenticalSchemas(t *testing.T) {
 }
 
 func TestDiffCommandFetchError(t *testing.T) {
-	orig := fetchSchemaFromAPI
-	t.Cleanup(func() { fetchSchemaFromAPI = orig })
-	fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
-		return onyx.Schema{}, os.ErrNotExist
+	orig := schemaClientFactoryHandler
+	t.Cleanup(func() { schemaClientFactoryHandler = orig })
+	schemaClientFactoryHandler = func(ctx context.Context, databaseID string) (schemaClient, error) {
+		return schemaClientFunc(func(context.Context) (onyx.Schema, error) {
+			return onyx.Schema{}, os.ErrNotExist
+		}), nil
 	}
 
 	tmp := t.TempDir()

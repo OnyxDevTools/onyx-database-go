@@ -126,18 +126,20 @@ func TestDiffCommandFetchesFromAPI(t *testing.T) {
 	pathA := filepath.Join(tmpDir, "a.json")
 	writeFile(t, pathA, `{"tables": []}`)
 
-	original := fetchSchemaFromAPI
-	defer func() { fetchSchemaFromAPI = original }()
+	original := schemaClientFactoryHandler
+	defer func() { schemaClientFactoryHandler = original }()
 
 	var called bool
-	fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
+	schemaClientFactoryHandler = func(ctx context.Context, databaseID string) (schemaClient, error) {
 		called = true
 		if databaseID != "db-123" {
 			t.Fatalf("expected database id db-123, got %s", databaseID)
 		}
-		return onyx.Schema{
-			Tables: []onyx.Table{{Name: "users", Fields: []onyx.Field{{Name: "id", Type: "string"}}}},
-		}, nil
+		return schemaClientFunc(func(context.Context) (onyx.Schema, error) {
+			return onyx.Schema{
+				Tables: []onyx.Table{{Name: "users", Fields: []onyx.Field{{Name: "id", Type: "string"}}}},
+			}, nil
+		}), nil
 	}
 
 	var out bytes.Buffer
@@ -168,18 +170,20 @@ func TestDiffCommandDefaultsToAPIWhenBMissing(t *testing.T) {
 	pathA := filepath.Join(tmpDir, "a.json")
 	writeFile(t, pathA, `{"tables": []}`)
 
-	original := fetchSchemaFromAPI
-	defer func() { fetchSchemaFromAPI = original }()
+	original := schemaClientFactoryHandler
+	defer func() { schemaClientFactoryHandler = original }()
 
 	var called bool
-	fetchSchemaFromAPI = func(ctx context.Context, databaseID string) (onyx.Schema, error) {
+	schemaClientFactoryHandler = func(ctx context.Context, databaseID string) (schemaClient, error) {
 		if databaseID != "" {
 			t.Fatalf("expected empty database id, got %s", databaseID)
 		}
 		called = true
-		return onyx.Schema{
-			Tables: []onyx.Table{{Name: "users", Fields: []onyx.Field{{Name: "id", Type: "string"}}}},
-		}, nil
+		return schemaClientFunc(func(context.Context) (onyx.Schema, error) {
+			return onyx.Schema{
+				Tables: []onyx.Table{{Name: "users", Fields: []onyx.Field{{Name: "id", Type: "string"}}}},
+			}, nil
+		}), nil
 	}
 
 	var out bytes.Buffer
