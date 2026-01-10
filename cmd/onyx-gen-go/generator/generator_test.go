@@ -53,44 +53,62 @@ func TestRunLoadsSchema(t *testing.T) {
 		t.Fatalf("run returned error: %v", err)
 	}
 
-	out, err := os.ReadFile(filepath.Join(outDir, "models.go"))
+	common, err := os.ReadFile(filepath.Join(outDir, "common.go"))
 	if err != nil {
-		t.Fatalf("expected generated file, read err: %v", err)
+		t.Fatalf("expected generated common file, read err: %v", err)
 	}
-	content := string(out)
-	if !strings.Contains(content, "package pkg") || !strings.Contains(content, "var Tables") {
-		t.Fatalf("unexpected generated content:\n%s", content)
+	if !strings.Contains(string(common), "package pkg") || !strings.Contains(string(common), "var Tables") {
+		t.Fatalf("unexpected common content:\n%s", string(common))
 	}
-
-	if !strings.Contains(content, "User: \"User\"") {
-		t.Fatalf("expected table mapping, got:\n%s", content)
+	if !strings.Contains(string(common), "User: \"User\"") {
+		t.Fatalf("expected table mapping, got:\n%s", string(common))
 	}
-
-	if strings.Contains(content, "FieldUser") {
-		t.Fatalf("did not expect field constants, got:\n%s", content)
+	if !strings.Contains(string(common), "type DB struct") || !strings.Contains(string(common), "New(ctx context.Context, cfg Config) (DB, error)") {
+		t.Fatalf("expected DB helpers, got:\n%s", string(common))
 	}
 
-	if !strings.Contains(content, "type User struct") || !strings.Contains(content, "CreatedAt *time.Time") {
-		t.Fatalf("expected struct with timestamp mapping, got:\n%s", content)
-	}
-
-	if strings.Contains(content, "MarshalJSON") {
-		t.Fatalf("did not expect custom marshal, got:\n%s", content)
-	}
-
-	clientPath := clientOutPath(outDir)
-	clientContent, err := os.ReadFile(clientPath)
+	userContent, err := os.ReadFile(filepath.Join(outDir, "user.go"))
 	if err != nil {
-		t.Fatalf("expected client file, read err: %v", err)
+		t.Fatalf("expected user file, read err: %v", err)
 	}
-	if !strings.Contains(string(clientContent), "type Client struct") || !strings.Contains(string(clientContent), "ListUsers") {
-		t.Fatalf("expected client helpers, got:\n%s", string(clientContent))
+	if !strings.Contains(string(userContent), "type User struct") || !strings.Contains(string(userContent), "CreatedAt *time.Time") {
+		t.Fatalf("expected struct with timestamp mapping, got:\n%s", string(userContent))
 	}
-	if !strings.Contains(string(clientContent), "SaveUser(ctx context.Context, item User, cascades ...onyx.CascadeSpec) (User, error)") {
-		t.Fatalf("expected typed save helper, got:\n%s", string(clientContent))
+	if strings.Contains(string(userContent), "MarshalJSON") {
+		t.Fatalf("did not expect custom marshal, got:\n%s", string(userContent))
 	}
-	if !strings.Contains(string(clientContent), "DeleteUser(ctx context.Context, id string) (int, error)") {
-		t.Fatalf("expected typed delete helper, got:\n%s", string(clientContent))
+	if !strings.Contains(string(userContent), "Users() UsersClient") {
+		t.Fatalf("expected typed accessor, got:\n%s", string(userContent))
+	}
+	if !strings.Contains(string(userContent), "Save(ctx context.Context, item User, cascades ...onyx.CascadeSpec) (User, error)") {
+		t.Fatalf("expected typed save helper, got:\n%s", string(userContent))
+	}
+	if !strings.Contains(string(userContent), "DeleteByID(ctx context.Context, id string) (int, error)") {
+		t.Fatalf("expected typed delete-by-id helper, got:\n%s", string(userContent))
+	}
+	if !strings.Contains(string(userContent), "Select(fields ...string) UsersMapClient") {
+		t.Fatalf("expected select to return map client, got:\n%s", string(userContent))
+	}
+	if !strings.Contains(string(userContent), "List(ctx context.Context) ([]map[string]any, error)") {
+		t.Fatalf("expected map list helper, got:\n%s", string(userContent))
+	}
+
+	generateContent, err := os.ReadFile(filepath.Join(outDir, "generate.go"))
+	if err != nil {
+		t.Fatalf("expected generate.go file, read err: %v", err)
+	}
+	if !strings.Contains(string(generateContent), "//go:generate onyx-go gen") {
+		t.Fatalf("expected go:generate anchor, got:\n%s", string(generateContent))
+	}
+	relSchema, _ := filepath.Rel(outDir, schemaPath)
+	if relSchema == "" {
+		relSchema = schemaPath
+	}
+	if !strings.Contains(string(generateContent), relSchema) {
+		t.Fatalf("expected schema path in generate anchor, got:\n%s", string(generateContent))
+	}
+	if !strings.Contains(string(generateContent), "--out .") {
+		t.Fatalf("expected regenerate-in-place out flag, got:\n%s", string(generateContent))
 	}
 }
 
@@ -123,5 +141,27 @@ func TestLoadSchemaRespectsSource(t *testing.T) {
 	}
 	if !called {
 		t.Fatalf("expected api client to be used")
+	}
+}
+
+func TestRunRespectsDisableGenerateFile(t *testing.T) {
+	tmp := t.TempDir()
+	schemaPath := filepath.Join(tmp, "schema.json")
+	if err := os.WriteFile(schemaPath, []byte(`{"tables":[{"name":"User"}]}`), 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	outDir := filepath.Join(tmp, "onyx")
+	opts := Options{
+		SchemaPath:          schemaPath,
+		OutPath:             outDir,
+		PackageName:         "pkg",
+		DisableGenerateFile: true,
+	}
+	if err := Run(opts); err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, "generate.go")); err == nil {
+		t.Fatalf("generate.go should not be written when disabled")
 	}
 }

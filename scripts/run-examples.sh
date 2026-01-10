@@ -2,37 +2,37 @@
 set -uo pipefail
 
 examples=(
-  "delete/byid:./examples/delete/cmd/byid"
-  "delete/query:./examples/delete/cmd/query"
-  "document/savegetdelete:./examples/document/cmd/savegetdelete"
-  "query/aggregateavg:./examples/query/cmd/aggregateavg"
-  "query/aggregateswithgrouping:./examples/query/cmd/aggregateswithgrouping"
-  "query/basic:./examples/query/cmd/basic"
-  "query/compound:./examples/query/cmd/compound"
-  "query/findbyid:./examples/query/cmd/findbyid"
-  "query/firstornull:./examples/query/cmd/firstornull"
-  "query/innerquery:./examples/query/cmd/innerquery"
-  "query/inpartition:./examples/query/cmd/inpartition"
-  "query/list:./examples/query/cmd/list"
-  "query/notinnerquery:./examples/query/cmd/notinnerquery"
-  "query/orderby:./examples/query/cmd/orderby"
-  "query/resolver:./examples/query/cmd/resolver"
-  "query/searchbyresolverfields:./examples/query/cmd/searchbyresolverfields"
-  "query/select:./examples/query/cmd/select"
-  "query/sortingandpaging:./examples/query/cmd/sortingandpaging"
-  "query/update:./examples/query/cmd/update"
-  "save/basic:./examples/save/cmd/basic"
-  "save/batchsave:./examples/save/cmd/batchsave"
-  "save/cascade:./examples/save/cmd/cascade"
-  "save/cascadebuilder:./examples/save/cmd/cascadebuilder"
-  "schema/basic:./examples/schema/cmd/basic"
-  "secrets/basic:./examples/secrets/cmd/basic"
-  "stream/close:./examples/stream/cmd/close"
-  "stream/createevents:./examples/stream/cmd/createevents"
-  "stream/deleteevents:./examples/stream/cmd/deleteevents"
-  "stream/querystream:./examples/stream/cmd/querystream"
-  "stream/updateevents:./examples/stream/cmd/updateevents"
-  "seed:./examples/cmd/seed"
+  "delete/byid:./cmd/delete/byid"
+  "delete/query:./cmd/delete/query"
+  "document/savegetdelete:./cmd/document/savegetdelete"
+  "query/aggregateavg:./cmd/query/aggregateavg"
+  "query/aggregateswithgrouping:./cmd/query/aggregateswithgrouping"
+  "query/basic:./cmd/query/basic"
+  "query/compound:./cmd/query/compound"
+  "query/findbyid:./cmd/query/findbyid"
+  "query/firstornull:./cmd/query/firstornull"
+  "query/innerquery:./cmd/query/innerquery"
+  "query/inpartition:./cmd/query/inpartition"
+  "query/list:./cmd/query/list"
+  "query/notinnerquery:./cmd/query/notinnerquery"
+  "query/orderby:./cmd/query/orderby"
+  "query/resolver:./cmd/query/resolver"
+  "query/searchbyresolverfields:./cmd/query/searchbyresolverfields"
+  "query/select:./cmd/query/select"
+  "query/sortingandpaging:./cmd/query/sortingandpaging"
+  "query/update:./cmd/query/update"
+  "save/basic:./cmd/save/basic"
+  "save/batchsave:./cmd/save/batchsave"
+  "save/cascade:./cmd/save/cascade"
+  "save/cascadebuilder:./cmd/save/cascadebuilder"
+  "schema/basic:./cmd/schema/basic"
+  "secrets/basic:./cmd/secrets/basic"
+  "stream/close:./cmd/stream/close"
+  "stream/createevents:./cmd/stream/createevents"
+  "stream/deleteevents:./cmd/stream/deleteevents"
+  "stream/querystream:./cmd/stream/querystream"
+  "stream/updateevents:./cmd/stream/updateevents"
+  "seed:./cmd/seed"
 )
 
 passed=0
@@ -44,6 +44,8 @@ red=$'\033[31m'
 reset=$'\033[0m'
 declare -a failed_names=()
 declare -a failed_logs=()
+
+pushd "$(dirname "${BASH_SOURCE[0]}")/../examples" >/dev/null
 
 for entry in "${examples[@]}"; do
   name=${entry%%:*}
@@ -70,6 +72,8 @@ for entry in "${examples[@]}"; do
   fi
   printf '%s%s%s%s%s\n' "$name" "$dots" "$color" "$status" "$reset"
 done
+
+popd >/dev/null
 
 if ((failed > 0)); then
   echo

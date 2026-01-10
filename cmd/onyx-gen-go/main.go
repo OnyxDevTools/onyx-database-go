@@ -23,13 +23,14 @@ func run(args []string, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("onyx-gen-go", flag.ContinueOnError)
 	fs.SetOutput(&usageBuffer)
 
-	schemaPath := fs.String("schema", "./onyx.schema.json", "path to the onyx.schema.json file")
+	schemaPath := fs.String("schema", "./api/onyx.schema.json", "path to the onyx.schema.json file")
 	source := fs.String("source", "file", "schema source: file or api")
 	databaseID := fs.String("database-id", "", "database id used when --source=api")
-	outPath := fs.String("out", "./onyxclient", "output directory for generated files (models.go, client.go)")
-	packageName := fs.String("package", "", "package name for generated code (defaults to output directory name)")
+	outPath := fs.String("out", "./gen/onyx", "output directory for generated files (models.go, client.go)")
+	packageName := fs.String("package", "", "package name for generated code (default: onyx)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")
+	emitGenerate := fs.Bool("emit-generate", true, "emit a go:generate anchor file alongside generated code")
 
 	fs.Usage = func() {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
@@ -48,13 +49,14 @@ func run(args []string, stdout, stderr io.Writer) error {
 	}
 
 	opts := generator.Options{
-		SchemaPath:      *schemaPath,
-		Source:          *source,
-		DatabaseID:      *databaseID,
-		OutPath:         *outPath,
-		PackageName:     *packageName,
-		Tables:          parseTables(*tables),
-		TimestampFormat: *timestamps,
+		SchemaPath:          *schemaPath,
+		Source:              *source,
+		DatabaseID:          *databaseID,
+		OutPath:             *outPath,
+		PackageName:         *packageName,
+		Tables:              parseTables(*tables),
+		TimestampFormat:     *timestamps,
+		DisableGenerateFile: !*emitGenerate,
 	}
 
 	if err := generator.Run(opts); err != nil {
@@ -62,8 +64,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 
-	fmt.Fprintf(stdout, "Generated models from %s to %s/models.go\n", opts.SchemaPath, opts.OutPath)
-	fmt.Fprintf(stdout, "Generated typed client to %s/client.go\n", opts.OutPath)
+	fmt.Fprintf(stdout, "Generated code from %s into %s/*.go\n", opts.SchemaPath, opts.OutPath)
 	return nil
 }
 
