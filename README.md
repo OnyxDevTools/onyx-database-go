@@ -197,7 +197,7 @@ import (
 ctx := context.Background()
 db, err := client.New(ctx, onyx.Config{})
 
-users, err := db.Users(ctx).Limit(25).List(ctx)
+users, err := db.Users().Limit(25).List(ctx)
 ```
 
 ---
