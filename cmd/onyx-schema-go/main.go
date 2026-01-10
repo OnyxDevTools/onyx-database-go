@@ -7,5 +7,11 @@ import (
 )
 
 func main() {
-	os.Exit(commands.Dispatch(os.Args[1:]))
+	exit(runMain(os.Args[1:]))
+}
+
+var exit = os.Exit
+
+func runMain(args []string) int {
+	return commands.Dispatch(args)
 }

@@ -15,7 +15,13 @@ import (
 )
 
 func main() {
-	os.Exit(dispatch(os.Args[1:], os.Stdout, os.Stderr))
+	exit(runMain(os.Args, os.Stdout, os.Stderr))
+}
+
+var exit = os.Exit
+
+func runMain(args []string, stdout, stderr io.Writer) int {
+	return dispatch(args[1:], stdout, stderr)
 }
 
 func dispatch(args []string, stdout, stderr io.Writer) int {
