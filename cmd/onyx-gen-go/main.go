@@ -30,8 +30,6 @@ func run(args []string, stdout, stderr io.Writer) error {
 	packageName := fs.String("package", "", "package name for generated code (default: onyx)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")
-	emitGenerate := fs.Bool("emit-generate", true, "emit a go:generate anchor file alongside generated code")
-
 	fs.Usage = func() {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
@@ -56,7 +54,6 @@ func run(args []string, stdout, stderr io.Writer) error {
 		PackageName:         *packageName,
 		Tables:              parseTables(*tables),
 		TimestampFormat:     *timestamps,
-		DisableGenerateFile: !*emitGenerate,
 	}
 
 	if err := generator.Run(opts); err != nil {
