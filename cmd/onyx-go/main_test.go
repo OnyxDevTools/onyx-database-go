@@ -200,3 +200,27 @@ func TestMainExitCodes(t *testing.T) {
 		})
 	}
 }
+
+func TestRunGenHelpAndInitErrors(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := runGen([]string{"-h"}, &stdout, &stderr)
+	if code != 0 || !strings.Contains(stdout.String(), "Usage of onyx-go gen") {
+		t.Fatalf("expected help output, got code %d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+
+	tmp := t.TempDir()
+	// anchorPath points to directory so WriteFile should fail
+	code = runGenInit([]string{"--file", tmp}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("expected failure writing anchor, got %d", code)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runGenInit([]string{"-h"}, &stdout, &stderr)
+	if code != 0 || !strings.Contains(stdout.String(), "Usage of onyx-go gen init") {
+		t.Fatalf("expected init help, got code=%d stdout=%s", code, stdout.String())
+	}
+}

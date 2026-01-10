@@ -25,6 +25,8 @@ go build ./...
 go vet ./...
 go test ./...
 ```
+## Code Coverage:
+go test ./... -coverprofile=coverage.out -covermode=atomic
 
 ## Using the CLIs locally
 Build/install once from the repo root:
@@ -35,6 +37,7 @@ onyx-go gen init
 go generate $ or onyx-go gen
 ../scripts/run-examples.sh
 ```
+
 
 after you've geneted the go stubs there is now a 
 ```bash

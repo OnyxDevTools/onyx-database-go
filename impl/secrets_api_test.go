@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/OnyxDevTools/onyx-database-go/contract"
 )
 
 func TestSecretsAPI(t *testing.T) {
@@ -44,5 +46,31 @@ func TestSecretsAPI(t *testing.T) {
 
 	if err := c.DeleteSecret(context.Background(), "API_KEY"); err != nil {
 		t.Fatalf("delete err: %v", err)
+	}
+}
+
+func TestSecretsAPIValidationErrors(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	if _, err := c.GetSecret(context.Background(), ""); err == nil {
+		t.Fatalf("expected get validation error")
+	}
+	if _, err := c.PutSecret(context.Background(), contract.OnyxSecret{}); err == nil {
+		t.Fatalf("expected put validation error")
+	}
+	if err := c.DeleteSecret(context.Background(), ""); err == nil {
+		t.Fatalf("expected delete validation error")
+	}
+}
+
+func TestSecretsAPIErrorPropagation(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"code":"bad","message":"nope"}`, http.StatusBadRequest)
+	})
+
+	if _, err := c.Secrets().List(context.Background()); err == nil {
+		t.Fatalf("expected list error")
 	}
 }

@@ -514,9 +514,6 @@ func toExported(name string) string {
 	})
 	var b strings.Builder
 	for _, p := range parts {
-		if p == "" {
-			continue
-		}
 		r, size := utf8.DecodeRuneInString(p)
 		b.WriteRune(unicode.ToUpper(r))
 		b.WriteString(p[size:])

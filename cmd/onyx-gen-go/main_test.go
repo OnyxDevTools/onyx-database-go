@@ -88,6 +88,18 @@ func TestRunInvalidFlags(t *testing.T) {
 	}
 }
 
+func TestRunFlagParseError(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := run([]string{"--bogus"}, &stdout, &stderr)
+	if err == nil {
+		t.Fatalf("expected parse error")
+	}
+	if stderr.Len() == 0 {
+		t.Fatalf("expected usage output on parse error")
+	}
+}
+
 func TestMainExitCodes(t *testing.T) {
 	tmp := t.TempDir()
 	schemaPath := filepath.Join(tmp, "schema.json")

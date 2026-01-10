@@ -71,3 +71,18 @@ func TestListFluentDecode(t *testing.T) {
 		t.Fatalf("unexpected decoded users: %+v", users)
 	}
 }
+
+func TestListFluentPropagatesError(t *testing.T) {
+	q := &stubQuery{err: context.Canceled}
+	var users []struct{}
+	if err := List(context.Background(), q).Decode(&users); err != context.Canceled {
+		t.Fatalf("expected upstream error, got %v", err)
+	}
+}
+
+func TestListIntoPropagatesError(t *testing.T) {
+	q := &stubQuery{err: context.DeadlineExceeded}
+	if err := ListInto(context.Background(), q, &[]struct{}{}); err != context.DeadlineExceeded {
+		t.Fatalf("expected error propagation, got %v", err)
+	}
+}

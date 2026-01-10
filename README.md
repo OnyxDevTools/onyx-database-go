@@ -16,41 +16,57 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
 
 ## Getting started (Cloud → schema → go generate)
 
-1. **Create a database** at <https://cloud.onyx.dev>. Define your schema (tables like `User`, `Role`, `Permission`) and create API keys.
+1. **Create a database** at <https://cloud.onyx.dev>. Define your schema (tables like `User`, `Role`, `Permission`) and create API keys. 
+
 2. **Capture connection parameters**:
+   You will need to setup an apiKey to connect to your database in the onyx console at <https://cloud.onyx.dev>.  After creting the apiKey, you can download the `onyx-database.json`. Save it to the `config` folder
+
+   They consiste of the following:
+
    - `baseUrl` (e.g., `https://api.onyx.dev`)
    - `databaseId`
    - `apiKey`
    - `apiSecret`
-3. **Install the CLI tool and sdk library** (Go 1.22+):
+
+3. **Install the client sdk and cli tool**
 
    ```bash
-   go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
    go install github.com/OnyxDevTools/onyx-database-go/onyx@latest
+   go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
    ```
 
 4. **Scaffold a go:generate anchor** (run in your project):
 
    ```bash
-   onyx-go gen init --schema ./onyx.schema.json --out ./gen/onyx --package onyx
+   onyx-go gen init
    ```
+   alternativly, you can override the default args like this:
 
-   This creates `generate.go` with the go:generate line and expects:
+  ```bash
+   onyx-go gen init --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
+   ```
+    
+   This creates `generate.go` with the go:generate line and expects this project folder structure:
 
    ```
    .
-   ├── generate.go          # emitted by onyx-go gen init
-   ├── onyx.schema.json     # your schema (download via console or CLI)
-   └── gen/onyx/            # generated client lives here
+   ├── generate.go               # emitted by onyx-go gen init
+   ├── api/onyx.schema.json      # your schema (download via console or CLI)
+   ├── config/onyx-database.json # your onyx connection config, alternatively you can set envars
+   └── gen/onyx/                 # generated client lives here
    ```
 
-5. **Generate the client**:
+5. Place your onyx.schema.json file in the api folder of your project.
+
+   > No local schema file? You can fetch it using the schema cli tool `onyx-go schema get`
+
+6. **Generate the client**:
 
    ```bash
-   go generate ./...
+   go generate
    ```
 
-6. **Code usage example **:
+7. **Start coding!**:
 
    ```go
    package main
@@ -81,37 +97,17 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
    }
    ```
 
-> No local schema file? Fetch it from the API with `onyx-go schema get --out ./onyx.schema.json`, then regenerate with `onyx-go gen --source api ...`.
-
 ---
 
-## Install
+## Client Initialization
 
-- Add the SDK to your module (the generator and examples depend on it):
-
-  ```bash
-  go get github.com/OnyxDevTools/onyx-database-go/onyx
-  ```
-
-- Install CLIs into `$(go env GOBIN)` (or `$(go env GOPATH)/bin`):
-
-  ```bash
-  go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
-  ```
-
-The runtime has no external dependencies beyond the Go stdlib. Works anywhere Go 1.22+ can run; reuse a single client per process for connection pooling.
-
----
-
-## Initialize the client
-
-Configuration resolution matches the TypeScript SDK: **explicit config → environment variables → config files**, cached for 5 minutes by default. Reset caches between tests with `onyx.ClearConfigCache()`.
+This SDK resolves credentials automatically using the chain **explicit config ➜ environment variables ➜ `ONYX_CONFIG_PATH` file ➜ project config file ➜ home profile** _(Node.js only for file-based sources)_. Call `onyx.New(ctx, { DatabaseID: 'database-id' })` to target a specific database, or omit the `databaseId` to use the default. You can also pass credentials directly via config.. Reset caches between tests with `onyx.ClearConfigCache()`.
 
 `Config` fields: `DatabaseID`, `DatabaseBaseURL`, `APIKey`, `APISecret`, `CacheTTL`, `ConfigPath`, `LogRequests`, `LogResponses`, and optional `HTTPClient`, `Clock`, `Sleep` overrides for custom transport/testing. Setting `ONYX_DEBUG=true` forces request/response logging even if the flags are false.
 
 ### Option A) Environment variables
 
-Set credentials, then call `Init` (or the generated `New`) with an empty config or just the database ID:
+Set credentials, then call `Init` if you use the raw sdk and handle marshalling and decoding yourself, or you can use the generated client which has a `New` method
 
 ```bash
 export ONYX_DATABASE_ID="db_123"
@@ -211,13 +207,14 @@ Flags:
 Use the generated client:
 
 ```go
-db, err := client.New(ctx, client.Config{})
+import (
+	"context"
+	"github.com/OnyxDevTools/onyx-database-go/examples/gen/onyx"
+)
+ctx := context.Background()
+db, err := client.New(ctx, onyx.Config{})
 
-users, err := db.Users().
-    Resolve("roles.permissions").
-    OrderBy("createdAt", true).
-    Limit(25).
-    List(ctx)
+users, err := db.Users(ctx).Limit(25).List(ctx)
 ```
 
 ---

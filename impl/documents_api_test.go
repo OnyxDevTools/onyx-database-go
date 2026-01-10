@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"testing"
+
+	"github.com/OnyxDevTools/onyx-database-go/contract"
 )
 
 func TestDocumentsAPI(t *testing.T) {
@@ -45,5 +47,62 @@ func TestDocumentsAPI(t *testing.T) {
 
 	if err := c.Documents().Delete(context.Background(), "doc_1"); err != nil {
 		t.Fatalf("delete err: %v", err)
+	}
+}
+
+func TestNormalizeDocumentIDs(t *testing.T) {
+	doc := contract.OnyxDocument{ID: "x"}
+	normalized := normalizeDocumentIDs(doc)
+	if normalized.DocumentID != "x" {
+		t.Fatalf("expected documentId populated, got %+v", normalized)
+	}
+}
+
+func TestDocumentClientValidationAndPreferredID(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"documentId":"doc_pref"}`))
+		}
+	})
+
+	// Missing IDs
+	if _, err := c.Documents().Save(context.Background(), contract.OnyxDocument{}); err == nil {
+		t.Fatalf("expected error on missing id")
+	}
+	if _, err := c.Documents().Get(context.Background(), " "); err == nil {
+		t.Fatalf("expected error on empty id")
+	}
+	if err := c.Documents().Delete(context.Background(), ""); err == nil {
+		t.Fatalf("expected error on empty id for delete")
+	}
+
+	doc, err := c.Documents().Save(context.Background(), contract.OnyxDocument{DocumentID: "doc_pref", ID: "ignored"})
+	if err != nil {
+		t.Fatalf("save err: %v", err)
+	}
+	if doc.DocumentID != "doc_pref" || doc.ID != "doc_pref" {
+		t.Fatalf("preferred id not applied: %+v", doc)
+	}
+
+	// Ensure fallback uses ID when DocumentID is empty
+	c2 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"id":"only_id"}`))
+		}
+	})
+	saved, err := c2.Documents().Save(context.Background(), contract.OnyxDocument{ID: "only_id"})
+	if err != nil || saved.DocumentID != "only_id" {
+		t.Fatalf("expected fallback id applied: err=%v saved=%+v", err, saved)
+	}
+
+	c3 := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"documentId":"trimmed"}`))
+	})
+	docTrim, err := c3.Documents().Save(context.Background(), contract.OnyxDocument{DocumentID: "  trimmed  "})
+	if err != nil || docTrim.DocumentID != "trimmed" {
+		t.Fatalf("expected trimmed document id, got %+v err=%v", docTrim, err)
 	}
 }

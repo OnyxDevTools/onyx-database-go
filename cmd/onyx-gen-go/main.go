@@ -38,17 +38,18 @@ func run(args []string, stdout, stderr io.Writer) error {
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")
 	fs.Usage = func() {
+		usageBuffer.Reset()
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
-		usageBuffer.WriteTo(stdout)
 	}
 
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			fs.Usage()
+			usageBuffer.WriteTo(stdout)
 			return nil
 		}
-
+		fs.Usage()
 		usageBuffer.WriteTo(stderr)
 		return err
 	}
@@ -64,6 +65,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 	}
 
 	if err := generator.Run(opts); err != nil {
+		fs.Usage()
 		usageBuffer.WriteTo(stderr)
 		return err
 	}
