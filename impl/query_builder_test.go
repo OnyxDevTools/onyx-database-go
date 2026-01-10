@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
+	"github.com/OnyxDevTools/onyx-database-go/impl/resolver"
 )
 
 func TestQueryChainingImmutable(t *testing.T) {
@@ -40,5 +41,25 @@ func TestWithinConditionEmbedsQuery(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "\"table\":\"pets\"") {
 		t.Fatalf("expected nested query: %s", data)
+	}
+}
+
+func TestPartitionDefaultsAndOverrides(t *testing.T) {
+	client := &client{cfg: resolver.ResolvedConfig{DatabaseID: "db", Partition: "default"}}
+	q := newQuery(client, "users")
+	payload := buildQueryPayload(q.(*query), true)
+	if payload.Partition == nil || *payload.Partition != "default" {
+		t.Fatalf("expected default partition applied, got %+v", payload.Partition)
+	}
+
+	q2 := q.InPartition("p1").(*query)
+	payload2 := buildQueryPayload(q2, true)
+	if payload2.Partition == nil || *payload2.Partition != "p1" {
+		t.Fatalf("expected override partition, got %+v", payload2.Partition)
+	}
+
+	q3 := q2.InPartition(" ").(*query)
+	if q3.partition != nil {
+		t.Fatalf("expected clearing partition when empty")
 	}
 }

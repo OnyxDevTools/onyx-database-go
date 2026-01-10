@@ -23,6 +23,7 @@ type Table struct {
 	Resolvers []Resolver     `json:"resolvers,omitempty"`
 	Indexes   []Index        `json:"indexes,omitempty"`
 	Triggers  []string       `json:"triggers,omitempty"`
+	Partition string         `json:"partition,omitempty"`
 	Meta      map[string]any `json:"meta,omitempty"`
 }
 

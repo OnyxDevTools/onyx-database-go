@@ -27,6 +27,7 @@ func (s stubMarshalQuery) Page(ctx context.Context, cursor string) (contract.Pag
 func (s stubMarshalQuery) Stream(ctx context.Context) (contract.Iterator, error) { return nil, nil }
 func (s stubMarshalQuery) Update(ctx context.Context) (int, error)               { return 0, nil }
 func (s stubMarshalQuery) Delete(ctx context.Context) (int, error)               { return 0, nil }
+func (s stubMarshalQuery) InPartition(string) contract.Query                     { return s }
 
 func TestReExportedHelpers(t *testing.T) {
 	assertJSONEqual := func(t *testing.T, got, want any) {

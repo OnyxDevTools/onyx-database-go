@@ -13,6 +13,7 @@ type Query interface {
 	OrderBy(sorts ...Sort) Query
 	Limit(limit int) Query
 	SetUpdates(updates map[string]any) Query
+	InPartition(partition string) Query
 	Update(ctx context.Context) (int, error)
 
 	List(ctx context.Context) (QueryResults, error)

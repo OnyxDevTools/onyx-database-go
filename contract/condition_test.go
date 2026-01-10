@@ -24,6 +24,7 @@ func (s stubQuery) Page(context.Context, string) (PageResult, error) {
 func (s stubQuery) Stream(context.Context) (Iterator, error) { return nil, nil }
 func (s stubQuery) SetUpdates(map[string]any) Query          { return s }
 func (s stubQuery) Update(context.Context) (int, error)      { return 0, nil }
+func (s stubQuery) InPartition(string) Query                 { return s }
 func (s stubQuery) MarshalJSON() ([]byte, error)             { return []byte(`{"table":"User"}`), nil }
 
 func TestConditionJSON(t *testing.T) {

@@ -168,6 +168,11 @@ func (c *client) Save(ctx context.Context, table string, entity any, relationshi
 
 func (c *client) Delete(ctx context.Context, table, id string) error {
 	path := c.tablePath(table) + "/" + tableEscape(id)
+	if strings.TrimSpace(c.cfg.Partition) != "" {
+		params := url.Values{}
+		params.Set("partition", strings.TrimSpace(c.cfg.Partition))
+		path += "?" + params.Encode()
+	}
 	return c.httpClient.DoJSON(ctx, http.MethodDelete, path, nil, nil)
 }
 

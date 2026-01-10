@@ -1,6 +1,10 @@
 package impl
 
-import "github.com/OnyxDevTools/onyx-database-go/contract"
+import (
+	"strings"
+
+	"github.com/OnyxDevTools/onyx-database-go/contract"
+)
 
 type clause struct {
 	Type      string
@@ -17,10 +21,16 @@ type query struct {
 	sorts         []contract.Sort
 	limit         *int
 	updates       map[string]any
+	partition     *string
 }
 
 func newQuery(client *client, table string) contract.Query {
-	return &query{client: client, table: table}
+	var partition *string
+	if client != nil && strings.TrimSpace(client.cfg.Partition) != "" {
+		p := strings.TrimSpace(client.cfg.Partition)
+		partition = &p
+	}
+	return &query{client: client, table: table, partition: partition}
 }
 
 func (q *query) clone() *query {
@@ -30,6 +40,10 @@ func (q *query) clone() *query {
 	nq.groupFields = append([]string{}, q.groupFields...)
 	nq.resolveFields = append([]string{}, q.resolveFields...)
 	nq.sorts = append([]contract.Sort{}, q.sorts...)
+	if q.partition != nil {
+		p := *q.partition
+		nq.partition = &p
+	}
 	if q.updates != nil {
 		nq.updates = map[string]any{}
 		for k, v := range q.updates {
@@ -91,6 +105,17 @@ func (q *query) SetUpdates(updates map[string]any) contract.Query {
 	for k, v := range updates {
 		nq.updates[k] = v
 	}
+	return nq
+}
+
+func (q *query) InPartition(partition string) contract.Query {
+	nq := q.clone()
+	trimmed := strings.TrimSpace(partition)
+	if trimmed == "" {
+		nq.partition = nil
+		return nq
+	}
+	nq.partition = &trimmed
 	return nq
 }
 

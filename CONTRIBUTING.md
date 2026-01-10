@@ -37,7 +37,7 @@ Build/install once from the repo root:
 cd examples
 go install ../cmd/onyx-go
 onyx-go gen init
-go generate $ or onyx-go gen
+go generate
 ../scripts/run-examples.sh
 ```
 

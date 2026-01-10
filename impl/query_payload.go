@@ -34,6 +34,9 @@ func buildQueryPayload(q *query, includeLimit bool) queryPayload {
 		Partition:  nil,
 	}
 	payload.Conditions = buildConditions(q.clauses)
+	if q.partition != nil {
+		payload.Partition = q.partition
+	}
 
 	if len(q.selectFields) > 0 {
 		payload.Fields = append([]string{}, q.selectFields...)
@@ -75,6 +78,9 @@ func buildUpdatePayload(q *query) updatePayload {
 		Sort:       nil,
 		Limit:      nil,
 		Partition:  nil,
+	}
+	if q.partition != nil {
+		payload.Partition = q.partition
 	}
 	for k, v := range q.updates {
 		payload.Updates[k] = v

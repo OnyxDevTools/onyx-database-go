@@ -171,6 +171,47 @@ func TestResolveConfigDirectoryFallback(t *testing.T) {
 	}
 }
 
+func TestResolveHomeProfileFallback(t *testing.T) {
+	ClearCache()
+	tmp := t.TempDir()
+	home := filepath.Join(tmp, "home")
+	if err := os.MkdirAll(filepath.Join(home, ".onyx"), 0o755); err != nil {
+		t.Fatalf("mkdir home: %v", err)
+	}
+	t.Setenv("HOME", home)
+
+	cfgPath := filepath.Join(home, ".onyx", "onyx-database.json")
+	if err := os.WriteFile(cfgPath, []byte(`{"databaseId":"home-db","databaseBaseUrl":"https://home","apiKey":"h","apiSecret":"s","partition":"home-part"}`), 0o644); err != nil {
+		t.Fatalf("write home cfg: %v", err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	// ensure no local config
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(cwd) })
+
+	cfg, meta, err := Resolve(context.Background(), Config{})
+	if err != nil {
+		t.Fatalf("resolve err: %v", err)
+	}
+	if cfg.DatabaseBaseURL != "https://home" || cfg.Partition != "home-part" {
+		t.Fatalf("expected home config applied, got %+v", cfg)
+	}
+	if meta.FilePath == "" {
+		t.Fatalf("expected meta filepath to be set")
+	}
+	realCfg, _ := filepath.EvalSymlinks(cfgPath)
+	realMeta, _ := filepath.EvalSymlinks(meta.FilePath)
+	if filepath.Clean(realMeta) != filepath.Clean(realCfg) {
+		t.Fatalf("expected meta filepath to be home config, got %s", meta.FilePath)
+	}
+}
+
 func TestResolveCacheTTL(t *testing.T) {
 	ClearCache()
 	defaultCache.now = func() time.Time { return time.Unix(0, 0) }

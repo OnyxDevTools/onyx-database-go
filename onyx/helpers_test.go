@@ -29,6 +29,7 @@ func (s *stubQuery) Page(ctx context.Context, cursor string) (contract.PageResul
 func (s *stubQuery) Stream(ctx context.Context) (contract.Iterator, error) { return nil, nil }
 func (s *stubQuery) Update(ctx context.Context) (int, error)               { return 0, nil }
 func (s *stubQuery) Delete(ctx context.Context) (int, error)               { return 0, nil }
+func (s *stubQuery) InPartition(string) contract.Query                     { return s }
 
 func TestListIntoDecodesResults(t *testing.T) {
 	q := &stubQuery{

@@ -17,6 +17,7 @@ func TestQueryCloneCopiesSlicesAndMaps(t *testing.T) {
 		limit:         &limit,
 		updates:       map[string]any{"name": "a"},
 		clauses:       []clause{{Type: "and", Condition: contract.Eq("id", 1)}},
+		partition:     ptr("p1"),
 	}
 
 	clone := orig.clone()
@@ -29,4 +30,9 @@ func TestQueryCloneCopiesSlicesAndMaps(t *testing.T) {
 	if clone.selectFields[0] != "a" || clone.updates["name"] != "a" {
 		t.Fatalf("clone mutated with original changes: %+v", clone)
 	}
+	if clone.partition == nil || *clone.partition != "p1" {
+		t.Fatalf("expected partition copied, got %+v", clone.partition)
+	}
 }
+
+func ptr[T any](v T) *T { return &v }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,7 @@ type Config struct {
 	ConfigPath      string
 	LogRequests     bool
 	LogResponses    bool
+	Partition       string
 }
 
 // ResolvedConfig represents a fully-hydrated configuration ready for use.
@@ -39,6 +41,7 @@ type ResolvedConfig struct {
 	CacheTTL        time.Duration
 	LogRequests     bool
 	LogResponses    bool
+	Partition       string
 }
 
 // Source identifies how a particular field was populated.
@@ -138,9 +141,15 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 	}
 	resolved.LogRequests = partial.LogRequests
 	resolved.LogResponses = partial.LogResponses
+	if strings.TrimSpace(partial.Partition) != "" {
+		resolved.Partition = strings.TrimSpace(partial.Partition)
+	}
 
 	ttl := resolved.CacheTTL
 	defaultCache.set(key, resolved, meta, ttl)
+	if os.Getenv("ONYX_DEBUG") == "true" {
+		log.Printf("onyx resolver: sources id=%s base=%s key=%s secret=%s file=%s partition=%v", meta.Sources.DatabaseID, meta.Sources.DatabaseBaseURL, meta.Sources.APIKey, meta.Sources.APISecret, meta.FilePath, resolved.Partition != "")
+	}
 	return resolved, meta, nil
 }
 
@@ -156,6 +165,7 @@ type fileConfig struct {
 	BaseURL         string `json:"baseUrl"`
 	APIKey          string `json:"apiKey"`
 	APISecret       string `json:"apiSecret"`
+	Partition       string `json:"partition"`
 }
 
 func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedConfig, meta *Meta) (string, error) {
@@ -183,6 +193,15 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 			candidates = append(candidates, fmt.Sprintf("./onyx-database-%s.json", dbID))
 		}
 		candidates = append(candidates, "./onyx-database.json")
+
+		if home, err := os.UserHomeDir(); err == nil {
+			if dbID != "" {
+				candidates = append(candidates, filepath.Join(home, ".onyx", fmt.Sprintf("onyx-database-%s.json", dbID)))
+				candidates = append(candidates, filepath.Join(home, fmt.Sprintf("onyx-database-%s.json", dbID)))
+			}
+			candidates = append(candidates, filepath.Join(home, ".onyx", "onyx-database.json"))
+			candidates = append(candidates, filepath.Join(home, "onyx-database.json"))
+		}
 	}
 
 	for _, candidate := range candidates {
@@ -228,6 +247,10 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 		if resolved.APISecret == "" && fc.APISecret != "" {
 			resolved.APISecret = fc.APISecret
 			meta.Sources.APISecret = SourceFile
+			applied = true
+		}
+		if resolved.Partition == "" && strings.TrimSpace(fc.Partition) != "" {
+			resolved.Partition = strings.TrimSpace(fc.Partition)
 			applied = true
 		}
 

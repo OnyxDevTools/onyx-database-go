@@ -67,4 +67,16 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 	if cond := buildConditions(nil); cond != nil {
 		t.Fatalf("expected nil conditions when no clauses")
 	}
+
+	part := "p1"
+	q.partition = &part
+	withPartition := buildQueryPayload(q, true)
+	if withPartition.Partition == nil || *withPartition.Partition != "p1" {
+		t.Fatalf("expected partition to be set")
+	}
+
+	upd := buildUpdatePayload(q)
+	if upd.Partition == nil || *upd.Partition != "p1" {
+		t.Fatalf("expected partition on update payload")
+	}
 }

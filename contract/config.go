@@ -15,6 +15,7 @@ type Config struct {
 	ConfigPath      string
 	LogRequests     bool
 	LogResponses    bool
+	Partition       string
 	HTTPClient      *http.Client
 	Clock           func() time.Time
 	Sleep           func(time.Duration)

@@ -266,6 +266,25 @@ func TestGetCommandErrors(t *testing.T) {
 			wantCode: 1,
 			wantSub:  "failed to write schema",
 		},
+		{
+			name: "mkdir error",
+			args: func(t *testing.T) []string {
+				tmp := t.TempDir()
+				// parent path is a file, so MkdirAll should fail
+				parent := filepath.Join(tmp, "file")
+				if err := os.WriteFile(parent, []byte("x"), 0o644); err != nil {
+					t.Fatalf("write file: %v", err)
+				}
+				return []string{"--database-id", "db", "--out", filepath.Join(parent, "schema.json")}
+			},
+			setup: func(t *testing.T) {
+				initSchemaClient = func(ctx context.Context, databaseID string) (onyx.Client, error) {
+					return &stubClient{schema: onyx.Schema{Tables: []onyx.Table{{Name: "User"}}}}, nil
+				}
+			},
+			wantCode: 1,
+			wantSub:  "failed to create schema directory",
+		},
 	}
 
 	for _, tt := range tests {
