@@ -12,10 +12,17 @@ import (
 )
 
 func main() {
-	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	exit(runMain(os.Args, os.Stdout, os.Stderr))
+}
+
+var exit = os.Exit
+
+func runMain(args []string, stdout, stderr io.Writer) int {
+	if err := run(args[1:], stdout, stderr); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
 	}
+	return 0
 }
 
 func run(args []string, stdout, stderr io.Writer) error {
@@ -47,13 +54,13 @@ func run(args []string, stdout, stderr io.Writer) error {
 	}
 
 	opts := generator.Options{
-		SchemaPath:          *schemaPath,
-		Source:              *source,
-		DatabaseID:          *databaseID,
-		OutPath:             *outPath,
-		PackageName:         *packageName,
-		Tables:              parseTables(*tables),
-		TimestampFormat:     *timestamps,
+		SchemaPath:      *schemaPath,
+		Source:          *source,
+		DatabaseID:      *databaseID,
+		OutPath:         *outPath,
+		PackageName:     *packageName,
+		Tables:          parseTables(*tables),
+		TimestampFormat: *timestamps,
 	}
 
 	if err := generator.Run(opts); err != nil {

@@ -98,6 +98,8 @@ func TestPublishCommandSendsSchema(t *testing.T) {
 type stubClient struct {
 	schema        onyx.Schema
 	publishCalled bool
+	schemaErr     error
+	publishErr    error
 }
 
 func (s *stubClient) From(table string) onyx.Query                     { return nil }
@@ -109,7 +111,12 @@ func (s *stubClient) Delete(ctx context.Context, table, id string) error { retur
 func (s *stubClient) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {
 	return nil
 }
-func (s *stubClient) Schema(ctx context.Context) (onyx.Schema, error) { return s.schema, nil }
+func (s *stubClient) Schema(ctx context.Context) (onyx.Schema, error) {
+	if s.schemaErr != nil {
+		return onyx.Schema{}, s.schemaErr
+	}
+	return s.schema, nil
+}
 func (s *stubClient) GetSchema(ctx context.Context, tables []string) (onyx.Schema, error) {
 	return s.schema, nil
 }
@@ -123,6 +130,9 @@ func (s *stubClient) UpdateSchema(ctx context.Context, schema onyx.Schema, publi
 }
 func (s *stubClient) ValidateSchema(ctx context.Context, schema onyx.Schema) error { return nil }
 func (s *stubClient) PublishSchema(ctx context.Context, schema onyx.Schema) error {
+	if s.publishErr != nil {
+		return s.publishErr
+	}
 	s.publishCalled = true
 	s.schema = schema
 	return nil
