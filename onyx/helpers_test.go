@@ -33,7 +33,7 @@ func (s *stubQuery) Delete(ctx context.Context) (int, error)               { ret
 func TestListIntoDecodesResults(t *testing.T) {
 	q := &stubQuery{
 		results: contract.QueryResults{
-			{"id": "1", "username": "alice"},
+			map[string]any{"id": "1", "username": "alice"},
 		},
 	}
 
@@ -54,7 +54,7 @@ func TestListIntoDecodesResults(t *testing.T) {
 func TestListFluentDecode(t *testing.T) {
 	q := &stubQuery{
 		results: contract.QueryResults{
-			{"id": "2", "username": "bob"},
+			map[string]any{"id": "2", "username": "bob"},
 		},
 	}
 

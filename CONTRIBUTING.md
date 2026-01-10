@@ -28,7 +28,7 @@ go build ./...
 go vet ./...
 go test ./...
 ```
-## Code Coverage:
+## See Code Coverage:
 go test ./... -coverprofile=coverage.out -covermode=atomic
 
 ## Using the CLIs locally
@@ -61,3 +61,19 @@ onyx-go gen --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx -
 # or from the examples module:
 onyx-go gen --schema ./onyx.schema.json --out ./gen/onyx --package onyx
 ```
+
+## Releasing (bump-version.sh)
+
+The repo ships an interactive release helper at `scripts/bump-version.sh` that:
+- Verifies a clean tree on `main`
+- Runs `go mod tidy` validation, tests, lint, build, and a smoke example
+- Prompts for semver bump (patch/minor/major) and a release message
+- Computes the next tag (first release starts at `v0.0.1`)
+- Commits (chore(release): …), tags, and pushes to origin; CI publishes on tag push
+
+Make sure your working tree is clean (commit/stash everything) before running the script; it will abort on uncommitted changes.
+Usage from the repo root:
+```bash
+scripts/bump-version.sh
+```
+

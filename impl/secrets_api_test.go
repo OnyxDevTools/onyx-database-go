@@ -74,3 +74,18 @@ func TestSecretsAPIErrorPropagation(t *testing.T) {
 		t.Fatalf("expected list error")
 	}
 }
+
+func TestOnyxSecretAlias(t *testing.T) {
+	calls := 0
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"records":[]}`))
+	})
+	if _, err := c.OnyxSecret().List(context.Background()); err != nil {
+		t.Fatalf("expected alias to delegate, got %v", err)
+	}
+	if calls == 0 {
+		t.Fatalf("expected underlying call to occur")
+	}
+}
