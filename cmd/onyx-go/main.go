@@ -65,8 +65,6 @@ func runGen(args []string, stdout, stderr io.Writer) int {
 	packageName := fs.String("package", "", "package name for generated code (default: onyx)")
 	tables := fs.String("tables", "", "comma-separated list of tables to generate")
 	timestamps := fs.String("timestamps", "time", "timestamp representation: time or string")
-	emitGenerate := fs.Bool("emit-generate", true, "emit a go:generate anchor file alongside generated code")
-
 	fs.Usage = func() {
 		fmt.Fprintf(&usageBuffer, "Usage of %s:\n", fs.Name())
 		fs.PrintDefaults()
@@ -83,14 +81,13 @@ func runGen(args []string, stdout, stderr io.Writer) int {
 	}
 
 	opts := generator.Options{
-		SchemaPath:          *schemaPath,
-		Source:              *source,
-		DatabaseID:          *databaseID,
-		OutPath:             *outPath,
-		PackageName:         *packageName,
-		Tables:              parseTables(*tables),
-		TimestampFormat:     *timestamps,
-		DisableGenerateFile: !*emitGenerate,
+		SchemaPath:      *schemaPath,
+		Source:          *source,
+		DatabaseID:      *databaseID,
+		OutPath:         *outPath,
+		PackageName:     *packageName,
+		Tables:          parseTables(*tables),
+		TimestampFormat: *timestamps,
 	}
 
 	if err := generator.Run(opts); err != nil {

@@ -23,7 +23,6 @@ type Options struct {
 	PackageName         string
 	Tables              []string
 	TimestampFormat     string
-	DisableGenerateFile bool
 }
 
 // Run validates the provided options and performs generation.
@@ -51,14 +50,6 @@ func Run(opts Options) error {
 		tablePath := filepath.Join(opts.OutPath, fmt.Sprintf("%s.go", toFileName(t.Name)))
 		tableCode := renderTable(t, opts.PackageName, opts.TimestampFormat)
 		if err := os.WriteFile(tablePath, tableCode, 0o644); err != nil {
-			return err
-		}
-	}
-
-	if !opts.DisableGenerateFile {
-		generatePath := filepath.Join(opts.OutPath, "generate.go")
-		generateCode := renderGenerate(opts)
-		if err := os.WriteFile(generatePath, generateCode, 0o644); err != nil {
 			return err
 		}
 	}

@@ -1,123 +1,158 @@
 # Onyx Database Go SDK
 
-Go SDK and CLIs for Onyx Database, with a contract-first design based on generating a client based on the onyx schema file. 
-Also contains 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![codecov](https://codecov.io/gh/OnyxDevTools/onyx-database-go/branch/main/graph/badge.svg)](https://codecov.io/gh/OnyxDevTools/onyx-database-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/OnyxDevTools/onyx-database-go/onyx.svg)](https://pkg.go.dev/github.com/OnyxDevTools/onyx-database-go/onyx)
 
-## Prereqs
+Go SDK and CLIs for **Onyx Cloud Database** with a contract-first design and stable codegen. The SDK is stdlib-only, resolver/query surface, supports streaming, secrets, documents, and ships a generator for table-safe Go types.
 
-Requires Go 1.22+. Install the CLIs into your `$(go env GOBIN)` (or `$(go env GOPATH)/bin`) from the repo root:
+- Website: <https://onyx.dev/>
+- Cloud Console: <https://cloud.onyx.dev>
+- Docs hub: <https://onyx.dev/documentation/>
+- Cloud API docs: <https://onyx.dev/documentation/api-documentation/>
+- Examples: `./examples` (separate Go module)
 
-## Getting Started
+---
 
-A step-by-step flow from a fresh checkout:
+## Getting started (Cloud → schema → go generate)
 
-1) Install the unified CLI:
+1. **Create a database** at <https://cloud.onyx.dev>. Define your schema (tables like `User`, `Role`, `Permission`) and create API keys.
+2. **Capture connection parameters**:
+   - `baseUrl` (e.g., `https://api.onyx.dev`)
+   - `databaseId`
+   - `apiKey`
+   - `apiSecret`
+3. **Install the CLI tool and sdk libraryr (Go 1.22+):
+
+   ```bash
+   go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
+   go install github.com/OnyxDevTools/onyx-database-go/onyx@latest
+   ```
+
+4. **Scaffold a go:generate anchor** (run in your project):
+
+   ```bash
+   onyx-go gen init --schema ./onyx.schema.json --out ./gen/onyx --package onyx
+   ```
+
+   This creates `generate.go` with the go:generate line and expects:
+
+   ```
+   .
+   ├── generate.go          # emitted by onyx-go gen init
+   ├── onyx.schema.json     # your schema (download via console or CLI)
+   └── gen/onyx/            # generated client lives here
+   ```
+
+5. **Generate the client**:
+
+   ```bash
+   go generate ./...
+   ```
+
+6. **Code usage example **:
+
+   ```go
+   package main
+
+   import (
+       "context"
+       "log"
+
+       client "your/module/gen/onyx"
+   )
+
+   func main() {
+       ctx := context.Background()
+       db, err := client.New(ctx, client.Config{})
+       if err != nil {
+           log.Fatal(err)
+       }
+
+       user, err := db.Users().Save(ctx, client.User{
+           Id:       "user_1",
+           Email:    "user@example.com",
+           Username: "User One",
+       })
+       if err != nil {
+           log.Fatal(err)
+       }
+       _ = user
+   }
+   ```
+
+> No local schema file? Fetch it from the API with `onyx-go schema get --out ./onyx.schema.json`, then regenerate with `onyx-go gen --source api ...`.
+
+---
+
+## Install
+
+- Add the SDK to your module (the generator and examples depend on it):
+
+  ```bash
+  go get github.com/OnyxDevTools/onyx-database-go/onyx
+  ```
+
+- Install CLIs into `$(go env GOBIN)` (or `$(go env GOPATH)/bin`):
+
+  ```bash
+  go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
+  ```
+
+The runtime has no external dependencies beyond the Go stdlib. Works anywhere Go 1.22+ can run; reuse a single client per process for connection pooling.
+
+---
+
+## Initialize the client
+
+Configuration resolution matches the TypeScript SDK: **explicit config → environment variables → config files**, cached for 5 minutes by default. Reset caches between tests with `onyx.ClearConfigCache()`.
+
+`Config` fields: `DatabaseID`, `DatabaseBaseURL`, `APIKey`, `APISecret`, `CacheTTL`, `ConfigPath`, `LogRequests`, `LogResponses`, and optional `HTTPClient`, `Clock`, `Sleep` overrides for custom transport/testing. Setting `ONYX_DEBUG=true` forces request/response logging even if the flags are false.
+
+### Option A) Environment variables
+
+Set credentials, then call `Init` (or the generated `New`) with an empty config or just the database ID:
+
 ```bash
-go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
+export ONYX_DATABASE_ID="db_123"
+export ONYX_DATABASE_BASE_URL="https://api.onyx.dev"
+export ONYX_DATABASE_API_KEY="key_abc"
+export ONYX_DATABASE_API_SECRET="secret_xyz"
 ```
 
-2) Scaffold a go:generate anchor (run from your project root):
-```bash
-onyx-go gen init --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
-```
-This assumes:
-```
-.
-├── generate.go           # created by the command above
-├── api/onyx.schema.json  # your schema
-└── gen/onyx/             # will contain generated code after go generate
-```
-
-3) Generate the client:
-```bash
-go generate   # runs the go:generate line emitted in generate.go
-```
-
-4) Initialize once at startup and reuse:
 ```go
-package main
-
-import (
-    "context"
-    "log"
-
-    onyx "your/module/gen/onyx"
-)
-
-func main() {
-    ctx := context.Background()
-    db, err := onyx.New(ctx, onyx.Config{})
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Save
-    user, err := db.Users().Save(ctx, onyx.User{
-        Id:       "user_1",
-        Email:    "user@example.com",
-        Username: "User One",
-    })
-    if err != nil { log.Fatal(err) }
-    _ = user
-}
+db, err := client.New(ctx, client.Config{DatabaseID: "db_123"}) // uses env + cached resolver
+if err != nil { log.Fatal(err) }
+// Call onyx.ClearConfigCache() when you need to reset cached config between tests
 ```
 
-5) (Optional) If you dont have a local schema file but have a database setup in cloud.onyx.dev, you can retreive it:
-```bash
-onyx-go schema get
-```
+### Option B) Explicit config
 
-5) (Optional) Regenerate from the API instead of a file:
-```bash
-onyx-go gen --source api --database-id "$ONYX_DATABASE_ID" --out ./gen/onyx --package onyx
-```
-
-
-## CLI tools 
-- Schema CLI:
-  - Validate: `onyx-schema-go validate`
-  - Diff: `onyx-schema-go diff`
-  - Get (API): `onyx-schema-go get` (replaces your schema with what is in onyx) or use `--print` to pretty-print without writing to your local schema)
-  - Publish (API): `onyx-schema-go publish` if valid, will publish your remote database with the local one
-
-- Codegen CLI:
-  - Example regen (in this repo): `go generate ./...` (writes to `./examples/gen/onyx`)
-
-## Client Initalization
-
-The Go client resolves configuration in the same order as the TS client: explicit values > environment variables > config files. Use `ClearConfigCache` between tests to reset cached values.
-
-### Explicit configuration
 ```go
-ctx := context.Background()
-
-db, err := onyx.Init(ctx, onyx.Config{
+db, err := client.New(ctx, client.Config{
     DatabaseID:      "db_123",
     DatabaseBaseURL: "https://api.onyx.dev",
     APIKey:          os.Getenv("ONYX_DATABASE_API_KEY"),
     APISecret:       os.Getenv("ONYX_DATABASE_API_SECRET"),
-    LogRequests:     true,  // optional: enable request logging
-    LogResponses:    false, // optional: enable response logging
+    CacheTTL:        10 * time.Minute, // optional; defaults to 5m
+    LogRequests:     true,             // optional request logging
+    LogResponses:    false,            // optional response logging
 })
 if err != nil { log.Fatal(err) }
 ```
 
-### Resolver, env vars, and config files
-```go
-// Environment variables are read when explicit values are empty
-os.Setenv("ONYX_DATABASE_ID", "db_123")
-os.Setenv("ONYX_DATABASE_BASE_URL", "https://api.onyx.dev")
-os.Setenv("ONYX_DATABASE_API_KEY", "key_abc")
-os.Setenv("ONYX_DATABASE_API_SECRET", "secret_xyz")
+### Option C) Config files (Go-only)
 
-ctx := context.Background()
-db, err := onyx.InitWithDatabaseID(ctx, "db_123")
-if err != nil { log.Fatal(err) }
+`ConfigPath` or `ONYX_CONFIG_PATH` can point to a JSON file. When unset, the resolver checks (in order):
 
-defer onyx.ClearConfigCache() // reset between test cases
-```
+- `./onyx-database-<databaseId>.json`
+- `./onyx-database.json`
+- `~/.onyx/onyx-database-<databaseId>.json`
+- `~/.onyx/onyx-database.json`
+- `~/onyx-database.json`
 
-You can also supply a JSON file (lowest precedence) named `onyx-database.json`, `onyx-database-<dbid>.json`, or pointed to via `ONYX_CONFIG_PATH` (a sample lives at `./examples/config/onyx-database.json`):
+Shape:
+
 ```json
 {
   "databaseId": "db_123",
@@ -127,114 +162,334 @@ You can also supply a JSON file (lowest precedence) named `onyx-database.json`, 
 }
 ```
 
-## Query builder parity
+### Connection handling
 
-The fluent query API mirrors the TS builder, supporting filters, projections, nested resolves, sorting, pagination, and streaming.
+`onyx.Init` / `client.New` resolve configuration once per cache key and reuse a single signed HTTP client (keep-alive enabled). Reuse the returned client across operations; `CacheTTL` controls how long resolution results are reused. `onyx.ClearConfigCache()` also clears the HTTP client cache.
+
+---
+
+## Optional: generate Go types and table-safe clients
+
+`onyx-go gen` emits:
+- Plain Go structs for each table, JSON-tagged to match the API.
+- `Tables` constants and `Resolvers` map (when resolvers exist).
+- A typed `DB` wrapper with table-specific clients (`Users()`, `Roles()`, etc.), `Documents()`, `Secrets()`, `Core()`, and `Wrap(core)` for adapters.
+- Typed helpers: `FindByID`, `FindByEmail` (when an `email` field exists), `FindActiveUsers`/`CountActive` (when an `isActive` field exists), `SaveMany`, `DeleteByIDs`, paginated iterators, `WithTimeout`, `QueryHook`, and cascade support via `...onyx.CascadeSpec`.
+
+Stable ordering (set `ONYX_GEN_TIMESTAMP` to pin header text); imports only `github.com/OnyxDevTools/onyx-database-go/onyx` plus `time` when timestamps are time values.
+
+Generate from a file:
+
+```bash
+onyx-go gen
+```
+
+is the same as running these default switches: 
+```bash
+onyx-go gen --schema ./onyx.schema.json --out ./gen/onyx --package onyx
+```
+
+Generate from the onyx remote api:
+
+```bash
+onyx-go gen --source api --database-id "$ONYX_DATABASE_ID" --out ./gen/onyx --package onyx
+```
+
+Scaffold and regenerate with go:generate:
+
+```bash
+onyx-go gen init #first time setup
+go generate
+```
+
+Flags:
+- `--tables User,Role` to emit a subset
+- `--timestamps time|string` to control timestamp field types (`time.Time` vs `string`)
+
+Use the generated client:
 
 ```go
-ctx := context.Background()
-db, err := onyx.Init(ctx, onyx.Config{/* ... */})
-if err != nil { log.Fatal(err) }
+db, err := client.New(ctx, client.Config{})
 
-page, err := db.Users().
-    Select("id", "email", "profile.avatarUrl").
-    Where(onyx.Contains("email", "@example.com")).
-    And(onyx.Gte("createdAt", "2024-01-01T00:00:00Z")).
-    Resolve("roles", "profile").
-    OrderBy("createdAt", false).
+users, err := db.Users().
+    Resolve("roles.permissions").
+    OrderBy("createdAt", true).
     Limit(25).
-    Page(ctx, "") // empty cursor = first page
-if err != nil { log.Fatal(err) }
+    List(ctx)
+```
 
-for _, user := range page.Items {
-    fmt.Println(user)
+---
+## Manage schemas from the CLI
+
+`onyx-go schema` shares the same credential resolver as the SDK:
+
+```bash
+# Inspect resolved config and verify connectivity
+onyx-go schema info # using defaults
+onyx-go schema info --database-id "$ONYX_DATABASE_ID"
+
+# Fetch normalized schema from the API (writes ./onyx.schema.json by default)
+onyx-go schema get. # using defaults
+onyx-go schema get --out ./onyx.schema.json
+onyx-go schema get --tables User,Profile --print   # print subset to stdout
+
+# Validate or normalize a local schema file
+onyx-go schema validate # using defaults
+onyx-go schema validate --schema ./onyx.schema.json
+
+# Diff local vs API (or vs another file)
+onyx-go schema diff #using defaults
+onyx-go schema diff --a ./onyx.schema.json --b ./next.schema.json
+onyx-go schema diff --a ./onyx.schema.json --database-id "$ONYX_DATABASE_ID" --json
+
+# Publish changes (normalize + PUT /schemas/{dbId})
+onyx-go schema publish # using defaults
+onyx-go schema publish --schema ./onyx.schema.json --database-id "$ONYX_DATABASE_ID"
+```
+
+Omit `--database-id` to rely on env vars or config files like `./onyx-database.json` or `~/.onyx/onyx-database.json` (a sample lives at `./examples/config/onyx-database.json`).
+
+---
+
+## Query helpers at a glance
+
+```go
+import (
+    "github.com/OnyxDevTools/onyx-database-go/onyx"
+)
+
+onyx.Eq
+onyx.Neq
+onyx.In
+onyx.NotIn
+onyx.Between
+onyx.Gt
+onyx.Gte
+onyx.Lt
+onyx.Lte
+onyx.Like
+onyx.Contains
+onyx.StartsWith
+onyx.IsNull
+onyx.NotNull
+onyx.Within      // IN subquery
+onyx.NotWithin   // NOT IN subquery
+onyx.Asc
+onyx.Desc
+```
+
+### Inner queries (IN/NOT IN)
+
+```go
+db, _ := client.New(ctx, client.Config{})
+core := db.Core()
+
+admins, _ := db.Users().
+    Where(onyx.Within(
+        "id",
+        core.From(client.Tables.UserRole).
+            Select("userId").
+            Where(onyx.Eq("roleId", "role-admin")),
+    )).
+    List(ctx)
+
+rolesMissingPerm, _ := db.Roles().
+    Where(onyx.NotWithin(
+        "id",
+        core.From(client.Tables.RolePermission).
+            Select("roleId").
+            Where(onyx.Eq("permissionId", "perm-manage-users")),
+    )).
+    List(ctx)
+```
+
+`Within`/`NotWithin` accept another query; the SDK serializes the inner query before sending it to the API.
+
+---
+
+## Usage examples (User / Role / Permission)
+
+> Replace `client` with your generated package import (default package name is `onyx`).
+
+### List & page
+
+```go
+page, err := db.Users().
+    Where(onyx.Eq("isActive", true)).
+    And(onyx.Contains("email", "@example.com")).
+    Resolve("roles.permissions", "profile").
+    OrderBy("createdAt", true).
+    Limit(25).
+    Page(ctx, "")
+if err != nil { log.Fatal(err) }
+for _, u := range page.Items {
+    fmt.Println(u.Email)
 }
 
-iter, err := db.Users().Stream(ctx)
-if err != nil { log.Fatal(err) }
+// Iterate all pages
+iter := db.Users().Pages(ctx)
 for iter.Next() {
-    // handle each streamed item
+    p, _ := iter.Page()
+    for _, u := range p.Items {
+        fmt.Println(u.Id)
+    }
 }
 if err := iter.Err(); err != nil { log.Fatal(err) }
 ```
 
-## Resolves and nested data
-
-Use `Resolve` with dotted paths to hydrate related records just like the TS client:
-```go
-users, err := db.Users().
-    Where(onyx.Eq("id", "user_123")).
-    Resolve("profile", "roles.permissions").
-    Limit(1).
-    List(ctx)
-if err != nil { log.Fatal(err) }
-```
-
-## Cascades
-
-Cascade specs match TS semantics and are constructed via `onyx.Cascade`:
-```go
-spec := onyx.Cascade("userRoles:UserRole(userId,id)")
-
-if err := db.Cascade(spec).Save(ctx, "User", user); err != nil {
-    log.Fatal(err)
-}
-
-if err := db.Cascade(spec).Delete(ctx, "User", user.ID); err != nil {
-    log.Fatal(err)
-}
-```
-
-## Documents and secrets APIs
-
-The Go SDK mirrors the TS helpers for auxiliary APIs as well:
+### Save / upsert (single, batch, cascade)
 
 ```go
-ctx := context.Background()
-db, err := onyx.Init(ctx, onyx.Config{/* ... */})
+// Single upsert
+_, err := db.Users().Save(ctx, client.User{
+    Id:       "user_124",
+    Email:    "bob@example.com",
+    Username: "Bob",
+})
 if err != nil { log.Fatal(err) }
 
-doc, err := db.Documents().Get(ctx, "doc_123")
+// Batch upsert with typed helper
+_, err = db.Users().SaveMany(ctx, []client.User{
+    {Id: "user_125", Email: "carol@example.com", Username: "Carol"},
+    {Id: "user_126", Email: "dana@example.com", Username: "Dana"},
+})
 if err != nil { log.Fatal(err) }
 
-doc.Data["status"] = "updated"
-if _, err := db.Documents().Save(ctx, doc); err != nil {
-    log.Fatal(err)
+// Cascade save relationships (uses resolver graph)
+cascade := onyx.Cascade("userRoles:UserRole(userId,id)")
+_, err = db.Users().Save(ctx, client.User{
+    Id:       "user_200",
+    Email:    "cathy@example.com",
+    Username: "Cathy",
+    UserRoles: []any{
+        map[string]any{"roleId": "role_admin"},
+        map[string]any{"roleId": "role_editor"},
+    },
+}, cascade)
+if err != nil { log.Fatal(err) }
+
+// Core client batch save (arrays of maps/structs), default chunk size 500
+core := db.Core()
+_ = core.BatchSave(ctx, "User", []any{{"id": "user_300", "email": "eve@example.com"}}, 0)
+```
+
+### Delete (by id or by query)
+
+```go
+// Primary-key delete
+deleted, err := db.Users().DeleteByID(ctx, "user_125")
+if err != nil { log.Fatal(err) }
+fmt.Println("rows removed:", deleted)
+
+// Delete matching a query
+count, err := db.Users().
+    Where(onyx.Eq("isActive", false)).
+    Delete(ctx)
+if err != nil { log.Fatal(err) }
+fmt.Println("inactive removed:", count)
+```
+
+### Update in place
+
+```go
+now := time.Now().UTC()
+updates := client.NewUserUpdates().
+    SetLastLoginAt(&now).
+    SetIsActive(true)
+
+modified, err := db.Users().
+    Where(onyx.Eq("email", "alice@example.com")).
+    SetUserUpdates(updates).
+    Update(ctx)
+if err != nil { log.Fatal(err) }
+fmt.Println("rows updated:", modified)
+```
+
+### Schema API
+
+```go
+core := db.Core()
+schema, _ := core.Schema(ctx)
+history, _ := core.GetSchemaHistory(ctx)
+_ = core.UpdateSchema(ctx, schema, true) // publish=true
+fmt.Println("tables:", len(schema.Tables), "history entries:", len(history))
+```
+
+### Secrets API
+
+```go
+secClient := db.Secrets()
+_, _ = secClient.Set(ctx, onyx.Secret{Key: "api-key", Value: "super-secret"})
+secret, _ := secClient.Get(ctx, "api-key")
+fmt.Println(secret.Value)
+_ = secClient.Delete(ctx, "api-key")
+```
+
+### Documents API
+
+```go
+doc := onyx.Document{
+    DocumentID: "logo.png",
+    Path:       "/brand/logo.png",
+    MimeType:   "image/png",
+    Content:    base64LogoPNG,
 }
+saved, _ := db.Documents().Save(ctx, doc)
+fetched, _ := db.Documents().Get(ctx, saved.DocumentID)
+_ = db.Documents().Delete(ctx, fetched.DocumentID)
+```
 
-secret := onyx.Secret{Key: "API_KEY", Value: "abc"}
-if _, err := db.Secrets().Set(ctx, secret); err != nil {
-    log.Fatal(err)
+### Streaming
+
+```go
+iter, err := db.Users().
+    Where(onyx.Eq("status", "active")).
+    Stream(ctx)
+if err != nil { log.Fatal(err) }
+defer iter.Close()
+
+for iter.Next() {
+    fmt.Println("event:", iter.Value())
+}
+if err := iter.Err(); err != nil { log.Fatal(err) }
+```
+
+---
+
+## Error handling
+
+SDK errors use `*onyx.Error` (code, message, `Meta` with HTTP status, etc.). Use `errors.As` to inspect:
+
+```go
+if err != nil {
+    var oe *onyx.Error
+    if errors.As(err, &oe) {
+        fmt.Println("code:", oe.Code, "status:", oe.Meta["status"])
+    }
 }
 ```
 
-## Schema CLI (onyx-schema-go)
+Initialization failures raise configuration errors; HTTP calls surface server messages and statuses via the same type.
 
-Validate and normalize contract-first schemas locally, or fetch/publish them via the API:
-```bash
-onyx-schema-go validate --schema ./examples/api/onyx.schema.json
-onyx-schema-go diff --a ./examples/api/onyx.schema.json --b ./next.schema.json --json
-onyx-schema-go normalize --schema ./examples/api/onyx.schema.json --out ./examples/api/onyx.normalized.json
-onyx-schema-go get --database-id db_123 --out ./examples/api/onyx.schema.json
-# or just print the remote schema using your env/config (e.g., onyx-database.json; sample at ./examples/config/onyx-database.json):
-onyx-schema-go get --print
-onyx-schema-go publish --schema ./examples/api/onyx.schema.json
-```
+---
 
-If `--database-id` is omitted, the CLI resolves credentials from env vars or config files such as `./onyx-database.json` (also `~/.onyx/onyx-database.json`; this repo includes `./examples/config/onyx-database.json` as a sample).
+## Examples
 
-## Codegen CLI (onyx-gen-go)
+`./examples` is a standalone Go module with ready-to-run samples for queries, cascades, streaming, schema/diff/publish, documents, and secrets. Point it at your database by setting the same env vars or config file described above.
 
-Generate strongly-typed models, table constants, and helpers with deterministic output that only import `contract` (plus `time` when timestamps are requested):
-```bash
-# In this repo (writes to examples/gen/onyx with a fixed timestamp)
-go generate ./...
+---
 
-# Manual regeneration against local schema (same as go generate)
-onyx-gen-go --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx --package onyx
+## Release workflow
 
-# Pull the schema from the API and emit the same helpers (examples module)
-onyx-gen-go --source api --database-id db_123 --out ./examples/gen/onyx --package onyx
-```
+See `RELEASING.md` for details. In short:
 
-Generated helpers expose typed accessors like `db.Users().Where(onyx.Eq("id", userID)).List(ctx)` while keeping the public API aligned with the TS client. In your own app, set `--out` to your repository path and import that package (do not import the example package from this repo; the copy under `examples/gen/onyx` exists only for the samples in this repo).
+1. `go vet ./...`
+2. `go test ./... -coverprofile=coverage.out -covermode=atomic`
+3. Update docs/examples as needed.
+4. Tag and push `vX.Y.Z`.
+
+---
+
+## License
+
+MIT © Onyx Dev Tools. See `LICENSE`.
