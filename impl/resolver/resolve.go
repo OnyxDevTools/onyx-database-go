@@ -46,7 +46,8 @@ const (
 
 // Meta contains debug information about configuration resolution.
 type Meta struct {
-	Sources FieldSources
+	Sources  FieldSources
+	FilePath string
 }
 
 // FieldSources holds the origin for each resolved value.
@@ -102,9 +103,11 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 	}
 
 	// File-based config is lowest precedence.
-	if err := resolveFromFiles(ctx, partial, &resolved, &meta); err != nil {
+	filePath, err := resolveFromFiles(ctx, partial, &resolved, &meta)
+	if err != nil {
 		return ResolvedConfig{}, Meta{}, err
 	}
+	meta.FilePath = filePath
 
 	if resolved.DatabaseID == "" || resolved.DatabaseBaseURL == "" || resolved.APIKey == "" || resolved.APISecret == "" {
 		return ResolvedConfig{}, Meta{}, errors.New("missing required configuration values")
@@ -136,11 +139,12 @@ type fileConfig struct {
 	APISecret       string `json:"apiSecret"`
 }
 
-func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedConfig, meta *Meta) error {
+func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedConfig, meta *Meta) (string, error) {
 	path := partial.ConfigPath
 	if path == "" {
 		path = os.Getenv("ONYX_CONFIG_PATH")
 	}
+	var chosenPath string
 
 	candidates := []string{}
 	if path != "" {
@@ -169,7 +173,7 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 	for _, candidate := range candidates {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return "", ctx.Err()
 		default:
 		}
 
@@ -183,27 +187,37 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 			continue
 		}
 
+		applied := false
 		if resolved.DatabaseID == "" && fc.DatabaseID != "" {
 			resolved.DatabaseID = fc.DatabaseID
 			meta.Sources.DatabaseID = SourceFile
+			applied = true
 		}
 		if resolved.DatabaseBaseURL == "" {
 			switch {
 			case fc.DatabaseBaseURL != "":
 				resolved.DatabaseBaseURL = fc.DatabaseBaseURL
 				meta.Sources.DatabaseBaseURL = SourceFile
+				applied = true
 			case fc.BaseURL != "":
 				resolved.DatabaseBaseURL = fc.BaseURL
 				meta.Sources.DatabaseBaseURL = SourceFile
+				applied = true
 			}
 		}
 		if resolved.APIKey == "" && fc.APIKey != "" {
 			resolved.APIKey = fc.APIKey
 			meta.Sources.APIKey = SourceFile
+			applied = true
 		}
 		if resolved.APISecret == "" && fc.APISecret != "" {
 			resolved.APISecret = fc.APISecret
 			meta.Sources.APISecret = SourceFile
+			applied = true
+		}
+
+		if applied {
+			chosenPath = candidate
 		}
 
 		if resolved.DatabaseID != "" && resolved.DatabaseBaseURL != "" && resolved.APIKey != "" && resolved.APISecret != "" {
@@ -211,5 +225,5 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 		}
 	}
 
-	return nil
+	return chosenPath, nil
 }

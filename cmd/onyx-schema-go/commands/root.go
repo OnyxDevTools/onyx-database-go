@@ -72,5 +72,6 @@ func defaultAvailableCommands() []Command {
 		&NormalizeCommand{},
 		&GetCommand{},
 		&PublishCommand{},
+		&InfoCommand{},
 	}
 }

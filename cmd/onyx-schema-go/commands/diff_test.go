@@ -158,7 +158,7 @@ func TestDiffCommandFetchesFromAPI(t *testing.T) {
 		t.Fatal("expected fetchSchemaFromAPI to be called")
 	}
 
-	if !strings.Contains(out.String(), `"addedTables"`) {
+	if !strings.Contains(out.String(), `"removedTables"`) {
 		t.Fatalf("expected json diff output, got: %s", out.String())
 	}
 }
@@ -200,7 +200,8 @@ func TestDiffCommandDefaultsToAPIWhenBMissing(t *testing.T) {
 		t.Fatal("expected fetchSchemaFromAPI to be called")
 	}
 
-	if !strings.Contains(out.String(), "updated=API (configured credentials)") {
+	header := "Comparing schemas (base=API (configured credentials), updated=" + pathA + " (file))"
+	if !strings.Contains(out.String(), header) {
 		t.Fatalf("expected header showing API source, got: %s", out.String())
 	}
 }
