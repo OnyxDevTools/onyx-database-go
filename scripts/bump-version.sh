@@ -90,7 +90,8 @@ MESSAGE="${MESSAGE:-"${BUMP_TYPE} release"}"
 
 LATEST_TAG="$(git tag --list "v*.*.*" --sort=-v:refname | head -n1)"
 if [[ -z "${LATEST_TAG}" ]]; then
-  NEXT_VERSION="v0.1.0"
+  # First release baseline
+  NEXT_VERSION="v0.0.1"
 else
   if [[ ! "${LATEST_TAG}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
     abort "Latest tag ${LATEST_TAG} is not a valid semver tag."

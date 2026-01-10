@@ -1,4 +1,4 @@
-# Onyx Database Go SDK
+# Onyx Database Go Client SDK
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![codecov](https://codecov.io/gh/OnyxDevTools/onyx-database-go/branch/main/graph/badge.svg)](https://codecov.io/gh/OnyxDevTools/onyx-database-go)
@@ -68,17 +68,17 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
        "context"
        "log"
 
-       client "your/module/gen/onyx"
+       onyx "your/module/gen/onyx"
    )
 
    func main() {
        ctx := context.Background()
-       db, err := client.New(ctx, client.Config{})
+       db, err := onyx.New(ctx, onyx.Config{})
        if err != nil {
            log.Fatal(err)
        }
 
-       user, err := db.Users().Save(ctx, client.User{
+       user, err := db.Users().Save(ctx, onyx.User{
            Id:       "user_1",
            Email:    "user@example.com",
            Username: "User One",
@@ -108,7 +108,7 @@ export ONYX_DATABASE_API_SECRET="secret_xyz"
 ```
 
 ```go
-db, err := client.New(ctx, client.Config{DatabaseID: "db_123"}) // uses env + cached resolver
+db, err := onyx.New(ctx, onyx.Config{DatabaseID: "db_123"}) // uses env + cached resolver
 if err != nil { log.Fatal(err) }
 // Call onyx.ClearConfigCache() when you need to reset cached config between tests
 ```
@@ -116,7 +116,7 @@ if err != nil { log.Fatal(err) }
 ### Option B) Explicit config
 
 ```go
-db, err := client.New(ctx, client.Config{
+db, err := onyx.New(ctx, onyx.Config{
     DatabaseID:      "db_123",
     DatabaseBaseURL: "https://api.onyx.dev",
     APIKey:          os.Getenv("ONYX_DATABASE_API_KEY"),
@@ -153,7 +153,7 @@ Shape:
 
 ### Connection handling
 
-`onyx.Init` / `client.New` resolve configuration once per cache key and reuse a single signed HTTP client (keep-alive enabled). Reuse the returned client across operations; `CacheTTL` controls how long resolution results are reused. `onyx.ClearConfigCache()` also clears the HTTP client cache.
+`onyx.Init` / `onyx.New` resolve configuration once per cache key and reuse a single signed HTTP client (keep-alive enabled). Reuse the returned client across operations; `CacheTTL` controls how long resolution results are reused. `onyx.ClearConfigCache()` also clears the HTTP client cache.
 
 ---
 
@@ -195,7 +195,7 @@ import (
 	"github.com/OnyxDevTools/onyx-database-go/examples/gen/onyx"
 )
 ctx := context.Background()
-db, err := client.New(ctx, onyx.Config{})
+db, err := onyx.New(ctx, onyx.Config{})
 
 users, err := db.Users().Limit(25).List(ctx)
 ```
@@ -263,13 +263,13 @@ onyx.Desc
 ### Inner queries (IN/NOT IN)
 
 ```go
-db, _ := client.New(ctx, client.Config{})
+db, _ := onyx.New(ctx, onyx.Config{})
 core := db.Core()
 
 admins, _ := db.Users().
     Where(onyx.Within(
         "id",
-        core.From(client.Tables.UserRole).
+        core.From(onyx.Tables.UserRole).
             Select("userId").
             Where(onyx.Eq("roleId", "role-admin")),
     )).
@@ -278,7 +278,7 @@ admins, _ := db.Users().
 rolesMissingPerm, _ := db.Roles().
     Where(onyx.NotWithin(
         "id",
-        core.From(client.Tables.RolePermission).
+        core.From(onyx.Tables.RolePermission).
             Select("roleId").
             Where(onyx.Eq("permissionId", "perm-manage-users")),
     )).
@@ -323,7 +323,7 @@ if err := iter.Err(); err != nil { log.Fatal(err) }
 
 ```go
 // Single upsert
-_, err := db.Users().Save(ctx, client.User{
+_, err := db.Users().Save(ctx, onyx.User{
     Id:       "user_124",
     Email:    "bob@example.com",
     Username: "Bob",
@@ -331,7 +331,7 @@ _, err := db.Users().Save(ctx, client.User{
 if err != nil { log.Fatal(err) }
 
 // Batch upsert with typed helper
-_, err = db.Users().SaveMany(ctx, []client.User{
+_, err = db.Users().SaveMany(ctx, []onyx.User{
     {Id: "user_125", Email: "carol@example.com", Username: "Carol"},
     {Id: "user_126", Email: "dana@example.com", Username: "Dana"},
 })
@@ -339,7 +339,7 @@ if err != nil { log.Fatal(err) }
 
 // Cascade save relationships (uses resolver graph)
 cascade := onyx.Cascade("userRoles:UserRole(userId,id)")
-_, err = db.Users().Save(ctx, client.User{
+_, err = db.Users().Save(ctx, onyx.User{
     Id:       "user_200",
     Email:    "cathy@example.com",
     Username: "Cathy",
@@ -375,7 +375,7 @@ fmt.Println("inactive removed:", count)
 
 ```go
 now := time.Now().UTC()
-updates := client.NewUserUpdates().
+updates := onyx.NewUserUpdates().
     SetLastLoginAt(&now).
     SetIsActive(true)
 
@@ -400,11 +400,16 @@ fmt.Println("tables:", len(schema.Tables), "history entries:", len(history))
 ### Secrets API
 
 ```go
-secClient := db.Secrets()
-_, _ = secClient.Set(ctx, onyx.OnyxSecret{Key: "api-key", Value: "super-secret"})
-secret, _ := secClient.Get(ctx, "api-key")
+secrets := db.OnyxSecrets()
+if _, err := secrets.Set(ctx, onyx.OnyxSecret{Key: "api-key", Value: "super-secret"}); err != nil {
+    log.Fatal(err)
+}
+secret, err := secrets.Get(ctx, "api-key")
+if err != nil { log.Fatal(err) }
 fmt.Println(secret.Value)
-_ = secClient.Delete(ctx, "api-key")
+if err := secrets.Delete(ctx, "api-key"); err != nil {
+    log.Fatal(err)
+}
 ```
 
 ### Documents API

@@ -12,7 +12,9 @@ type secretClient struct {
 	client *client
 }
 
-func (c *client) Secrets() contract.OnyxSecretsClient { return &secretClient{client: c} }
+func (c *client) OnyxSecrets() contract.OnyxSecretsClient { return &secretClient{client: c} }
+func (c *client) OnyxSecret() contract.OnyxSecretsClient  { return c.OnyxSecrets() }
+func (c *client) Secrets() contract.OnyxSecretsClient     { return c.OnyxSecrets() }
 
 type secretListResponse struct {
 	Records []contract.OnyxSecret `json:"records"`

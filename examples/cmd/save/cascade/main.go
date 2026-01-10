@@ -13,7 +13,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	client, err := onyx.New(ctx, onyx.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func main() {
 
 	// Cascade save using a CascadeSpec; Users().Save returns the saved graph.
 	spec := onyx.Cascade("profile:UserProfile(userId,id)")
-	saved, err := client.Users().Save(ctx, user, spec)
+	saved, err := db.Users().Save(ctx, user, spec)
 	if err != nil {
 		log.Fatal(err)
 	}

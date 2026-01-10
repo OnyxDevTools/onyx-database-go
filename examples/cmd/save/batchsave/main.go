@@ -13,7 +13,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	client, err := onyx.New(ctx, onyx.Config{})
+	db, err := onyx.New(ctx, onyx.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func main() {
 	if len(users) == 0 {
 		log.Fatalf("warning: expected users to save")
 	}
-	if err := client.Core().BatchSave(ctx, onyx.Tables.User, toAnySlice(users), 2); err != nil {
+	if err := db.Core().BatchSave(ctx, onyx.Tables.User, toAnySlice(users), 2); err != nil {
 		log.Fatal(err)
 	}
 
@@ -44,7 +44,7 @@ func main() {
 	// Fetch a small sample with a timeout so debug sessions don't hang if the network is slow.
 	listCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if fetched, err := client.Users().Limit(5).List(listCtx); err == nil {
+	if fetched, err := db.Users().Limit(5).List(listCtx); err == nil {
 		var decoded []onyx.User
 		if b, marshalErr := json.Marshal(fetched); marshalErr == nil {
 			_ = json.Unmarshal(b, &decoded)

@@ -3,8 +3,11 @@
 Thanks for helping improve the Onyx Database Go SDK. This guide covers the local workflow: regenerating examples, running tests, and using the CLIs from both the root module and the examples module.
 
 ## Prerequisites
-- Go 1.22 or newer installed and on your PATH.
-- No sandboxed network installs are required; CLIs build from source.
+- Go 1.22.x (we standardize on 1.22.8). The repo assumes Go is provided via gvm.
+  - Install gvm: `bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)`
+  - Install toolchain: `gvm install go1.22.8` (and any other versions you need).
+  - Set the project default: `gvm use go1.22.8 --default` (or run `gvm use go1.22.8` in this repo before builds/tests).
+- No sandboxed network installs are required; CLIs build from source once gvm is set.
 
 ## Project layout basics
 - Root module: SDK, CLIs, contract, implementation (`go.mod` at repo root).

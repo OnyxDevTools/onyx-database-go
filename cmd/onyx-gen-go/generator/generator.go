@@ -218,12 +218,13 @@ func renderCommon(schema onyx.Schema, pkg string) []byte {
 	buf.WriteString("func (d DocumentsClient) Save(ctx context.Context, doc onyx.OnyxDocument) (onyx.OnyxDocument, error) { return d.core.Save(ctx, doc) }\n")
 	buf.WriteString("func (d DocumentsClient) Delete(ctx context.Context, id string) error { return d.core.Delete(ctx, id) }\n\n")
 
-	buf.WriteString("type SecretsClient struct { core onyx.Client }\n\n")
-	buf.WriteString("func (c DB) Secrets() SecretsClient { return SecretsClient{core: c.core} }\n\n")
-	buf.WriteString("func (s SecretsClient) List(ctx context.Context) ([]onyx.OnyxSecret, error) { return s.core.ListSecrets(ctx) }\n")
-	buf.WriteString("func (s SecretsClient) Get(ctx context.Context, key string) (onyx.OnyxSecret, error) { return s.core.GetSecret(ctx, key) }\n")
-	buf.WriteString("func (s SecretsClient) Set(ctx context.Context, secret onyx.OnyxSecret) (onyx.OnyxSecret, error) { return s.core.PutSecret(ctx, secret) }\n")
-	buf.WriteString("func (s SecretsClient) Delete(ctx context.Context, key string) error { return s.core.DeleteSecret(ctx, key) }\n\n")
+	buf.WriteString("type OnyxSecretsClient struct { core onyx.Client }\n\n")
+	buf.WriteString("func (c DB) OnyxSecrets() OnyxSecretsClient { return OnyxSecretsClient{core: c.core} }\n")
+	buf.WriteString("func (c DB) OnyxSecret() OnyxSecretsClient  { return c.OnyxSecrets() }\n\n")
+	buf.WriteString("func (s OnyxSecretsClient) List(ctx context.Context) ([]onyx.OnyxSecret, error) { return s.core.ListSecrets(ctx) }\n")
+	buf.WriteString("func (s OnyxSecretsClient) Get(ctx context.Context, key string) (onyx.OnyxSecret, error) { return s.core.GetSecret(ctx, key) }\n")
+	buf.WriteString("func (s OnyxSecretsClient) Set(ctx context.Context, secret onyx.OnyxSecret) (onyx.OnyxSecret, error) { return s.core.PutSecret(ctx, secret) }\n")
+	buf.WriteString("func (s OnyxSecretsClient) Delete(ctx context.Context, key string) error { return s.core.DeleteSecret(ctx, key) }\n\n")
 
 	return buf.Bytes()
 }

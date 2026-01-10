@@ -16,12 +16,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	secrets := db.Secrets()
 
 	secretKey := fmt.Sprintf("example-secret-%d", time.Now().UnixMilli())
 	secretValue := "demo-secret-value"
 
-	entries, err := secrets.List(ctx)
+	entries, err := db.OnyxSecrets().List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,7 +37,7 @@ func main() {
 		fmt.Println("Initial secrets list does not include the example key.")
 	}
 
-	saved, err := secrets.Set(ctx, onyx.OnyxSecret{Key: secretKey, Value: secretValue})
+	saved, err := db.OnyxSecrets().Set(ctx, onyx.OnyxSecret{Key: secretKey, Value: secretValue})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +46,7 @@ func main() {
 	}
 	fmt.Println("Saved secret metadata:", saved)
 
-	afterSet, err := secrets.List(ctx)
+	afterSet, err := db.OnyxSecrets().List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +60,7 @@ func main() {
 		}
 	}
 
-	found, err := secrets.Get(ctx, secretKey)
+	found, err := db.OnyxSecrets().Get(ctx, secretKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,12 +69,12 @@ func main() {
 	}
 	fmt.Println("Fetched secret:", found)
 
-	if err := secrets.Delete(ctx, secretKey); err != nil {
+	if err := db.OnyxSecrets().Delete(ctx, secretKey); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Secret deleted:", secretKey)
 
-	finalList, err := secrets.List(ctx)
+	finalList, err := db.OnyxSecrets().List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
