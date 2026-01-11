@@ -28,7 +28,14 @@ require_cmd() {
 
 require_clean_tree() {
   if ! git diff --quiet || ! git diff --cached --quiet; then
-    abort "Working tree not clean. Commit or stash changes first."
+    echo "Working tree not clean."
+    read -rp "Enter commit message to auto-commit and push changes (leave empty to abort): " COMMIT_MSG
+    if [[ -z "${COMMIT_MSG}" ]]; then
+      abort "Working tree not clean. Commit or stash changes first."
+    fi
+    cmd git add -A
+    cmd git commit -m "${COMMIT_MSG}"
+    cmd git push origin "${MAIN_BRANCH}"
   fi
 }
 
@@ -81,9 +88,12 @@ EXAMPLE_CONFIG="examples/config/onyx-database.json"
 EXAMPLE_SCHEMA="examples/api/onyx.schema.json"
 [[ -f "${EXAMPLE_CONFIG}" ]] || abort "Missing ${EXAMPLE_CONFIG}."
 [[ -f "${EXAMPLE_SCHEMA}" ]] || abort "Missing ${EXAMPLE_SCHEMA}."
-ONYX_CONFIG_PATH="${EXAMPLE_CONFIG}" \
-ONYX_SCHEMA_PATH="${EXAMPLE_SCHEMA}" \
-  cmd go run ./examples/cmd/query/basic/main.go
+( \
+  cd examples
+  ONYX_CONFIG_PATH="./config/onyx-database.json" \
+  ONYX_SCHEMA_PATH="./api/onyx.schema.json" \
+    cmd go run ./cmd/query/basic/main.go
+)
 
 require_clean_tree
 
