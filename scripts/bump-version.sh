@@ -161,4 +161,5 @@ CI will publish from tag ${NEXT_VERSION}.
 View Actions runs:
 - Tag:    https://github.com/OnyxDevTools/onyx-database-go/actions?query=tag%3A${NEXT_VERSION}
 - Branch: https://github.com/OnyxDevTools/onyx-database-go/actions?query=branch%3A${MAIN_BRANCH}
+- All runs: https://github.com/OnyxDevTools/onyx-database-go/actions
 NOTE
