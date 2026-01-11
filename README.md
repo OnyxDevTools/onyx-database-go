@@ -21,10 +21,15 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
 2. **Capture connection parameters**:
    You will need to setup an apiKey to connect to your database in the onyx console at <https://cloud.onyx.dev>.  After creating the apiKey, you can download the `onyx-database.json`. Save it to the `config` folder
 
-3. **Install the client sdk and cli tool**
+3. **Install the SDK + CLI**
 
+   Add the SDK to your project (writes to your `go.mod`):
    ```bash
-   go install github.com/OnyxDevTools/onyx-database-go/onyx@latest
+   go get github.com/OnyxDevTools/onyx-database-go@latest
+   ```
+
+   Install the CLI binary (adds `onyx-go` to `$(go env GOPATH)/bin`):
+   ```bash
    go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
    ```
 
