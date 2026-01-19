@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -31,10 +32,15 @@ func Run(opts Options) error {
 		return err
 	}
 
-	schema, err := loadSchema(context.Background(), opts)
+	schemaOpts := opts
+	schemaOpts.Tables = nil
+
+	schema, err := loadSchema(context.Background(), schemaOpts)
 	if err != nil {
 		return err
 	}
+
+	tableSchema := normalizeAndFilter(schema, opts.Tables)
 
 	if err := os.MkdirAll(opts.OutPath, 0o755); err != nil {
 		return err
@@ -46,7 +52,7 @@ func Run(opts Options) error {
 		return err
 	}
 
-	for _, t := range schema.Tables {
+	for _, t := range tableSchema.Tables {
 		tablePath := filepath.Join(opts.OutPath, fmt.Sprintf("%s.go", toFileName(t.Name)))
 		tableCode := renderTable(t, opts.PackageName, opts.TimestampFormat)
 		if err := os.WriteFile(tablePath, tableCode, 0o644); err != nil {
@@ -156,6 +162,9 @@ func renderCommon(schema onyx.Schema, pkg string) []byte {
 	buf.WriteString("func Cascade(spec string) onyx.CascadeSpec { return onyx.Cascade(spec) }\n")
 	buf.WriteString("func NewCascadeBuilder() onyx.CascadeBuilder { return onyx.NewCascadeBuilder() }\n\n")
 
+	buf.WriteString("type Condition = onyx.Condition\n")
+	buf.WriteString("type Sort = onyx.Sort\n")
+	buf.WriteString("type Query = onyx.Query\n")
 	buf.WriteString("type Schema = onyx.Schema\n")
 	buf.WriteString("type Table = onyx.Table\n")
 	buf.WriteString("type Field = onyx.Field\n")
@@ -163,13 +172,14 @@ func renderCommon(schema onyx.Schema, pkg string) []byte {
 	buf.WriteString("type OnyxDocument = onyx.OnyxDocument\n")
 	buf.WriteString("type OnyxSecret = onyx.OnyxSecret\n\n")
 
+	tables := tableEntries(schema)
 	buf.WriteString("var Tables = struct {\n")
-	for _, t := range schema.Tables {
+	for _, t := range tables {
 		fmt.Fprintf(&buf, "\t%s string\n", toExported(t.Name))
 	}
 	buf.WriteString("}{\n")
-	for _, t := range schema.Tables {
-		fmt.Fprintf(&buf, "\t%s: %q,\n", toExported(t.Name), t.Name)
+	for _, t := range tables {
+		fmt.Fprintf(&buf, "\t%s: %q,\n", toExported(t.Name), t.Value)
 	}
 	buf.WriteString("}\n\n")
 
@@ -630,6 +640,50 @@ func toFileName(name string) string {
 
 func clientOutPath(outDir string) string {
 	return filepath.Join(outDir, "common.go")
+}
+
+type tableEntry struct {
+	Name  string
+	Value string
+}
+
+func tableEntries(schema onyx.Schema) []tableEntry {
+	entries := make(map[string]string, len(schema.Tables))
+	for _, t := range schema.Tables {
+		entries[t.Name] = t.Name
+	}
+
+	const (
+		providerTable = "ProviderActivePointer"
+		partnerTable  = "PartnerActivePointer"
+	)
+
+	providerValue, hasProvider := entries[providerTable]
+	partnerValue, hasPartner := entries[partnerTable]
+	if hasProvider || hasPartner {
+		target := providerValue
+		if target == "" {
+			target = partnerValue
+		}
+		if !hasProvider {
+			entries[providerTable] = target
+		}
+		if !hasPartner {
+			entries[partnerTable] = target
+		}
+	}
+
+	names := make([]string, 0, len(entries))
+	for name := range entries {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	out := make([]tableEntry, 0, len(names))
+	for _, name := range names {
+		out = append(out, tableEntry{Name: name, Value: entries[name]})
+	}
+	return out
 }
 
 // ClientPathFor exposes the client path calculation for external callers.

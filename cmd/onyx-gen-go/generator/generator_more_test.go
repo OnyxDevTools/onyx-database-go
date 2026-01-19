@@ -84,6 +84,60 @@ func TestRenderCommonResolverBranches(t *testing.T) {
 	}
 }
 
+func TestTableEntriesAddsActivePointerAliases(t *testing.T) {
+	cases := []struct {
+		name     string
+		tables   []onyx.Table
+		expected map[string]string
+	}{
+		{
+			name:   "provider only",
+			tables: []onyx.Table{{Name: "ProviderActivePointer"}},
+			expected: map[string]string{
+				"ProviderActivePointer": "ProviderActivePointer",
+				"PartnerActivePointer":  "ProviderActivePointer",
+			},
+		},
+		{
+			name:   "partner only",
+			tables: []onyx.Table{{Name: "PartnerActivePointer"}},
+			expected: map[string]string{
+				"ProviderActivePointer": "PartnerActivePointer",
+				"PartnerActivePointer":  "PartnerActivePointer",
+			},
+		},
+		{
+			name: "both present",
+			tables: []onyx.Table{
+				{Name: "ProviderActivePointer"},
+				{Name: "PartnerActivePointer"},
+			},
+			expected: map[string]string{
+				"ProviderActivePointer": "ProviderActivePointer",
+				"PartnerActivePointer":  "PartnerActivePointer",
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			entries := tableEntries(onyx.Schema{Tables: tc.tables})
+			if len(entries) != len(tc.expected) {
+				t.Fatalf("expected %d entries, got %d", len(tc.expected), len(entries))
+			}
+			got := map[string]string{}
+			for _, e := range entries {
+				got[e.Name] = e.Value
+			}
+			for name, expectedValue := range tc.expected {
+				if got[name] != expectedValue {
+					t.Fatalf("expected %s -> %s, got %s", name, expectedValue, got[name])
+				}
+			}
+		})
+	}
+}
+
 func TestRenderGenerateIncludesOptions(t *testing.T) {
 	opts := Options{
 		Source:          "api",

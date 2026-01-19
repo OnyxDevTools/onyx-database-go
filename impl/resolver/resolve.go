@@ -190,6 +190,10 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 		}
 		candidates = append(candidates, filepath.Join("config", "onyx-database.json"))
 		if dbID != "" {
+			candidates = append(candidates, filepath.Join("internal", "config", fmt.Sprintf("onyx-database-%s.json", dbID)))
+		}
+		candidates = append(candidates, filepath.Join("internal", "config", "onyx-database.json"))
+		if dbID != "" {
 			candidates = append(candidates, fmt.Sprintf("./onyx-database-%s.json", dbID))
 		}
 		candidates = append(candidates, "./onyx-database.json")

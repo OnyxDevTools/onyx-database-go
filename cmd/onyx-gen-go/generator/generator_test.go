@@ -66,6 +66,9 @@ func TestRunLoadsSchema(t *testing.T) {
 	if !strings.Contains(string(common), "type DB struct") || !strings.Contains(string(common), "New(ctx context.Context, cfg Config) (DB, error)") {
 		t.Fatalf("expected DB helpers, got:\n%s", string(common))
 	}
+	if !strings.Contains(string(common), "type Condition = onyx.Condition") || !strings.Contains(string(common), "type Sort = onyx.Sort") || !strings.Contains(string(common), "type Query = onyx.Query") {
+		t.Fatalf("expected query type aliases, got:\n%s", string(common))
+	}
 
 	userContent, err := os.ReadFile(filepath.Join(outDir, "user.go"))
 	if err != nil {
@@ -95,6 +98,41 @@ func TestRunLoadsSchema(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(outDir, "generate.go")); err == nil {
 		t.Fatalf("generate.go should not be emitted by default")
+	}
+}
+
+func TestTablesStructIncludesFullSchema(t *testing.T) {
+	tmp := t.TempDir()
+	schemaPath := filepath.Join(tmp, "schema.json")
+	rawSchema := `{"tables":[{"name":"User","fields":[{"name":"id","type":"String"}]},{"name":"Audit","fields":[{"name":"id","type":"String"}]}]}`
+	if err := os.WriteFile(schemaPath, []byte(rawSchema), 0o644); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+
+	outDir := filepath.Join(tmp, "onyx")
+	opts := Options{SchemaPath: schemaPath, OutPath: outDir, PackageName: "pkg", Tables: []string{"User"}}
+	if err := Run(opts); err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+
+	common, err := os.ReadFile(filepath.Join(outDir, "common.go"))
+	if err != nil {
+		t.Fatalf("expected generated common file, read err: %v", err)
+	}
+	for _, table := range []string{"Audit", "User"} {
+		expected := table + ": \"" + table + "\""
+		if !strings.Contains(string(common), expected) {
+			t.Fatalf("expected Tables map to include %s, got:\n%s", table, string(common))
+		}
+	}
+
+	if _, err := os.Stat(filepath.Join(outDir, "user.go")); err != nil {
+		t.Fatalf("expected generated user table file: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, "audit.go")); err == nil {
+		t.Fatalf("did not expect audit table file when tables filter provided")
+	} else if !os.IsNotExist(err) {
+		t.Fatalf("unexpected error checking audit.go: %v", err)
 	}
 }
 

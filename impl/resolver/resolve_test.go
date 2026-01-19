@@ -171,6 +171,65 @@ func TestResolveConfigDirectoryFallback(t *testing.T) {
 	}
 }
 
+func TestResolveInternalConfigFallback(t *testing.T) {
+	ClearCache()
+	dir := t.TempDir()
+	internalConfigDir := filepath.Join(dir, "internal", "config")
+	if err := os.MkdirAll(internalConfigDir, 0o755); err != nil {
+		t.Fatalf("mkdir internal config dir: %v", err)
+	}
+	internalCfg := filepath.Join(internalConfigDir, "onyx-database.json")
+	if err := os.WriteFile(internalCfg, []byte(`{"databaseId":"db1","databaseBaseUrl":"https://internal","apiKey":"k","apiSecret":"s"}`), 0o644); err != nil {
+		t.Fatalf("write internal config: %v", err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+
+	home := filepath.Join(dir, "home")
+	if err := os.MkdirAll(home, 0o755); err != nil {
+		t.Fatalf("mkdir home: %v", err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("ONYX_CONFIG_PATH", "")
+	t.Setenv("ONYX_DATABASE_ID", "")
+	t.Setenv("ONYX_DATABASE_BASE_URL", "")
+	t.Setenv("ONYX_DATABASE_API_KEY", "")
+	t.Setenv("ONYX_DATABASE_API_SECRET", "")
+
+	cfg, meta, err := Resolve(context.Background(), Config{})
+	if err != nil {
+		t.Fatalf("resolve err: %v", err)
+	}
+	if cfg.DatabaseBaseURL != "https://internal" {
+		t.Fatalf("expected internal config fallback, got %+v", cfg)
+	}
+	internalReal, err := filepath.EvalSymlinks(internalCfg)
+	if err != nil {
+		t.Fatalf("eval symlinks: %v", err)
+	}
+	metaReal, err := filepath.EvalSymlinks(meta.FilePath)
+	if err != nil {
+		t.Fatalf("eval meta symlinks: %v", err)
+	}
+	if filepath.Clean(metaReal) != filepath.Clean(internalReal) {
+		t.Fatalf("expected meta filepath %s, got %s", internalReal, meta.FilePath)
+	}
+	if meta.Sources.DatabaseBaseURL != SourceFile {
+		t.Fatalf("expected file source, got %+v", meta.Sources)
+	}
+}
+
 func TestResolveHomeProfileFallback(t *testing.T) {
 	ClearCache()
 	tmp := t.TempDir()
