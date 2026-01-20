@@ -238,6 +238,39 @@ Omit `--database-id` to rely on env vars or config files like `./config/onyx-dat
 
 ---
 
+## AI chat + models (OpenAI-style)
+
+The client also speaks to Onyx AI (OpenAI-compatible, default base `https://ai.onyx.dev`; override with `Config.AIBaseURL` or `ONYX_AI_BASE_URL`). Same API key/secret is reused.
+
+Chat completion (non-streaming):
+
+```go
+ctx := context.Background()
+db, _ := onyx.Init(ctx, onyx.Config{}) // resolves API key/secret + AI base
+resp, err := db.Chat(ctx, onyx.AIChatCompletionRequest{
+    Model: "onyx-chat",
+    Messages: []onyx.AIChatMessage{
+        {Role: "user", Content: "Say hello from Onyx in one short sentence."},
+    },
+})
+if err != nil { log.Fatal(err) }
+fmt.Println(resp.Choices[0].Message.Content)
+```
+
+List available models:
+
+```go
+ctx := context.Background()
+db, _ := onyx.Init(ctx, onyx.Config{})
+models, err := db.GetModels(ctx)
+if err != nil { log.Fatal(err) }
+for _, m := range models.Data {
+    fmt.Println(m.ID)
+}
+```
+
+---
+
 ## Query helpers at a glance
 
 ```go
