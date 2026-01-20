@@ -149,3 +149,18 @@ func (s *stubClient) PutSecret(ctx context.Context, secret onyx.Secret) (onyx.Se
 	return secret, nil
 }
 func (s *stubClient) DeleteSecret(ctx context.Context, key string) error { return nil }
+func (s *stubClient) Chat(ctx context.Context, req onyx.AIChatCompletionRequest) (onyx.AIChatCompletionResponse, error) {
+	return onyx.AIChatCompletionResponse{}, nil
+}
+func (s *stubClient) ChatStream(ctx context.Context, req onyx.AIChatCompletionRequest) (onyx.AIChatStream, error) {
+	return nil, nil
+}
+func (s *stubClient) GetModels(ctx context.Context) (onyx.AIModelsResponse, error) {
+	return onyx.AIModelsResponse{}, nil
+}
+func (s *stubClient) GetModel(ctx context.Context, modelID string) (onyx.AIModel, error) {
+	return onyx.AIModel{}, nil
+}
+func (s *stubClient) RequestScriptApproval(ctx context.Context, req onyx.AIScriptApprovalRequest) (onyx.AIScriptApprovalResponse, error) {
+	return onyx.AIScriptApprovalResponse{}, nil
+}

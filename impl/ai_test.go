@@ -14,6 +14,7 @@ import (
 func TestChatUsesDatabaseIDAndDisablesStream(t *testing.T) {
 	clearHTTPClientCache()
 	ClearConfigCache()
+	clearEnv(t)
 
 	var capturedQuery string
 	var capturedStream any
@@ -74,6 +75,7 @@ func TestChatUsesDatabaseIDAndDisablesStream(t *testing.T) {
 func TestChatStreamSetsStreamAndParsesChunks(t *testing.T) {
 	clearHTTPClientCache()
 	ClearConfigCache()
+	clearEnv(t)
 
 	body := strings.Join([]string{
 		`data: {"id":"chunk-1","object":"chat.completion.chunk","created":1,"model":"onyx-chat","choices":[{"index":0,"delta":{"content":"hi"},"finish_reason":null}]}`,
@@ -138,6 +140,7 @@ func TestChatStreamSetsStreamAndParsesChunks(t *testing.T) {
 func TestRequestScriptApprovalUsesDatabaseIDOverride(t *testing.T) {
 	clearHTTPClientCache()
 	ClearConfigCache()
+	clearEnv(t)
 
 	var capturedQuery string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -184,4 +187,14 @@ func TestRequestScriptApprovalUsesDatabaseIDOverride(t *testing.T) {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func clearEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("ONYX_DATABASE_ID", "")
+	t.Setenv("ONYX_DATABASE_BASE_URL", "")
+	t.Setenv("ONYX_DATABASE_API_KEY", "")
+	t.Setenv("ONYX_DATABASE_API_SECRET", "")
+	t.Setenv("ONYX_CONFIG_PATH", "")
+	t.Setenv("ONYX_AI_BASE_URL", "")
 }
