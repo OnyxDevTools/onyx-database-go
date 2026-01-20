@@ -22,6 +22,7 @@ type Config = contract.Config
 type client struct {
 	cfg        resolver.ResolvedConfig
 	httpClient *httpclient.Client
+	aiClient   *httpclient.Client
 	now        func() time.Time
 	sleep      func(time.Duration)
 }
@@ -117,13 +118,14 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 	}
 
 	hc := getCachedHTTPClient(resolved.DatabaseBaseURL, cfg.HTTPClient, logRequests, logResponses, signer, logger)
+	ai := getCachedHTTPClient(resolved.AIBaseURL, cfg.HTTPClient, logRequests, logResponses, signer, logger)
 
 	nowFn := time.Now
 	if cfg.Clock != nil {
 		nowFn = cfg.Clock
 	}
 
-	c := &client{cfg: resolved, httpClient: hc, now: nowFn}
+	c := &client{cfg: resolved, httpClient: hc, aiClient: ai, now: nowFn}
 	if cfg.Sleep != nil {
 		c.sleep = cfg.Sleep
 	} else {

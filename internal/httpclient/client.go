@@ -54,6 +54,16 @@ func New(baseURL string, httpClient *http.Client, opts Options) *Client {
 	}
 }
 
+// Logger returns the configured logger (never nil).
+func (c *Client) Logger() *log.Logger {
+	return c.logger
+}
+
+// LogResponses reports whether response logging is enabled.
+func (c *Client) LogResponses() bool {
+	return c.logResponses
+}
+
 // DoJSON executes an HTTP request and decodes the JSON response.
 func (c *Client) DoJSON(ctx context.Context, method, path string, reqBody any, respBody any) error {
 	resp, body, err := c.do(ctx, method, path, reqBody, false)
@@ -97,6 +107,9 @@ func (c *Client) do(ctx context.Context, method, path string, reqBody any, strea
 		return nil, nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if streaming {
+		req.Header.Set("Accept", "text/event-stream")
+	}
 
 	if err := signRequest(c.signer, req, buf.Bytes()); err != nil {
 		return nil, nil, err

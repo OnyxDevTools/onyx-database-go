@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const defaultAIBaseURL = "https://ai.onyx.dev"
+
 var (
 	pathAbs            = filepath.Abs
 	evalSymlinks       = filepath.EvalSymlinks
@@ -25,6 +27,7 @@ type Config struct {
 	DatabaseBaseURL string
 	APIKey          string
 	APISecret       string
+	AIBaseURL       string
 	CacheTTL        time.Duration
 	ConfigPath      string
 	LogRequests     bool
@@ -38,6 +41,7 @@ type ResolvedConfig struct {
 	DatabaseBaseURL string
 	APIKey          string
 	APISecret       string
+	AIBaseURL       string
 	CacheTTL        time.Duration
 	LogRequests     bool
 	LogResponses    bool
@@ -66,6 +70,7 @@ type FieldSources struct {
 	DatabaseBaseURL Source
 	APIKey          Source
 	APISecret       Source
+	AIBaseURL       Source
 }
 
 // Resolve merges explicit values, environment variables, and configuration files.
@@ -91,6 +96,7 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 	apply(partial.DatabaseBaseURL, &resolved.DatabaseBaseURL, &meta.Sources.DatabaseBaseURL, SourceExplicit)
 	apply(partial.APIKey, &resolved.APIKey, &meta.Sources.APIKey, SourceExplicit)
 	apply(partial.APISecret, &resolved.APISecret, &meta.Sources.APISecret, SourceExplicit)
+	apply(partial.AIBaseURL, &resolved.AIBaseURL, &meta.Sources.AIBaseURL, SourceExplicit)
 
 	// Environment variables fill missing values.
 	envVars := map[string]struct {
@@ -102,6 +108,7 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 		"base":   {&resolved.DatabaseBaseURL, &meta.Sources.DatabaseBaseURL, "ONYX_DATABASE_BASE_URL"},
 		"apiKey": {&resolved.APIKey, &meta.Sources.APIKey, "ONYX_DATABASE_API_KEY"},
 		"secret": {&resolved.APISecret, &meta.Sources.APISecret, "ONYX_DATABASE_API_SECRET"},
+		"aiBase": {&resolved.AIBaseURL, &meta.Sources.AIBaseURL, "ONYX_AI_BASE_URL"},
 	}
 
 	for _, spec := range envVars {
@@ -135,6 +142,10 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 		return ResolvedConfig{}, Meta{}, errors.New("missing required configuration values")
 	}
 
+	if strings.TrimSpace(resolved.AIBaseURL) == "" {
+		resolved.AIBaseURL = defaultAIBaseURL
+	}
+
 	resolved.CacheTTL = partial.CacheTTL
 	if resolved.CacheTTL <= 0 {
 		resolved.CacheTTL = 5 * time.Minute
@@ -166,6 +177,7 @@ type fileConfig struct {
 	APIKey          string `json:"apiKey"`
 	APISecret       string `json:"apiSecret"`
 	Partition       string `json:"partition"`
+	AIBaseURL       string `json:"aiBaseUrl"`
 }
 
 func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedConfig, meta *Meta) (string, error) {
@@ -251,6 +263,11 @@ func resolveFromFiles(ctx context.Context, partial Config, resolved *ResolvedCon
 		if resolved.APISecret == "" && fc.APISecret != "" {
 			resolved.APISecret = fc.APISecret
 			meta.Sources.APISecret = SourceFile
+			applied = true
+		}
+		if resolved.AIBaseURL == "" && strings.TrimSpace(fc.AIBaseURL) != "" {
+			resolved.AIBaseURL = strings.TrimSpace(fc.AIBaseURL)
+			meta.Sources.AIBaseURL = SourceFile
 			applied = true
 		}
 		if resolved.Partition == "" && strings.TrimSpace(fc.Partition) != "" {

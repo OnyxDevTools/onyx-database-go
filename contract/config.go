@@ -11,6 +11,7 @@ type Config struct {
 	DatabaseBaseURL string
 	APIKey          string
 	APISecret       string
+	AIBaseURL       string
 	CacheTTL        time.Duration
 	ConfigPath      string
 	LogRequests     bool

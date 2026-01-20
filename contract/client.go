@@ -4,6 +4,8 @@ import "context"
 
 // Client defines the SDK surface for interacting with an Onyx database.
 type Client interface {
+	AIClient
+
 	From(table string) Query
 	Search(queryText string, minScore ...float64) Query
 	Cascade(spec CascadeSpec) CascadeClient
