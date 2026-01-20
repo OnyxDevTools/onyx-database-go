@@ -10,9 +10,12 @@ import (
 
 type stubMarshalQuery struct{}
 
-func (s stubMarshalQuery) Where(condition contract.Condition) contract.Query       { return s }
-func (s stubMarshalQuery) And(condition contract.Condition) contract.Query         { return s }
-func (s stubMarshalQuery) Or(condition contract.Condition) contract.Query          { return s }
+func (s stubMarshalQuery) Where(condition contract.Condition) contract.Query { return s }
+func (s stubMarshalQuery) And(condition contract.Condition) contract.Query   { return s }
+func (s stubMarshalQuery) Or(condition contract.Condition) contract.Query    { return s }
+func (s stubMarshalQuery) Search(queryText string, minScore ...float64) contract.Query {
+	return s
+}
 func (s stubMarshalQuery) Select(fields ...string) contract.Query                  { return s }
 func (s stubMarshalQuery) GroupBy(fields ...string) contract.Query                 { return s }
 func (s stubMarshalQuery) Resolve(paths ...string) contract.Query                  { return s }
@@ -59,6 +62,7 @@ func TestReExportedHelpers(t *testing.T) {
 	assertJSONEqual(t, Like("field", "x"), contract.Like("field", "x"))
 	assertJSONEqual(t, Contains("field", "x"), contract.Contains("field", "x"))
 	assertJSONEqual(t, StartsWith("field", "x"), contract.StartsWith("field", "x"))
+	assertJSONEqual(t, Search("text", 1.2), contract.Search("text", 1.2))
 	assertJSONEqual(t, IsNull("field"), contract.IsNull("field"))
 	assertJSONEqual(t, NotNull("field"), contract.NotNull("field"))
 

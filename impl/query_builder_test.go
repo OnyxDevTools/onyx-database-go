@@ -32,6 +32,50 @@ func TestQueryMarshalDeterministic(t *testing.T) {
 	}
 }
 
+func TestSearchPayloads(t *testing.T) {
+	client := &client{cfg: resolver.ResolvedConfig{DatabaseID: "db"}}
+	cases := []struct {
+		name     string
+		q        contract.Query
+		expected string
+	}{
+		{
+			name:     "table search with min score",
+			q:        newQuery(nil, "Table").Search("Text", 4.4),
+			expected: `{"type":"SelectQuery","table":"Table","conditions":{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"minScore":4.4,"queryText":"Text"}}}}`,
+		},
+		{
+			name:     "table search null min score",
+			q:        newQuery(nil, "Table").Search("Text"),
+			expected: `{"type":"SelectQuery","table":"Table","conditions":{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"minScore":null,"queryText":"Text"}}}}`,
+		},
+		{
+			name:     "all tables search",
+			q:        client.Search("Text", 4.4),
+			expected: `{"type":"SelectQuery","table":"ALL","conditions":{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"minScore":4.4,"queryText":"Text"}}}}`,
+		},
+		{
+			name: "search combined with filter",
+			q: newQuery(nil, "Table").
+				Search("text", 4.4).
+				And(contract.Eq("attribute", "value")),
+			expected: `{"type":"SelectQuery","table":"Table","conditions":{"conditionType":"CompoundCondition","conditions":[{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"minScore":4.4,"queryText":"text"}}},{"conditionType":"SingleCondition","criteria":{"field":"attribute","operator":"EQUAL","value":"value"}}],"operator":"AND"}}`,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.q)
+			if err != nil {
+				t.Fatalf("marshal error: %v", err)
+			}
+			if string(data) != tt.expected {
+				t.Fatalf("unexpected payload:\n%s", string(data))
+			}
+		})
+	}
+}
+
 func TestWithinConditionEmbedsQuery(t *testing.T) {
 	sub := newQuery(nil, "pets").Where(contract.Eq("type", "cat"))
 	q := newQuery(nil, "users").Where(contract.Within("pet", sub))

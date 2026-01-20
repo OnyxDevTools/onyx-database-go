@@ -69,6 +69,10 @@ func (q *query) Or(condition contract.Condition) contract.Query {
 	return nq
 }
 
+func (q *query) Search(queryText string, minScore ...float64) contract.Query {
+	return q.Where(contract.Search(queryText, minScore...))
+}
+
 func (q *query) Select(fields ...string) contract.Query {
 	nq := q.clone()
 	nq.selectFields = append(nq.selectFields, fields...)

@@ -7,6 +7,7 @@ type Query interface {
 	Where(condition Condition) Query
 	And(condition Condition) Query
 	Or(condition Condition) Query
+	Search(queryText string, minScore ...float64) Query
 	Select(fields ...string) Query
 	GroupBy(fields ...string) Query
 	Resolve(paths ...string) Query

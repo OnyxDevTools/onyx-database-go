@@ -102,8 +102,9 @@ type stubClient struct {
 	publishErr    error
 }
 
-func (s *stubClient) From(table string) onyx.Query                     { return nil }
-func (s *stubClient) Cascade(spec onyx.CascadeSpec) onyx.CascadeClient { return nil }
+func (s *stubClient) From(table string) onyx.Query                            { return nil }
+func (s *stubClient) Search(queryText string, minScore ...float64) onyx.Query { return nil }
+func (s *stubClient) Cascade(spec onyx.CascadeSpec) onyx.CascadeClient        { return nil }
 func (s *stubClient) Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
 	return nil, nil
 }

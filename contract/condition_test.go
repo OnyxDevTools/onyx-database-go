@@ -11,6 +11,7 @@ type stubQuery struct{}
 func (s stubQuery) Where(Condition) Query                      { return s }
 func (s stubQuery) And(Condition) Query                        { return s }
 func (s stubQuery) Or(Condition) Query                         { return s }
+func (s stubQuery) Search(string, ...float64) Query            { return s }
 func (s stubQuery) Select(...string) Query                     { return s }
 func (s stubQuery) GroupBy(...string) Query                    { return s }
 func (s stubQuery) Resolve(...string) Query                    { return s }
@@ -47,6 +48,8 @@ func TestConditionJSON(t *testing.T) {
 		{name: "like", cond: Like("email", "%@example.com"), want: `{"conditionType":"SingleCondition","criteria":{"field":"email","operator":"LIKE","value":"%@example.com"}}`},
 		{name: "contains", cond: Contains("tags", "blue"), want: `{"conditionType":"SingleCondition","criteria":{"field":"tags","operator":"CONTAINS","value":"blue"}}`},
 		{name: "starts_with", cond: StartsWith("name", "Al"), want: `{"conditionType":"SingleCondition","criteria":{"field":"name","operator":"STARTS_WITH","value":"Al"}}`},
+		{name: "search_with_min_score", cond: Search("Text", 4.4), want: `{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"queryText":"Text","minScore":4.4}}}`},
+		{name: "search_null_min_score", cond: Search("Text"), want: `{"conditionType":"SingleCondition","criteria":{"field":"__full_text__","operator":"MATCHES","value":{"queryText":"Text","minScore":null}}}`},
 		{name: "is_null", cond: IsNull("deletedAt"), want: `{"conditionType":"SingleCondition","criteria":{"field":"deletedAt","operator":"IS_NULL"}}`},
 		{name: "not_null", cond: NotNull("createdAt"), want: `{"conditionType":"SingleCondition","criteria":{"field":"createdAt","operator":"NOT_NULL"}}`},
 		{name: "within", cond: Within("userId", sampleQuery), want: `{"conditionType":"SingleCondition","criteria":{"field":"userId","operator":"IN","value":{"table":"User"}}}`},

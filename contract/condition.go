@@ -21,6 +21,14 @@ type condition struct {
 	query  queryProvider
 }
 
+// FullTextQuery represents the lucene full-text search payload.
+type FullTextQuery struct {
+	QueryText string   `json:"queryText"`
+	MinScore  *float64 `json:"minScore"`
+}
+
+const fullTextField = "__full_text__"
+
 func (c condition) MarshalJSON() ([]byte, error) {
 	crit := map[string]any{
 		"field":    c.field,
@@ -88,6 +96,8 @@ func operatorFor(op string) string {
 		return "IN"
 	case "not_within":
 		return "NOT_IN"
+	case "matches":
+		return "MATCHES"
 	default:
 		return op
 	}
@@ -139,6 +149,21 @@ func Contains(field string, value any) Condition {
 // StartsWith matches string prefixes.
 func StartsWith(field string, value any) Condition {
 	return condition{op: "starts_with", field: field, value: value}
+}
+
+// Search performs a full-text search across all indexed fields.
+// When minScore is omitted, it is serialized as null.
+func Search(queryText string, minScore ...float64) Condition {
+	var score *float64
+	if len(minScore) > 0 {
+		v := minScore[0]
+		score = &v
+	}
+	return condition{
+		op:    "matches",
+		field: fullTextField,
+		value: FullTextQuery{QueryText: queryText, MinScore: score},
+	}
 }
 
 // IsNull checks for null values.

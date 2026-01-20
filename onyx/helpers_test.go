@@ -12,9 +12,12 @@ type stubQuery struct {
 	err     error
 }
 
-func (s *stubQuery) Where(condition contract.Condition) contract.Query       { return s }
-func (s *stubQuery) And(condition contract.Condition) contract.Query         { return s }
-func (s *stubQuery) Or(condition contract.Condition) contract.Query          { return s }
+func (s *stubQuery) Where(condition contract.Condition) contract.Query { return s }
+func (s *stubQuery) And(condition contract.Condition) contract.Query   { return s }
+func (s *stubQuery) Or(condition contract.Condition) contract.Query    { return s }
+func (s *stubQuery) Search(queryText string, minScore ...float64) contract.Query {
+	return s
+}
 func (s *stubQuery) Select(fields ...string) contract.Query                  { return s }
 func (s *stubQuery) GroupBy(fields ...string) contract.Query                 { return s }
 func (s *stubQuery) Resolve(paths ...string) contract.Query                  { return s }

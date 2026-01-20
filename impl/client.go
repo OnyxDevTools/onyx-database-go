@@ -148,6 +148,10 @@ func (c *client) From(table string) contract.Query {
 	return newQuery(c, table)
 }
 
+func (c *client) Search(queryText string, minScore ...float64) contract.Query {
+	return newQuery(c, "ALL").Search(queryText, minScore...)
+}
+
 func (c *client) Cascade(spec contract.CascadeSpec) contract.CascadeClient {
 	return &cascadeClient{client: c, spec: spec}
 }
