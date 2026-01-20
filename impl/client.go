@@ -94,10 +94,12 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 		DatabaseBaseURL: cfg.DatabaseBaseURL,
 		APIKey:          cfg.APIKey,
 		APISecret:       cfg.APISecret,
+		AIBaseURL:       cfg.AIBaseURL,
 		CacheTTL:        cfg.CacheTTL,
 		ConfigPath:      cfg.ConfigPath,
 		LogRequests:     cfg.LogRequests,
 		LogResponses:    cfg.LogResponses,
+		Partition:       cfg.Partition,
 	})
 	if err != nil {
 		return nil, err
