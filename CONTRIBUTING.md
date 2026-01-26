@@ -7,17 +7,17 @@ Thanks for helping improve the Onyx Database Go SDK. This guide covers the local
   - Install gvm: `bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)`
   - Install toolchain: `gvm install go1.22.8` (and any other versions you need).
   - Set the project default: `gvm use go1.22.8 --default` (or run `gvm use go1.22.8` in this repo before builds/tests).
-- No sandboxed network installs are required; CLIs build from source once gvm is set.
+- Install the Onyx CLI for schema/codegen workflows (see below).
 
 ## Project layout basics
 - Root module: SDK, CLIs, contract, implementation (`go.mod` at repo root).
 - Examples module: lives in `examples/`, has its own `go.mod`, generated client in `examples/gen/onyx`, and sample config/schema (`examples/config/onyx-database.json`, `examples/api/onyx.schema.json`).
-- Code generation entrypoint: `generate.go` at repo root (runs the generator against `examples/api/onyx.schema.json` and writes `examples/gen/onyx` deterministically).
+- Code generation entrypoint: `generate.go` at repo root (runs the Onyx CLI against `examples/api/onyx.schema.json` and writes `examples/gen/onyx` deterministically).
 
 ## Regenerating the example client
 From the examples:
 ```bash
-go generate   # runs onyx-gen-go against examples/api/onyx.schema.json and writes examples/gen/onyx
+go generate   # runs onyx gen --go against examples/api/onyx.schema.json and writes examples/gen/onyx
 ```
 The generation uses a fixed `ONYX_GEN_TIMESTAMP` for deterministic headers. If you change the schema under `examples/api/onyx.schema.json`, rerun `go generate ./...` and commit the updated files under `examples/gen/onyx`.
 
@@ -32,11 +32,10 @@ go test ./...
 go test ./... -coverprofile=coverage.out -covermode=atomic
 
 ## Using the CLIs locally
-Build/install once from the repo root:
+Install the Onyx CLI once (see README for install options), then from the repo root:
 ```bash
 cd examples
-go install ../cmd/onyx-go
-onyx-go gen init
+onyx init
 go generate
 ../scripts/run-examples.sh
 ```
@@ -55,52 +54,48 @@ go generate
 
 Schema CLI quick checks (root or examples, adjust paths as needed):
 ```bash
-onyx-go schema info
-onyx-go schema get --print
-onyx-go schema validate
-onyx-go schema diff
+onyx schema info
+onyx schema get --print
+onyx schema validate
+onyx schema diff
 ```
 Defaults look in `./config/onyx-database.json` for credentials and `./api/onyx.schema.json` for schema files (matching generator defaults in the examples module).
 
 ### CLI reference
 
-`onyx-go gen`
-- Flags: `--schema ./api/onyx.schema.json`, `--source file`, `--database-id ""` (only when `--source=api`), `--out ./gen/onyx`, `--package ""` (defaults to `onyx`), `--tables ""` (all tables), `--timestamps time`
-- Notes: Generates the typed client into `--out`; defaults assume an `api/` + `gen/` layout.
+`onyx gen --go`
+- Flags: `--schema ./api/onyx.schema.json`, `--source file`, `--database-id ""` (only when `--source=api`), `--out ./gen/onyx`, `--package ""` (defaults to `onyx`), `--tables ""` (all tables)
+- Notes: Generates the typed client into `--out`; defaults assume an `api/` + `gen/` layout when flags are provided.
 
-`onyx-go gen init`
-- Flags: `--file generate.go`, `--schema ./api/onyx.schema.json`, `--source file`, `--database-id ""`, `--out ./gen/onyx`, `--package onyx`, `--tables ""`, `--timestamps time`
+`onyx init`
+- Flags: `--schema ./api/onyx.schema.json`, `--out ./gen/onyx`, `--package onyx`, `--force`
 - Notes: Writes a go:generate anchor; subsequent `go generate` uses these defaults.
 
-`onyx-go schema info`
-- Flags: `--database-id ""`, `--config ""`, `--no-verify` (false)
+`onyx schema info`
+- Flags: `--database-id ""`, `--config ""`
 - Notes: Resolves config (env → `ONYX_CONFIG_PATH` → `config/onyx-database.json` → home). Verifies connectivity unless `--no-verify`.
 
-`onyx-go schema get`
+`onyx schema get`
 - Flags: `--database-id ""`, `--out api/onyx.schema.json`, `--print` (false)
 - Notes: Fetches schema from API, normalizes, and writes to `--out` (creates parent dirs). With `--print`, writes to stdout and skips file output.
 
-`onyx-go schema validate`
+`onyx schema validate`
 - Flags: `--schema api/onyx.schema.json`
 - Notes: Parses + validates a local schema file.
 
-`onyx-go schema normalize`
-- Flags: `--schema api/onyx.schema.json`, `--out ""`
-- Notes: Normalizes a schema; writes to stdout when `--out` is empty, otherwise writes file.
-
-`onyx-go schema diff`
+`onyx schema diff`
 - Flags: `--a api/onyx.schema.json`, `--b ""`, `--database-id ""`, `--json` (false)
 - Notes: Compares two schemas. If `--b` is empty, fetches updated schema from API (optionally for `--database-id`; otherwise uses resolved credentials).
 
-`onyx-go schema publish`
+`onyx schema publish`
 - Flags: `--database-id ""`, `--schema api/onyx.schema.json`
 - Notes: Normalizes and publishes the local schema to the API.
 
 Generator CLI (examples module paths):
 ```bash
-onyx-go gen --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx --package onyx
+onyx gen --go --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx --package onyx
 # or from the examples module:
-onyx-go gen --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
+onyx gen --go --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
 ```
 
 ## Linting

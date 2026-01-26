@@ -2,7 +2,7 @@
 
 ## Quick orientation
 - Go SDK + CLIs for Onyx Database. Root module hosts packages `contract` (public API types), `impl` (runtime), `onyx` (thin re-export/wiring). `examples/` is a separate module with generated client + runnable samples.
-- CLIs live under `cmd/`: `onyx-go` (gen + schema entrypoint), `onyx-gen-go` (generator), `onyx-schema-go` (schema tools). Helper scripts in `scripts/`.
+- CLIs live under `cmd/`: `onyx-go` (schema entrypoint), `onyx-schema-go` (schema tools). Codegen is provided by the external Onyx CLI (`onyx`).
 - `contract` must stay stdlib-only and stable; see `contract/STABILITY.md` before altering exported surfaces. `onyx` should remain a light facade over `impl`.
 
 ## Tooling & build
@@ -26,9 +26,9 @@
 - Errors are `*contract.Error` with deterministic formatting and `Meta["status"]`; streaming iterator scans newline-delimited JSON up to 10MB buffer.
 
 ## Code generation & examples
-- `go generate` (root) runs `cmd/onyx-go gen` against `examples/api/onyx.schema.json` and writes `examples/gen/onyx` with `ONYX_GEN_TIMESTAMP` pinned for deterministic headers. Regenerate instead of manual edits when schema or generator changes.
-- Generator usage: `onyx-go gen --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx` (add `--source api --database-id ...` to pull from API). `onyx-go gen init` writes a go:generate anchor.
-- Schema CLI: `onyx-go schema {info|get|validate|diff|publish}` uses the same resolver; `--print` avoids file output.
+- `go generate` (root) runs `onyx gen --go` against `examples/api/onyx.schema.json` and writes `examples/gen/onyx` with `ONYX_GEN_TIMESTAMP` pinned for deterministic headers. Regenerate instead of manual edits when schema or generator changes.
+- Generator usage: `onyx gen --go --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx` (add `--source api --database-id ...` to pull from API). `onyx init` writes a go:generate anchor.
+- Schema CLI: `onyx schema {info|get|validate|diff|publish}` uses the same resolver; `--print` avoids file output.
 - Examples rely on `examples/config/onyx-database.json`; `scripts/run-examples.sh` executes each sample via `go run` and expects the `example: completed` marker.
 
 ## Example writing guidelines
