@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/OnyxDevTools/onyx-database-go/branch/main/graph/badge.svg)](https://codecov.io/gh/OnyxDevTools/onyx-database-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/OnyxDevTools/onyx-database-go/onyx.svg)](https://pkg.go.dev/github.com/OnyxDevTools/onyx-database-go/onyx)
 
-Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, builder-pattern API for querying and persisting data in Onyx from Node.js or edge runtimes like Cloudflare Workers. Ships ESM & CJS, includes a credential resolver, and an optional schema code generator that produces table-safe types and a tables enum.
+Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, builder-pattern API for querying and persisting data in Onyx. Includes a credential resolver plus optional schema-driven codegen via the Onyx CLI.
 
 - Website: <https://onyx.dev/>
 - Cloud Console: <https://cloud.onyx.dev>
@@ -28,27 +28,32 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
    go get github.com/OnyxDevTools/onyx-database-go@latest
    ```
 
-   Install the CLI binary (adds `onyx-go` to `$(go env GOPATH)/bin`):
+   Install the Onyx CLI (adds `onyx` to your PATH):
    ```bash
-   go install github.com/OnyxDevTools/onyx-database-go/cmd/onyx-go@latest
+   curl -fsSL https://raw.githubusercontent.com/OnyxDevTools/onyx-cli/main/scripts/install.sh | bash
+   ```
+   Or via Homebrew:
+   ```bash
+   brew tap OnyxDevTools/onyx-cli
+   brew install onyx-cli
    ```
 
 4. **initialize your generator cofig (go:generate anchor)** :
 
    ```bash
-   onyx-go gen init
+   onyx init
    ```
    alternativly, you can override the default args like this:
 
   ```bash
-   onyx-go gen init --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
+   onyx init --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
    ```
     
    This creates `generate.go` with the go:generate line and expects this project folder structure:
 
    ```
    .
-   ├── generate.go               # emitted by onyx-go gen init
+   ├── generate.go               # emitted by onyx init
    ├── api/onyx.schema.json      # your schema (download via console or CLI)
    ├── config/onyx-database.json # your onyx connection config, alternatively you can set envars
    └── gen/onyx/                 # generated client lives here
@@ -56,7 +61,7 @@ Go client SDK for Onyx Cloud Database — a zero-dependency, strict-typed, build
 
 5. Place your onyx.schema.json file in the api folder of your project.
 
-   > No local schema file? You can fetch it using the schema cli tool `onyx-go schema get`
+   > No local schema file? You can fetch it using the schema cli tool `onyx schema get`
 
 6. **Generate the client**:
 
@@ -167,24 +172,24 @@ Shape:
 Generate from a file:
 
 ```bash
-onyx-go gen
+onyx gen --go --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
 ```
 
-is the same as running these default switches: 
+If you keep the default CLI paths (`./onyx.schema.json`, `./gen/onyx`, package `onyx`), you can also run:
 ```bash
-onyx-go gen --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
+onyx gen --go
 ```
 
 Generate from the onyx remote api:
 
 ```bash
-onyx-go gen --source api --database-id "$ONYX_DATABASE_ID" --out ./gen/onyx --package onyx
+onyx gen --go --source api --database-id "$ONYX_DATABASE_ID" --out ./gen/onyx --package onyx
 ```
 
 Scaffold and regenerate with go:generate:
 
 ```bash
-onyx-go gen init #first time setup
+onyx init #first time setup
 go generate
 ```
 
@@ -208,30 +213,30 @@ users, err := db.Users().Limit(25).List(ctx)
 ---
 ## Manage schemas from the CLI
 
-`onyx-go schema` shares the same credential resolver as the SDK:
+`onyx schema` shares the same credential resolver as the SDK:
 
 ```bash
 # Inspect resolved config and verify connectivity
-onyx-go schema info # using defaults
-onyx-go schema info --database-id "$ONYX_DATABASE_ID"
+onyx schema info # using defaults
+onyx schema info --database-id "$ONYX_DATABASE_ID"
 
 # Fetch normalized schema from the API (writes ./api/onyx.schema.json by default)
-onyx-go schema get # using defaults
-onyx-go schema get --out ./api/onyx.schema.json
-onyx-go schema get --tables User,Profile --print   # print subset to stdout
+onyx schema get # using defaults
+onyx schema get --out ./api/onyx.schema.json
+onyx schema get --tables User,Profile --print   # print subset to stdout
 
 # Validate or normalize a local schema file
-onyx-go schema validate # using defaults
-onyx-go schema validate --schema ./api/onyx.schema.json
+onyx schema validate # using defaults
+onyx schema validate --schema ./api/onyx.schema.json
 
 # Diff local vs API (or vs another file)
-onyx-go schema diff #using defaults
-onyx-go schema diff --a ./api/onyx.schema.json --b ./next.schema.json
-onyx-go schema diff --a ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID" --json
+onyx schema diff #using defaults
+onyx schema diff --a ./api/onyx.schema.json --b ./next.schema.json
+onyx schema diff --a ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID" --json
 
 # Publish changes (normalize + PUT /schemas/{dbId})
-onyx-go schema publish # using defaults
-onyx-go schema publish --schema ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID"
+onyx schema publish # using defaults
+onyx schema publish --schema ./api/onyx.schema.json --database-id "$ONYX_DATABASE_ID"
 ```
 
 Omit `--database-id` to rely on env vars or config files like `./config/onyx-database.json` or `~/.onyx/onyx-database.json` (a sample lives at `./examples/config/onyx-database.json`).

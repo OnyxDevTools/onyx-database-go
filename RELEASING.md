@@ -15,7 +15,7 @@ git push origin vX.Y.Z
 ```
 
 ## GitHub Release workflow (optional)
-If desired, add a `release.yml` workflow that builds binaries for `cmd/onyx-gen-go` and `cmd/onyx-schema-go` on tags and uploads them as artifacts. Binaries must be deterministic and produced via `go build ./cmd/...`.
+If desired, add a `release.yml` workflow that builds binaries for `cmd/onyx-go` and `cmd/onyx-schema-go` on tags and uploads them as artifacts. Binaries must be deterministic and produced via `go build ./cmd/...`.
 
 ## Release notes template
 ```
