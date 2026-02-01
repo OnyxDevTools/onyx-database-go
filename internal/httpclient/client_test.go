@@ -138,3 +138,13 @@ func TestAuthSigning(t *testing.T) {
 		t.Fatalf("missing secret header")
 	}
 }
+
+func TestLoggerAccessors(t *testing.T) {
+	c := New("https://example.com", nil, Options{LogResponses: true})
+	if c.Logger() == nil {
+		t.Fatalf("expected non-nil logger")
+	}
+	if !c.LogResponses() {
+		t.Fatalf("expected LogResponses to reflect option")
+	}
+}

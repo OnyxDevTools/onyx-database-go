@@ -239,3 +239,35 @@ func TestResolveHonorsCacheExpiry(t *testing.T) {
 		t.Fatalf("expected cache entry expired")
 	}
 }
+
+func TestResolveFromFilesAppliesAIBaseURLAndPartition(t *testing.T) {
+	ClearCache()
+	tmp := t.TempDir()
+	cfgPath := filepath.Join(tmp, "custom.json")
+	if err := os.WriteFile(cfgPath, []byte(`{
+		"databaseId":"db",
+		"databaseBaseUrl":"http://base",
+		"apiKey":"k",
+		"apiSecret":"s",
+		"aiBaseUrl":"http://ai",
+		"partition":"p1"
+	}`), 0o644); err != nil {
+		t.Fatalf("write cfg: %v", err)
+	}
+
+	resolved := &ResolvedConfig{}
+	meta := &Meta{}
+	chosen, err := resolveFromFiles(context.Background(), Config{ConfigPath: cfgPath}, resolved, meta)
+	if err != nil {
+		t.Fatalf("resolveFromFiles err: %v", err)
+	}
+	if chosen != cfgPath {
+		t.Fatalf("expected chosen path %s, got %s", cfgPath, chosen)
+	}
+	if resolved.AIBaseURL != "http://ai" || resolved.Partition != "p1" {
+		t.Fatalf("expected ai base url and partition applied, got %+v", resolved)
+	}
+	if meta.Sources.AIBaseURL != SourceFile || meta.Sources.DatabaseID != SourceFile {
+		t.Fatalf("expected file sources recorded, got %+v", meta.Sources)
+	}
+}
