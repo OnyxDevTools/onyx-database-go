@@ -35,7 +35,7 @@ func main() {
 	also, err := db.Users().
 		Where(onyx.Eq("email", "notfound@example.com")).
 		Limit(1).
-		FirstOrNull(ctx)
+		FirstOrNil(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
