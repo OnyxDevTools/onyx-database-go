@@ -10,13 +10,16 @@ set -euo pipefail
 
 # Pin tools to the repo-local Go toolchain without mutating global shell/gvm state.
 REPO_ROOT="$(pwd)"
-GO_ROOT="/Users/cosborn/.gvm/gos/go1.22.8"
-# Always override to avoid leaking a newer gvm/default toolchain into lint/typecheck.
-export GOROOT="${GO_ROOT}"
-export GOTOOLCHAIN="go1.22.8"
-export GOMODCACHE="${GOMODCACHE:-${REPO_ROOT}/.cache/gomod}"
-export PATH="${REPO_ROOT}/bin:${GOROOT}/bin:${PATH}"
-mkdir -p "${GOMODCACHE}"
+GO_VERSION="1.22.8"
+DEFAULT_GVM_ROOT="${HOME}/.gvm/gos/go${GO_VERSION}"
+CACHE_GO_ROOT="${REPO_ROOT}/.cache/go${GO_VERSION}"
+GOLANGCI_VERSION="v1.63.4"
+GOBIN="${REPO_ROOT}/bin"
+OS_NAME="$(uname -s)"
+DARWIN_MAJOR=""
+if [[ "${OS_NAME}" == "Darwin" ]]; then
+  DARWIN_MAJOR="$(uname -r | cut -d. -f1)"
+fi
 
 abort() { echo "ERROR: $*" >&2; exit 1; }
 info()  { echo "==> $*"; }
@@ -25,6 +28,60 @@ cmd()   { echo "+ $*"; "$@"; }
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || abort "Missing required command: $1"
 }
+
+require_cmd curl
+
+ensure_pinned_go() {
+  local go_root=""
+  if [[ -x "${DEFAULT_GVM_ROOT}/bin/go" ]]; then
+    go_root="${DEFAULT_GVM_ROOT}"
+  elif [[ -x "${CACHE_GO_ROOT}/bin/go" ]]; then
+    go_root="${CACHE_GO_ROOT}"
+  else
+    info "Pinned Go ${GO_VERSION} not found; downloading to ${CACHE_GO_ROOT}..."
+    local go_os go_arch tarball url tmp
+    go_os="$(uname | tr '[:upper:]' '[:lower:]')"
+    case "$(uname -m)" in
+      x86_64|amd64) go_arch="amd64" ;;
+      arm64|aarch64) go_arch="arm64" ;;
+      *) abort "Unsupported architecture: $(uname -m)" ;;
+    esac
+    tarball="go${GO_VERSION}.${go_os}-${go_arch}.tar.gz"
+    url="https://go.dev/dl/${tarball}"
+    tmp="$(mktemp -t go-toolchain.XXXXXX.tar.gz)"
+    cmd curl -L "${url}" -o "${tmp}"
+    mkdir -p "${REPO_ROOT}/.cache"
+    tar -C "${REPO_ROOT}/.cache" -xzf "${tmp}"
+    mv "${REPO_ROOT}/.cache/go" "${CACHE_GO_ROOT}"
+    rm -f "${tmp}"
+    go_root="${CACHE_GO_ROOT}"
+  fi
+  echo "${go_root}"
+}
+
+GO_ROOT="$(ensure_pinned_go)"
+
+GO_BIN=""
+
+if [[ -x "${GO_ROOT}/bin/go" ]]; then
+  if [[ "${OS_NAME}" == "Darwin" && -n "${DARWIN_MAJOR}" && "${DARWIN_MAJOR}" -ge 25 ]]; then
+    info "Darwin ${DARWIN_MAJOR} detected; skipping pinned Go ${GO_VERSION} due to LC_UUID issues on macOS 15+."
+  else
+    GO_BIN="${GO_ROOT}/bin/go"
+    info "Using pinned Go ${GO_VERSION}: ${GO_BIN}"
+  fi
+fi
+
+if [[ -z "${GO_BIN}" ]]; then
+  GO_BIN="$(command -v go || true)"
+  [[ -n "${GO_BIN}" ]] || abort "Missing required command: go"
+  info "Pinned Go not available; falling back to system Go: ${GO_BIN}"
+fi
+
+export GOMODCACHE="${GOMODCACHE:-${REPO_ROOT}/.cache/gomod}"
+export GOBIN
+export PATH="${REPO_ROOT}/bin:$(dirname "${GO_BIN}"):${PATH}"
+mkdir -p "${GOMODCACHE}"
 
 require_clean_tree() {
   if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -48,8 +105,26 @@ restore_go_mod() {
 [[ "$(git rev-parse --show-toplevel)" == "$(pwd)" ]] || abort "Run from the repo root."
 
 require_cmd git
-require_cmd go
-require_cmd golangci-lint
+
+ensure_golangci() {
+  local desired="${GOLANGCI_VERSION}"
+  local bin_path="${GOBIN}/golangci-lint"
+  if [[ -x "${bin_path}" ]]; then
+    local have
+    have="$("${bin_path}" --version 2>/dev/null | awk '{print $4}')"
+    if [[ "${have}" == "${desired}" ]]; then
+      echo "${bin_path}"
+      return
+    fi
+    info "Updating golangci-lint ${have} -> ${desired}..."
+  else
+    info "Installing golangci-lint ${desired}..."
+  fi
+  cmd "${GO_BIN}" install "github.com/golangci/golangci-lint/cmd/golangci-lint@${desired}"
+  echo "${bin_path}"
+}
+
+GOLANGCI_BIN="$(ensure_golangci)"
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 MAIN_BRANCH="main"
@@ -62,7 +137,7 @@ require_clean_tree
 
 # --- Quality gates (fail fast before any commits/tags) ---
 info "Checking dependencies (go mod tidy)..."
-cmd go mod tidy
+cmd "${GO_BIN}" mod tidy
 if ! git diff --quiet -- go.mod go.sum; then
   restore_go_mod
   abort "go mod tidy produced changes; commit those first."
@@ -71,17 +146,17 @@ fi
 info "Running tests..."
 if [[ -n "${COVERPROFILE:-}" ]]; then
   COVER_FILE="$(mktemp -t onyx-go-cover.XXXXXX)"
-  cmd go test ./... -coverprofile="${COVER_FILE}" -covermode=atomic
+  cmd "${GO_BIN}" test ./... -coverprofile="${COVER_FILE}" -covermode=atomic
   rm -f "${COVER_FILE}"
 else
-  cmd go test ./...
+  cmd "${GO_BIN}" test ./...
 fi
 
 info "Linting..."
-cmd golangci-lint run
+cmd "${GOLANGCI_BIN}" run
 
 info "Building..."
-cmd go build ./...
+cmd "${GO_BIN}" build ./...
 
 info "Running examples (smoke test)..."
 EXAMPLE_CONFIG="examples/config/onyx-database.json"
@@ -92,7 +167,7 @@ EXAMPLE_SCHEMA="examples/api/onyx.schema.json"
   cd examples
   ONYX_CONFIG_PATH="./config/onyx-database.json" \
   ONYX_SCHEMA_PATH="./api/onyx.schema.json" \
-    cmd go run ./cmd/query/basic/main.go
+    cmd "${GO_BIN}" run ./cmd/query/basic/main.go
 )
 
 require_clean_tree
