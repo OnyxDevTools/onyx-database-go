@@ -81,7 +81,7 @@ fi
 export GOMODCACHE="${GOMODCACHE:-${REPO_ROOT}/.cache/gomod}"
 export GOBIN
 export PATH="${REPO_ROOT}/bin:$(dirname "${GO_BIN}"):${PATH}"
-mkdir -p "${GOMODCACHE}"
+mkdir -p "${GOBIN}" "${GOMODCACHE}"
 
 require_clean_tree() {
   if ! git diff --quiet || ! git diff --cached --quiet; then
