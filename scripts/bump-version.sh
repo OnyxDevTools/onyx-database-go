@@ -143,14 +143,18 @@ if ! git diff --quiet -- go.mod go.sum; then
   abort "go mod tidy produced changes; commit those first."
 fi
 
-info "Running tests..."
-if [[ -n "${COVERPROFILE:-}" ]]; then
-  COVER_FILE="$(mktemp -t onyx-go-cover.XXXXXX)"
-  cmd "${GO_BIN}" test ./... -coverprofile="${COVER_FILE}" -covermode=atomic
+info "Running vet..."
+cmd "${GO_BIN}" vet ./...
+
+info "Running tests with coverage..."
+COVER_FILE="${COVERPROFILE:-$(mktemp -t onyx-go-cover.XXXXXX)}"
+cmd "${GO_BIN}" test ./... -coverprofile="${COVER_FILE}" -covermode=atomic
+total_cov="$("${GO_BIN}" tool cover -func="${COVER_FILE}" | awk '/^total:/ {print $3}')"
+if [[ "${total_cov}" != "100.0%" ]]; then
   rm -f "${COVER_FILE}"
-else
-  cmd "${GO_BIN}" test ./...
+  abort "Coverage check failed: total coverage ${total_cov} (expected 100.0%)."
 fi
+rm -f "${COVER_FILE}"
 
 info "Linting..."
 cmd "${GOLANGCI_BIN}" run
@@ -158,17 +162,12 @@ cmd "${GOLANGCI_BIN}" run
 info "Building..."
 cmd "${GO_BIN}" build ./...
 
-info "Running examples (smoke test)..."
+info "Running examples (full suite)..."
 EXAMPLE_CONFIG="examples/config/onyx-database.json"
 EXAMPLE_SCHEMA="examples/api/onyx.schema.json"
 [[ -f "${EXAMPLE_CONFIG}" ]] || abort "Missing ${EXAMPLE_CONFIG}."
 [[ -f "${EXAMPLE_SCHEMA}" ]] || abort "Missing ${EXAMPLE_SCHEMA}."
-( \
-  cd examples
-  ONYX_CONFIG_PATH="./config/onyx-database.json" \
-  ONYX_SCHEMA_PATH="./api/onyx.schema.json" \
-    cmd "${GO_BIN}" run ./cmd/query/basic/main.go
-)
+cmd scripts/run-examples.sh
 
 require_clean_tree
 

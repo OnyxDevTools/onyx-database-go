@@ -49,7 +49,7 @@ go test ./...
 cd onyx-cli
 ./scripts/local-onyx.sh
 cd ../examples
-lonyx gen --go # or localonyx gen --go. 
+onyx gen --go # or localonyx gen --go. 
 ../scripts/run-examples.sh
 
 ```
