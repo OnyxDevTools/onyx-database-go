@@ -21,17 +21,42 @@ go generate   # runs onyx gen --go against examples/api/onyx.schema.json and wri
 ```
 The generation uses a fixed `ONYX_GEN_TIMESTAMP` for deterministic headers. If you change the schema under `examples/api/onyx.schema.json`, rerun `go generate ./...` and commit the updated files under `examples/gen/onyx`.
 
+### Local CLI (localonyx) for codegen and schema commands
+If you want to use the locally vendored CLI (no global install needed):
+```bash
+cd onyx-cli
+./scripts/local-onyx.sh   # builds and installs ~/.local/bin/localonyx (adds to ~/.zshrc if needed)
+```
+Then open a new shell (or `source ~/.zshrc`) and run:
+```bash
+# from repo root
+localonyx gen --go --schema ./examples/api/onyx.schema.json --out ./examples/gen/onyx --package onyx
+# from examples/ (no flags needed; falls back to ./api/onyx.schema.json)
+cd examples && localonyx gen --go
+```
+`localonyx gen` first looks for `./onyx.schema.json`; if missing and `--schema` wasn’t set, it falls back to `./api/onyx.schema.json`, matching the examples layout. You can also use `localonyx schema validate|diff|publish` with the same flags as `onyx schema ...`.
+
+Notes:
+- The installer appends `~/.local/bin` to `~/.zshrc` so `localonyx` is on PATH in new shells. If you need it immediately, run `export PATH="$HOME/.local/bin:$PATH"` once in your current session.
+- Go generation defaults to value fields (non-pointer) unless the schema marks a field as nullable; `--go-pointer-fields` is available if you need pointer types.
+
 ## Building and testing
 From the repo root:
 ```bash
 go build ./...
 go vet ./...
 go test ./...
+cd onyx-cli
+./scripts/local-onyx.sh
+cd ../examples
+lonyx gen --go # or localonyx gen --go. 
+../scripts/run-examples.sh
+
 ```
 ## See Code Coverage:
 go test ./... -coverprofile=coverage.out -covermode=atomic
 
-## Using the CLIs locally
+## Using the distributed CLI tool
 Install the Onyx CLI once (see README for install options), then from the repo root:
 ```bash
 cd examples

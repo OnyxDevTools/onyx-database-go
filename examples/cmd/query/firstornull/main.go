@@ -17,45 +17,34 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Exactly one match expected.
 	first, err := db.Users().
 		Where(onyx.Eq("email", "basic@example.com")).
 		Limit(1).
-		List(ctx)
+		One(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if first == nil {
-		log.Fatalf("warning: expected query response")
+	if first.Username == "" {
+		log.Fatalf("warning: expected a single User object")
 	}
+	out, _ := json.MarshalIndent(first, "", "  ")
+	fmt.Println(string(out))
 
-	if len(first) > 0 {
-		if first[0].Id == "" {
-			log.Fatalf("warning: expected user id")
-		}
-		out, _ := json.MarshalIndent(first[0], "", "  ")
-		fmt.Println(string(out))
-	} else {
-		fmt.Println("null")
-	}
-
+	// Zero matches expected.
 	also, err := db.Users().
 		Where(onyx.Eq("email", "notfound@example.com")).
 		Limit(1).
-		List(ctx)
+		FirstOrNull(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if also == nil {
-		log.Fatalf("warning: expected query response")
-	}
-
-	if len(also) == 0 {
 		fmt.Println("\nshould be null: null")
+	} else if also.Username == "" {
+		log.Fatalf("warning: expected a User object when not null")
 	} else {
-		if also[0].Id == "" {
-			log.Fatalf("warning: expected user id")
-		}
-		out, _ := json.MarshalIndent(also[0], "", "  ")
+		out, _ := json.MarshalIndent(also, "", "  ")
 		fmt.Printf("\nshould be null: %s\n", string(out))
 	}
 	log.Println("example: completed")

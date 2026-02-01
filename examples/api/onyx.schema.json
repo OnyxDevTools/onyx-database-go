@@ -11,48 +11,48 @@
         {
           "name": "actorId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "changes",
           "type": "EmbeddedObject",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "dateTime",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "errorCode",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "errorMessage",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "metadata",
           "type": "EmbeddedObject",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "requestId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "resource",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "status",
@@ -62,7 +62,7 @@
         {
           "name": "targetId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "tenantId",
@@ -77,12 +77,12 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "deletedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "description",
@@ -92,18 +92,18 @@
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "name",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "updatedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         }
       ]
     },
@@ -113,12 +113,12 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "deletedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "description",
@@ -128,23 +128,23 @@
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "isSystem",
           "type": "Boolean",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "name",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "updatedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         }
       ],
       "resolvers": [
@@ -164,23 +164,23 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "permissionId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "roleId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         }
       ],
       "resolvers": [
@@ -200,28 +200,28 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "deletedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "email",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "isActive",
           "type": "Boolean",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "lastLoginAt",
@@ -231,12 +231,12 @@
         {
           "name": "updatedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "username",
           "type": "String",
-          "nullable": true
+          "nullable": false
         }
       ],
       "resolvers": [
@@ -260,7 +260,7 @@
         {
           "name": "address",
           "type": "EmbeddedObject",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "age",
@@ -270,7 +270,7 @@
         {
           "name": "avatarUrl",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "bio",
@@ -280,33 +280,33 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "deletedAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "firstName",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "lastName",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "phone",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "updatedAt",
@@ -316,7 +316,7 @@
         {
           "name": "userId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         }
       ]
     },
@@ -326,23 +326,23 @@
         {
           "name": "createdAt",
           "type": "Timestamp",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "id",
           "type": "String",
-          "nullable": true,
+          "nullable": false,
           "primaryKey": true
         },
         {
           "name": "roleId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         },
         {
           "name": "userId",
           "type": "String",
-          "nullable": true
+          "nullable": false
         }
       ],
       "resolvers": [
