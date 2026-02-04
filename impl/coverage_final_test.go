@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -182,10 +183,28 @@ func TestInitRespectsCustomClockAndSleep(t *testing.T) {
 
 func TestInitErrorOnMissingConfig(t *testing.T) {
 	ClearConfigCache()
+	tmp := t.TempDir()
+	t.Setenv("HOME", tmp)
+	t.Setenv("ONYX_CONFIG_PATH", "")
 	t.Setenv("ONYX_DATABASE_ID", "")
 	t.Setenv("ONYX_DATABASE_BASE_URL", "")
 	t.Setenv("ONYX_DATABASE_API_KEY", "")
 	t.Setenv("ONYX_DATABASE_API_SECRET", "")
+	t.Setenv("ONYX_AI_BASE_URL", "")
+	t.Setenv("ONYX_DEBUG", "")
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(cwd); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
 
 	if _, err := Init(context.Background(), Config{}); err == nil {
 		t.Fatalf("expected init to fail when config missing")
