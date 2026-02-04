@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -108,10 +109,17 @@ func lookupDatabaseIDFromAPIKey(ctx context.Context, baseURL, apiKey, apiSecret 
 		Signer: httpclient.Signer{APIKey: apiKey, APISecret: apiSecret},
 	})
 
+	base := strings.TrimRight(baseURL, "/")
 	var lastErr error
 	for _, path := range databaseIDResolvePaths {
+		if debugEnabled() {
+			log.Printf("onyx resolver: resolve database id GET %s%s", base, path)
+		}
 		var resp databaseIDResolveResponse
 		if err := client.DoJSON(ctx, http.MethodGet, path, nil, &resp); err != nil {
+			if debugEnabled() {
+				log.Printf("onyx resolver: resolve database id failed for %s%s: %v", base, path, err)
+			}
 			if shouldTryNextResolvePath(err) {
 				lastErr = err
 				continue
@@ -142,4 +150,8 @@ func shouldTryNextResolvePath(err error) bool {
 		}
 	}
 	return status == http.StatusNotFound || status == http.StatusMethodNotAllowed
+}
+
+func debugEnabled() bool {
+	return readConfigEnv("ONYX_DEBUG") == "true"
 }

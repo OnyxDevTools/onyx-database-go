@@ -42,6 +42,13 @@ func tableEscape(s string) string {
 	return url.PathEscape(s)
 }
 
+func redactSecret(secret string) string {
+	if len(secret) <= 4 {
+		return "****"
+	}
+	return fmt.Sprintf("%s****", secret[:4])
+}
+
 func getCachedHTTPClient(baseURL string, baseHTTP *http.Client, logRequests, logResponses bool, signer httpclient.Signer, logger *log.Logger) *httpclient.Client {
 	key := httpClientCacheKey(baseURL, baseHTTP, logRequests, logResponses, signer)
 	if cached, ok := httpClientCache.Load(key); ok {
@@ -89,7 +96,7 @@ func clearHTTPClientCache() {
 
 // Init constructs a client using the provided configuration.
 func Init(ctx context.Context, cfg Config) (contract.Client, error) {
-	resolved, _, err := resolver.Resolve(ctx, resolver.Config{
+	resolved, meta, err := resolver.Resolve(ctx, resolver.Config{
 		DatabaseID:      cfg.DatabaseID,
 		DatabaseBaseURL: cfg.DatabaseBaseURL,
 		APIKey:          cfg.APIKey,
@@ -114,6 +121,21 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 
 	// Match the TS SDK logging output (no timestamps/prefixes).
 	logger := log.New(os.Stdout, "", 0)
+	if os.Getenv("ONYX_DEBUG") == "true" {
+		logger.Printf(
+			"[onyx] init config: databaseId=%s baseUrl=%s aiBaseUrl=%s apiKey=%s apiSecret=%s partition=%q cacheTTL=%s logRequests=%t logResponses=%t configFile=%s",
+			resolved.DatabaseID,
+			resolved.DatabaseBaseURL,
+			resolved.AIBaseURL,
+			resolved.APIKey,
+			redactSecret(resolved.APISecret),
+			resolved.Partition,
+			resolved.CacheTTL,
+			logRequests,
+			logResponses,
+			meta.FilePath,
+		)
+	}
 	signer := httpclient.Signer{
 		APIKey:    resolved.APIKey,
 		APISecret: resolved.APISecret,
