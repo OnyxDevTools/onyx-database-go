@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
@@ -96,5 +98,45 @@ func TestInitUsesDebugLoggingAndCacheKey(t *testing.T) {
 	second := getCachedHTTPClient("http://example.com", customHTTP, true, true, signer, logger2)
 	if second == nil {
 		t.Fatalf("expected cached client returned")
+	}
+}
+
+func TestInitDebugLogsRedactsSecret(t *testing.T) {
+	t.Setenv("ONYX_DATABASE_ID", "db")
+	t.Setenv("ONYX_DATABASE_BASE_URL", "http://example.com")
+	t.Setenv("ONYX_DATABASE_API_KEY", "key")
+	t.Setenv("ONYX_DATABASE_API_SECRET", "secret1")
+	t.Setenv("ONYX_DEBUG", "true")
+	resolver.ClearCache()
+
+	origStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = origStdout })
+
+	done := make(chan string, 1)
+	go func() {
+		data, _ := io.ReadAll(r)
+		done <- string(data)
+	}()
+
+	if _, err := Init(context.Background(), contract.Config{}); err != nil {
+		_ = w.Close()
+		_ = r.Close()
+		t.Fatalf("init err: %v", err)
+	}
+
+	_ = w.Close()
+	out := <-done
+	_ = r.Close()
+
+	if strings.Contains(out, "secret1") {
+		t.Fatalf("expected api secret to be redacted, got %q", out)
+	}
+	if !strings.Contains(out, "apiSecret=secr****") {
+		t.Fatalf("expected redacted api secret, got %q", out)
 	}
 }

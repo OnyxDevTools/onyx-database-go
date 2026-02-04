@@ -1,8 +1,10 @@
 package resolver
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -211,6 +213,52 @@ func TestLookupDatabaseIDFromAPIKeyFallbackToSecondPath(t *testing.T) {
 	}
 	if got != "db-second" {
 		t.Fatalf("expected db-second, got %s", got)
+	}
+}
+
+func TestLookupDatabaseIDFromAPIKeyDebugLogging(t *testing.T) {
+	t.Setenv("ONYX_DEBUG", "true")
+	origWriter := log.Writer()
+	origFlags := log.Flags()
+	buf := &bytes.Buffer{}
+	log.SetOutput(buf)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(origWriter)
+		log.SetFlags(origFlags)
+	})
+
+	origPaths := databaseIDResolvePaths
+	databaseIDResolvePaths = []string{"/first", "/second"}
+	t.Cleanup(func() { databaseIDResolvePaths = origPaths })
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/first":
+			http.Error(w, `{"code":"not_found","message":"missing"}`, http.StatusNotFound)
+		case "/second":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"databaseId":"db-second"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	got, err := lookupDatabaseIDFromAPIKey(context.Background(), srv.URL, "key", "secret")
+	if err != nil {
+		t.Fatalf("lookup err: %v", err)
+	}
+	if got != "db-second" {
+		t.Fatalf("expected db-second, got %s", got)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "resolve database id GET") {
+		t.Fatalf("expected debug log for GET, got %q", out)
+	}
+	if !strings.Contains(out, "failed for") {
+		t.Fatalf("expected debug log for failure, got %q", out)
 	}
 }
 
