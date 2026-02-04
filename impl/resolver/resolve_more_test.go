@@ -38,6 +38,7 @@ func TestResolveCacheHitReturnsCachedValues(t *testing.T) {
 }
 
 func TestResolveMissingRequiredFields(t *testing.T) {
+	isolateResolverEnv(t)
 	ClearCache()
 	if _, _, err := Resolve(context.Background(), Config{}); err == nil {
 		t.Fatalf("expected error for missing required fields")

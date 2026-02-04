@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-const defaultAIBaseURL = "https://ai.onyx.dev"
+const (
+	defaultAIBaseURL       = "https://ai.onyx.dev"
+	defaultDatabaseBaseURL = "https://api.onyx.dev"
+)
 
 var (
 	pathAbs            = filepath.Abs
@@ -56,6 +59,8 @@ const (
 	SourceExplicit Source = "explicit"
 	SourceEnv      Source = "env"
 	SourceFile     Source = "file"
+	SourceDerived  Source = "derived"
+	SourceDefault  Source = "default"
 )
 
 // Meta contains debug information about configuration resolution.
@@ -136,6 +141,22 @@ func Resolve(ctx context.Context, partial Config) (ResolvedConfig, Meta, error) 
 		}
 	} else {
 		meta.FilePath = filePath
+	}
+
+	if strings.TrimSpace(resolved.DatabaseBaseURL) == "" {
+		resolved.DatabaseBaseURL = defaultDatabaseBaseURL
+		meta.Sources.DatabaseBaseURL = SourceDefault
+	}
+
+	if resolved.DatabaseID == "" && strings.TrimSpace(resolved.APIKey) != "" {
+		dbID, err := resolveDatabaseIDFromAPIKeyFn(ctx, resolved.DatabaseBaseURL, resolved.APIKey, resolved.APISecret)
+		if err != nil {
+			return ResolvedConfig{}, Meta{}, err
+		}
+		if strings.TrimSpace(dbID) != "" {
+			resolved.DatabaseID = strings.TrimSpace(dbID)
+			meta.Sources.DatabaseID = SourceDerived
+		}
 	}
 
 	if resolved.DatabaseID == "" || resolved.DatabaseBaseURL == "" || resolved.APIKey == "" || resolved.APISecret == "" {
