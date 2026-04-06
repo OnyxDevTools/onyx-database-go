@@ -17,6 +17,7 @@ type query struct {
 	clauses       []clause
 	selectFields  []string
 	groupFields   []string
+	distinct      bool
 	resolveFields []string
 	sorts         []contract.Sort
 	limit         *int
@@ -82,6 +83,12 @@ func (q *query) Select(fields ...string) contract.Query {
 func (q *query) GroupBy(fields ...string) contract.Query {
 	nq := q.clone()
 	nq.groupFields = append(nq.groupFields, fields...)
+	return nq
+}
+
+func (q *query) Distinct() contract.Query {
+	nq := q.clone()
+	nq.distinct = true
 	return nq
 }
 

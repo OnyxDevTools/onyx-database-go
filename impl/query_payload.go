@@ -44,6 +44,10 @@ func buildQueryPayload(q *query, includeLimit bool) queryPayload {
 	if len(q.groupFields) > 0 {
 		payload.GroupBy = append([]string{}, q.groupFields...)
 	}
+	if q.distinct {
+		distinct := true
+		payload.Distinct = &distinct
+	}
 	if len(q.resolveFields) > 0 {
 		payload.Resolvers = append([]string{}, q.resolveFields...)
 	}

@@ -18,18 +18,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stats, err := db.Users().
-		Select("isActive", coreonyx.Count("id")).
-		GroupBy("isActive").
+	bucket := coreonyx.Format("dateTime", "yyyy-MM-dd HH")
+	rows, err := db.AuditLogs().
+		Select(bucket, coreonyx.Count("*"), "status").
+		GroupBy(bucket, "status").
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if stats == nil {
-		log.Fatalf("warning: expected grouped aggregates")
+	if rows == nil {
+		log.Fatalf("warning: expected bucketed rows")
 	}
 
-	out, _ := json.MarshalIndent(stats, "", "  ")
+	out, _ := json.MarshalIndent(rows, "", "  ")
 	fmt.Println(string(out))
 	log.Println("example: completed")
 }

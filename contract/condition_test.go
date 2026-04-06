@@ -14,6 +14,7 @@ func (s stubQuery) Or(Condition) Query                         { return s }
 func (s stubQuery) Search(string, ...float64) Query            { return s }
 func (s stubQuery) Select(...string) Query                     { return s }
 func (s stubQuery) GroupBy(...string) Query                    { return s }
+func (s stubQuery) Distinct() Query                            { return s }
 func (s stubQuery) Resolve(...string) Query                    { return s }
 func (s stubQuery) OrderBy(...Sort) Query                      { return s }
 func (s stubQuery) Limit(int) Query                            { return s }

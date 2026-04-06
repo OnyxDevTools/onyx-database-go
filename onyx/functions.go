@@ -1,10 +1,37 @@
 package onyx
 
-import "github.com/OnyxDevTools/onyx-database-go/contract"
+import (
+	"strconv"
+	"strings"
+
+	"github.com/OnyxDevTools/onyx-database-go/contract"
+)
 
 // Re-export contract helpers to keep the public surface stable.
-func Asc(field string) Sort                        { return contract.Asc(field) }
-func Desc(field string) Sort                       { return contract.Desc(field) }
+func Asc(field string) Sort     { return contract.Asc(field) }
+func Desc(field string) Sort    { return contract.Desc(field) }
+func Count(expr string) string  { return unaryQueryFunction("count", expr) }
+func Sum(expr string) string    { return unaryQueryFunction("sum", expr) }
+func Avg(expr string) string    { return unaryQueryFunction("avg", expr) }
+func Min(expr string) string    { return unaryQueryFunction("min", expr) }
+func Max(expr string) string    { return unaryQueryFunction("max", expr) }
+func Median(expr string) string { return unaryQueryFunction("median", expr) }
+func Percentile(expr string, percentile float64) string {
+	return queryFunction("percentile", normalizeQueryExpr(expr), formatFloatArg(percentile))
+}
+func Std(expr string) string      { return unaryQueryFunction("std", expr) }
+func Variance(expr string) string { return unaryQueryFunction("variance", expr) }
+func Upper(expr string) string    { return unaryQueryFunction("upper", expr) }
+func Lower(expr string) string    { return unaryQueryFunction("lower", expr) }
+func Format(expr, pattern string) string {
+	return queryFunction("format", normalizeQueryExpr(expr), quoteQueryString(pattern))
+}
+func Substring(expr string, from, length int) string {
+	return queryFunction("substring", normalizeQueryExpr(expr), strconv.Itoa(from), strconv.Itoa(length))
+}
+func Replace(expr, pattern, replacement string) string {
+	return queryFunction("replace", normalizeQueryExpr(expr), quoteQueryString(pattern), quoteQueryString(replacement))
+}
 func Eq(field string, value any) Condition         { return contract.Eq(field, value) }
 func Neq(field string, value any) Condition        { return contract.Neq(field, value) }
 func In(field string, values []any) Condition      { return contract.In(field, values) }
@@ -31,3 +58,23 @@ func NewError(code, message string, meta map[string]any) *Error {
 }
 func NormalizeSchema(s Schema) Schema             { return contract.NormalizeSchema(s) }
 func ParseSchemaJSON(data []byte) (Schema, error) { return contract.ParseSchemaJSON(data) }
+
+func unaryQueryFunction(name, expr string) string {
+	return queryFunction(name, normalizeQueryExpr(expr))
+}
+
+func queryFunction(name string, args ...string) string {
+	return name + "(" + strings.Join(args, ",") + ")"
+}
+
+func normalizeQueryExpr(expr string) string {
+	return strings.TrimSpace(expr)
+}
+
+func quoteQueryString(value string) string {
+	return strconv.Quote(value)
+}
+
+func formatFloatArg(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
+}

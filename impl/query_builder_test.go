@@ -107,3 +107,16 @@ func TestPartitionDefaultsAndOverrides(t *testing.T) {
 		t.Fatalf("expected clearing partition when empty")
 	}
 }
+
+func TestDistinctPayload(t *testing.T) {
+	q := newQuery(nil, "users").Select("email").Distinct()
+	data, err := json.Marshal(q)
+	if err != nil {
+		t.Fatalf("marshal error: %v", err)
+	}
+
+	expected := `{"type":"SelectQuery","table":"users","fields":["email"],"distinct":true}`
+	if string(data) != expected {
+		t.Fatalf("unexpected payload: %s", string(data))
+	}
+}

@@ -18,6 +18,7 @@ func (s stubMarshalQuery) Search(queryText string, minScore ...float64) contract
 }
 func (s stubMarshalQuery) Select(fields ...string) contract.Query                  { return s }
 func (s stubMarshalQuery) GroupBy(fields ...string) contract.Query                 { return s }
+func (s stubMarshalQuery) Distinct() contract.Query                                { return s }
 func (s stubMarshalQuery) Resolve(paths ...string) contract.Query                  { return s }
 func (s stubMarshalQuery) OrderBy(sorts ...contract.Sort) contract.Query           { return s }
 func (s stubMarshalQuery) Limit(limit int) contract.Query                          { return s }
@@ -127,4 +128,37 @@ func TestInitWrappers(t *testing.T) {
 	}
 
 	ClearConfigCache()
+}
+
+func TestQueryFunctionHelpers(t *testing.T) {
+	cases := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{name: "count wildcard", got: Count("*"), want: "count(*)"},
+		{name: "sum", got: Sum("amount"), want: "sum(amount)"},
+		{name: "avg", got: Avg("age"), want: "avg(age)"},
+		{name: "min", got: Min("createdAt"), want: "min(createdAt)"},
+		{name: "max", got: Max("createdAt"), want: "max(createdAt)"},
+		{name: "median", got: Median("durationMs"), want: "median(durationMs)"},
+		{name: "percentile integer", got: Percentile("durationMs", 95), want: "percentile(durationMs,95)"},
+		{name: "percentile decimal", got: Percentile("durationMs", 99.5), want: "percentile(durationMs,99.5)"},
+		{name: "std", got: Std("durationMs"), want: "std(durationMs)"},
+		{name: "variance", got: Variance("durationMs"), want: "variance(durationMs)"},
+		{name: "upper", got: Upper("level"), want: "upper(level)"},
+		{name: "lower", got: Lower("level"), want: "lower(level)"},
+		{name: "format", got: Format("timestamp", "yyyy-MM-dd HH:mm"), want: `format(timestamp,"yyyy-MM-dd HH:mm")`},
+		{name: "substring", got: Substring("username", 0, 3), want: "substring(username,0,3)"},
+		{name: "replace", got: Replace("message", `\\s+`, "_"), want: `replace(message,"\\\\s+","_")`},
+		{name: "composed", got: Count(Substring("username", 0, 1)), want: "count(substring(username,0,1))"},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Fatalf("expected %q, got %q", tt.want, tt.got)
+			}
+		})
+	}
 }

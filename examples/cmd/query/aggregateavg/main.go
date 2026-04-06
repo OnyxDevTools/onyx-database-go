@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/OnyxDevTools/onyx-database-go/examples/gen/onyx"
+	coreonyx "github.com/OnyxDevTools/onyx-database-go/onyx"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	}
 
 	stats, err := db.UserProfiles().
-		Select("avg(age)").
+		Select(coreonyx.Avg("age")).
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)

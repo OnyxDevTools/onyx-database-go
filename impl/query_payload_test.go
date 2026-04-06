@@ -41,6 +41,7 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 		table:         "users",
 		selectFields:  []string{"id"},
 		groupFields:   []string{"status"},
+		distinct:      true,
 		resolveFields: []string{"roles"},
 		sorts:         []contract.Sort{contract.Desc("createdAt")},
 		limit:         &limit,
@@ -53,6 +54,9 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 	}
 	if len(withLimit.Fields) != 1 || len(withLimit.GroupBy) != 1 || len(withLimit.Resolvers) != 1 || len(withLimit.Sort) != 1 {
 		t.Fatalf("expected fields/group/resolvers/sort set: %+v", withLimit)
+	}
+	if withLimit.Distinct == nil || !*withLimit.Distinct {
+		t.Fatalf("expected distinct included")
 	}
 
 	withoutLimit := buildQueryPayload(q, false)

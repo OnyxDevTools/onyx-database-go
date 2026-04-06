@@ -18,15 +18,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stats, err := db.Users().
-		Select("isActive", coreonyx.Count("id")).
-		GroupBy("isActive").
+	stats, err := db.UserProfiles().
+		Select(
+			coreonyx.Sum("age"),
+			coreonyx.Min("age"),
+			coreonyx.Max("age"),
+			coreonyx.Median("age"),
+			coreonyx.Percentile("age", 95),
+			coreonyx.Std("age"),
+			coreonyx.Variance("age"),
+		).
 		List(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if stats == nil {
-		log.Fatalf("warning: expected grouped aggregates")
+		log.Fatalf("warning: expected aggregate stats")
 	}
 
 	out, _ := json.MarshalIndent(stats, "", "  ")

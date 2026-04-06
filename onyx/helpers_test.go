@@ -20,6 +20,7 @@ func (s *stubQuery) Search(queryText string, minScore ...float64) contract.Query
 }
 func (s *stubQuery) Select(fields ...string) contract.Query                  { return s }
 func (s *stubQuery) GroupBy(fields ...string) contract.Query                 { return s }
+func (s *stubQuery) Distinct() contract.Query                                { return s }
 func (s *stubQuery) Resolve(paths ...string) contract.Query                  { return s }
 func (s *stubQuery) OrderBy(sorts ...contract.Sort) contract.Query           { return s }
 func (s *stubQuery) Limit(limit int) contract.Query                          { return s }

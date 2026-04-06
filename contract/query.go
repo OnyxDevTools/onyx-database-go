@@ -10,6 +10,7 @@ type Query interface {
 	Search(queryText string, minScore ...float64) Query
 	Select(fields ...string) Query
 	GroupBy(fields ...string) Query
+	Distinct() Query
 	Resolve(paths ...string) Query
 	OrderBy(sorts ...Sort) Query
 	Limit(limit int) Query

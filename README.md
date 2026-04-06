@@ -301,7 +301,23 @@ onyx.Within      // IN subquery
 onyx.NotWithin   // NOT IN subquery
 onyx.Asc
 onyx.Desc
+onyx.Count
+onyx.Sum
+onyx.Avg
+onyx.Min
+onyx.Max
+onyx.Median
+onyx.Percentile
+onyx.Std
+onyx.Variance
+onyx.Upper
+onyx.Lower
+onyx.Format
+onyx.Substring
+onyx.Replace
 ```
+
+`Distinct()` is a query-builder modifier on `onyx.Query`, for example `db.From("User").Select("email").Distinct().List(ctx)`.
 
 ### Inner queries (IN/NOT IN)
 
@@ -329,6 +345,47 @@ rolesMissingPerm, _ := db.Roles().
 ```
 
 `Within`/`NotWithin` accept another query; the SDK serializes the inner query before sending it to the API.
+
+---
+
+### Aggregate + group-by
+
+```go
+import coreonyx "github.com/OnyxDevTools/onyx-database-go/onyx"
+
+db, _ := coreonyx.Init(ctx, coreonyx.Config{})
+
+rows, err := db.From("User").
+    Select("isActive", coreonyx.Count("id")).
+    GroupBy("isActive").
+    List(ctx)
+if err != nil { log.Fatal(err) }
+
+for _, row := range rows {
+    fmt.Printf("isActive=%v count=%v\n", row["isActive"], row["count(id)"])
+}
+```
+
+### Time buckets with `Format`
+
+```go
+import coreonyx "github.com/OnyxDevTools/onyx-database-go/onyx"
+
+db, _ := coreonyx.Init(ctx, coreonyx.Config{})
+
+bucket := coreonyx.Format("dateTime", "yyyy-MM-dd HH")
+rows, err := db.From("AuditLog").
+    Select(bucket, coreonyx.Count("*"), "status").
+    GroupBy(bucket, "status").
+    List(ctx)
+if err != nil { log.Fatal(err) }
+
+for _, row := range rows {
+    fmt.Printf("%v %v %v\n", row[bucket], row["status"], row["count(*)"])
+}
+```
+
+Aliases are not supported yet, so aggregate keys remain the raw function expressions such as `count(id)` or `format(dateTime,"yyyy-MM-dd HH")`.
 
 ---
 
