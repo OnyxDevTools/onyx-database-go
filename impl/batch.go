@@ -35,7 +35,7 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 		// Match TS SDK: send the slice directly (not wrapped) so the API receives an array of entities.
 		payload := chunk
 
-		err := c.httpClient.DoJSON(ctx, http.MethodPut, path, payload, nil)
+		err := c.httpClient.DoEntity(ctx, http.MethodPut, path, payload, nil, c.wireFormat)
 		if err == nil {
 			continue
 		}
@@ -51,7 +51,7 @@ func batchSave(ctx context.Context, c *client, table string, entities []any, bat
 					return ctx.Err()
 				case <-time.After(50 * time.Millisecond):
 				}
-				if retryErr := c.httpClient.DoJSON(ctx, http.MethodPut, path, payload, nil); retryErr == nil {
+				if retryErr := c.httpClient.DoEntity(ctx, http.MethodPut, path, payload, nil, c.wireFormat); retryErr == nil {
 					continue
 				} else {
 					return retryErr

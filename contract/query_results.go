@@ -1,6 +1,9 @@
 package contract
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // QueryResults represents a collection of query rows.
 type QueryResults []map[string]any
@@ -21,6 +24,38 @@ func (q *QueryResults) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*q = wrapper.Records
+	return nil
+}
+
+// UnmarshalMessagePackValue consumes the validated JSON-shaped value tree
+// produced by the entity MessagePack decoder. It deliberately avoids
+// re-marshaling through encoding/json so dynamic signed integers remain int64.
+func (q *QueryResults) UnmarshalMessagePackValue(value any) error {
+	if wrapper, ok := value.(map[string]any); ok {
+		value = wrapper["records"]
+	}
+
+	if value == nil {
+		*q = nil
+		return nil
+	}
+
+	items, ok := value.([]any)
+	if !ok {
+		return fmt.Errorf("msgpack: cannot decode query results from %T", value)
+	}
+	results := make(QueryResults, len(items))
+	for i, item := range items {
+		if item == nil {
+			continue
+		}
+		row, ok := item.(map[string]any)
+		if !ok {
+			return fmt.Errorf("msgpack: query result at index %d is %T; expected an object", i, item)
+		}
+		results[i] = row
+	}
+	*q = results
 	return nil
 }
 

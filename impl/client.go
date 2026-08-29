@@ -23,6 +23,7 @@ type client struct {
 	cfg        resolver.ResolvedConfig
 	httpClient *httpclient.Client
 	aiClient   *httpclient.Client
+	wireFormat string
 	now        func() time.Time
 	sleep      func(time.Duration)
 }
@@ -96,6 +97,10 @@ func clearHTTPClientCache() {
 
 // Init constructs a client using the provided configuration.
 func Init(ctx context.Context, cfg Config) (contract.Client, error) {
+	wireFormat, err := normalizeWireFormat(cfg.WireFormat)
+	if err != nil {
+		return nil, err
+	}
 	resolved, meta, err := resolver.Resolve(ctx, resolver.Config{
 		DatabaseID:      cfg.DatabaseID,
 		DatabaseBaseURL: cfg.DatabaseBaseURL,
@@ -149,7 +154,7 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 		nowFn = cfg.Clock
 	}
 
-	c := &client{cfg: resolved, httpClient: hc, aiClient: ai, now: nowFn}
+	c := &client{cfg: resolved, httpClient: hc, aiClient: ai, wireFormat: wireFormat, now: nowFn}
 	if cfg.Sleep != nil {
 		c.sleep = cfg.Sleep
 	} else {
@@ -157,6 +162,17 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 	}
 
 	return c, nil
+}
+
+func normalizeWireFormat(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", contract.WireFormatJSON:
+		return contract.WireFormatJSON, nil
+	case contract.WireFormatMessagePack:
+		return contract.WireFormatMessagePack, nil
+	default:
+		return "", fmt.Errorf("unsupported entity wire format %q (expected %q or %q)", value, contract.WireFormatJSON, contract.WireFormatMessagePack)
+	}
 }
 
 // InitWithDatabaseID initializes a client using only the database ID and environment/file configuration.
@@ -190,7 +206,7 @@ func (c *client) Save(ctx context.Context, table string, entity any, relationshi
 		path += "?" + params.Encode()
 	}
 	var resp map[string]any
-	if err := c.httpClient.DoJSON(ctx, http.MethodPut, path, entity, &resp); err != nil {
+	if err := c.httpClient.DoEntity(ctx, http.MethodPut, path, entity, &resp, c.wireFormat); err != nil {
 		return nil, err
 	}
 	return resp, nil
@@ -203,7 +219,7 @@ func (c *client) Delete(ctx context.Context, table, id string) error {
 		params.Set("partition", strings.TrimSpace(c.cfg.Partition))
 		path += "?" + params.Encode()
 	}
-	return c.httpClient.DoJSON(ctx, http.MethodDelete, path, nil, nil)
+	return c.httpClient.DoEntity(ctx, http.MethodDelete, path, nil, nil, c.wireFormat)
 }
 
 func (c *client) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {

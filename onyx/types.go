@@ -2,6 +2,11 @@ package onyx
 
 import "github.com/OnyxDevTools/onyx-database-go/contract"
 
+const (
+	WireFormatJSON        = contract.WireFormatJSON
+	WireFormatMessagePack = contract.WireFormatMessagePack
+)
+
 type (
 	Client                      = contract.Client
 	Config                      = contract.Config

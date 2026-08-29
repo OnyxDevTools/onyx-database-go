@@ -15,6 +15,10 @@ type errorPayload struct {
 	Meta    map[string]any `json:"meta"`
 }
 
+type nestedErrorPayload struct {
+	Error errorPayload `json:"error"`
+}
+
 func parseError(ctx context.Context, status int, body []byte) error {
 	if errors.Is(ctx.Err(), context.Canceled) {
 		return ctx.Err()
@@ -22,11 +26,14 @@ func parseError(ctx context.Context, status int, body []byte) error {
 
 	var payload errorPayload
 	if err := json.Unmarshal(body, &payload); err == nil && (payload.Code != "" || payload.Message != "") {
-		if payload.Meta == nil {
-			payload.Meta = map[string]any{}
-		}
-		payload.Meta["status"] = status
-		return &contract.Error{Code: payload.Code, Message: payload.Message, Meta: payload.Meta}
+		return contractError(status, payload)
+	}
+
+	// onyx-cloud serializes ErrorResponse as {"error":{"message":"..."}}.
+	// Keep accepting the historical flat SDK envelope above as well.
+	var nested nestedErrorPayload
+	if err := json.Unmarshal(body, &nested); err == nil && (nested.Error.Code != "" || nested.Error.Message != "") {
+		return contractError(status, nested.Error)
 	}
 
 	meta := map[string]any{"status": status}
@@ -38,4 +45,12 @@ func parseError(ctx context.Context, status int, body []byte) error {
 		msg = "request failed"
 	}
 	return &contract.Error{Message: msg, Meta: meta}
+}
+
+func contractError(status int, payload errorPayload) *contract.Error {
+	if payload.Meta == nil {
+		payload.Meta = map[string]any{}
+	}
+	payload.Meta["status"] = status
+	return &contract.Error{Code: payload.Code, Message: payload.Message, Meta: payload.Meta}
 }

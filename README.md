@@ -165,6 +165,39 @@ Shape:
 
 `onyx.Init` / `onyx.New` resolve configuration once per cache key and reuse a single signed HTTP client (keep-alive enabled). Reuse the returned client across operations; `CacheTTL` controls how long resolution results are reused. `onyx.ClearConfigCache()` also clears the HTTP client cache.
 
+### Optional binary entity transport
+
+JSON remains the default. To opt entity saves, deletes, batches, queries, and query streams into the smaller MessagePack transport, set `WireFormat` when initializing the core client:
+
+```go
+db, err := onyx.Init(ctx, onyx.Config{
+    DatabaseID: "db_123",
+    WireFormat: onyx.WireFormatMessagePack,
+})
+```
+
+The SDK sends `application/vnd.msgpack` and accepts a JSON response as a compatibility fallback. Documents, schemas, secrets, configuration discovery, and AI routes continue to use JSON. MessagePack streams contain concatenated self-delimiting values; the iterator handles framing and any initial `nil` proxy-flush frame.
+
+The binary profile preserves the recursive JSON model: null, booleans, signed 64-bit integers, finite floating-point values, UTF-8 strings, arrays, and string-keyed maps. Binary and extension values are intentionally excluded. Struct `json` tags, `omitempty`, `json.Marshaler`, embedded fields, and `,string` fields keep their existing semantics; values requiring the more complex JSON rules are normalized through `encoding/json` before MessagePack encoding.
+
+Run the native codec and size benchmarks with:
+
+```bash
+go test ./internal/msgpack -run '^TestRepresentativeEncodedSize$' -bench 'Benchmark(Encode|Decode)' -benchmem -count=5
+```
+
+Reference results from the 250-row fixture (median of five runs, Go 1.22.8, linux/amd64, AMD Ryzen AI MAX+ 395, 2026-08-29):
+
+| Metric | JSON | MessagePack | Difference |
+| --- | ---: | ---: | ---: |
+| Raw payload | 43,888 bytes | 34,126 bytes | 22.2% smaller |
+| Encode | 271,697 ns/op | 124,376 ns/op | 54.2% faster |
+| Encode heap | 214,069 B/op, 5,003 allocs/op | 190,161 B/op, 517 allocs/op | 11.2% fewer bytes, 89.7% fewer allocations |
+| Decode | 354,771 ns/op | 279,609 ns/op | 21.2% faster |
+| Decode heap | 273,293 B/op, 7,978 allocs/op | 282,159 B/op, 15,878 allocs/op | 3.2% more bytes, 99.0% more allocations |
+
+These are codec microbenchmarks, not end-to-end network measurements, and results vary by machine. MessagePack reduced payload size and median runtime for this fixture, while its current generic decoder made more allocations than `encoding/json`.
+
 ---
 
 ## Optional: generate Go types and table-safe clients

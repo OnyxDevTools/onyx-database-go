@@ -30,3 +30,4 @@ Thumbs.db
 # Go modules
 vendor/
 onyx-cli/
+benchmarks
