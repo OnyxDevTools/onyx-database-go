@@ -2,6 +2,7 @@ package impl
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
@@ -20,7 +21,7 @@ type queryPayload struct {
 	Partition  *string           `json:"partition,omitempty"`
 }
 
-func buildQueryPayload(q *query, includeLimit bool) queryPayload {
+func buildQueryPayload(q *query, includeLimit bool) (queryPayload, error) {
 	payload := queryPayload{
 		Type:       "SelectQuery",
 		Table:      q.table,
@@ -33,7 +34,14 @@ func buildQueryPayload(q *query, includeLimit bool) queryPayload {
 		Distinct:   nil,
 		Partition:  nil,
 	}
-	payload.Conditions = buildConditions(q.clauses)
+	if q.buildErr != nil {
+		return queryPayload{}, q.buildErr
+	}
+	conditions, err := buildConditions(q.clauses)
+	if err != nil {
+		return queryPayload{}, err
+	}
+	payload.Conditions = conditions
 	if q.partition != nil {
 		payload.Partition = q.partition
 	}
@@ -53,14 +61,17 @@ func buildQueryPayload(q *query, includeLimit bool) queryPayload {
 	}
 	if len(q.sorts) > 0 {
 		for _, s := range q.sorts {
-			raw, _ := json.Marshal(s)
+			raw, err := json.Marshal(s)
+			if err != nil {
+				return queryPayload{}, fmt.Errorf("marshal query sort: %w", err)
+			}
 			payload.Sort = append(payload.Sort, raw)
 		}
 	}
 	if includeLimit && q.limit != nil {
 		payload.Limit = q.limit
 	}
-	return payload
+	return payload, nil
 }
 
 type updatePayload struct {
@@ -73,11 +84,18 @@ type updatePayload struct {
 	Partition  *string           `json:"partition,omitempty"`
 }
 
-func buildUpdatePayload(q *query) updatePayload {
+func buildUpdatePayload(q *query) (updatePayload, error) {
+	if q.buildErr != nil {
+		return updatePayload{}, q.buildErr
+	}
+	conditions, err := buildConditions(q.clauses)
+	if err != nil {
+		return updatePayload{}, err
+	}
 	payload := updatePayload{
 		Type:       "UpdateQuery",
 		Table:      q.table,
-		Conditions: buildConditions(q.clauses),
+		Conditions: conditions,
 		Updates:    map[string]any{},
 		Sort:       nil,
 		Limit:      nil,
@@ -91,14 +109,17 @@ func buildUpdatePayload(q *query) updatePayload {
 	}
 	if len(q.sorts) > 0 {
 		for _, s := range q.sorts {
-			raw, _ := json.Marshal(s)
+			raw, err := json.Marshal(s)
+			if err != nil {
+				return updatePayload{}, fmt.Errorf("marshal update sort: %w", err)
+			}
 			payload.Sort = append(payload.Sort, raw)
 		}
 	}
 	if q.limit != nil {
 		payload.Limit = q.limit
 	}
-	return payload
+	return payload, nil
 }
 
 func (p queryPayload) MarshalJSON() ([]byte, error) {
@@ -106,29 +127,44 @@ func (p queryPayload) MarshalJSON() ([]byte, error) {
 	return json.Marshal(alias(p))
 }
 
-func buildConditions(clauses []clause) json.RawMessage {
+func buildConditions(clauses []clause) (json.RawMessage, error) {
 	if len(clauses) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	buildSingle := func(c clause) map[string]any {
-		raw, _ := json.Marshal(c.Condition)
+	buildSingle := func(c clause) (map[string]any, error) {
+		raw, err := json.Marshal(c.Condition)
+		if err != nil {
+			return nil, fmt.Errorf("marshal query condition: %w", err)
+		}
 		var m map[string]any
-		_ = json.Unmarshal(raw, &m)
-		return m
+		if err := json.Unmarshal(raw, &m); err != nil {
+			return nil, fmt.Errorf("decode query condition: %w", err)
+		}
+		return m, nil
 	}
 
-	cur := buildSingle(clauses[0])
+	cur, err := buildSingle(clauses[0])
+	if err != nil {
+		return nil, err
+	}
 	for _, c := range clauses[1:] {
+		next, err := buildSingle(c)
+		if err != nil {
+			return nil, err
+		}
 		cur = map[string]any{
 			"conditionType": "CompoundCondition",
 			"operator":      strings.ToUpper(c.Type),
-			"conditions":    []any{cur, buildSingle(c)},
+			"conditions":    []any{cur, next},
 		}
 	}
 
-	out, _ := json.Marshal(cur)
-	return out
+	out, err := json.Marshal(cur)
+	if err != nil {
+		return nil, fmt.Errorf("marshal query conditions: %w", err)
+	}
+	return out, nil
 }
 
 var _ contract.Query = (*query)(nil)

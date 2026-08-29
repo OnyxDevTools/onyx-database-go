@@ -352,6 +352,64 @@ onyx.Replace
 
 `Distinct()` is a query-builder modifier on `onyx.Query`, for example `db.From("User").Select("email").Distinct().List(ctx)`.
 
+### Native vector-managed search
+
+Legacy `Search(queryText, minScore...)` remains available. For the complete
+native lexical, semantic, and hybrid contract, construct a validated query and
+use `SearchVector` on one searchable table:
+
+```go
+minScore := 0.42
+searchQuery, err := onyx.NewVectorSearchQuery(onyx.VectorSearchQueryInput{
+    Text:          "storm warning",
+    MinScore:      &minScore,
+    MaxCandidates: 500, // optional; default 1000, maximum 5000
+})
+if err != nil { log.Fatal(err) }
+
+results, err := db.From("Article").SearchVector(searchQuery).List(ctx)
+if err != nil { log.Fatal(err) }
+```
+
+`VectorSearchQueryInput` also accepts a validated `SemanticVectorSignature`
+and the optional `NearbyBucketRadius` and `RequireAllTerms` controls. Semantic
+64-bit identifiers and fingerprint words are serialized losslessly as strings.
+
+Physically bounded candidate channels are explicit and read-only. Each must be
+the sole root criterion; partitioned tables also require one concrete
+`InPartition` value:
+
+```go
+// Bounded lexical candidates.
+lexical, err := onyx.NewVectorSearchQuery(onyx.VectorSearchQueryInput{
+    Text:          "storm warning",
+    MaxCandidates: 250,
+})
+if err != nil { log.Fatal(err) }
+rows, err := db.From("Article").ApproximateSearch(lexical).List(ctx)
+
+// Bounded native-HNSW nearest neighbors.
+hnsw, err := onyx.NewHNSWSearchQuery(onyx.HNSWSearchQueryInput{
+    CalibrationID: -7909761245221418085,
+    Vector:        []float64{0.25, -0.5, 0.75},
+    MaxCandidates: 100,
+    EFSearch:      400,
+    MinScore:      &minScore,
+})
+if err != nil { log.Fatal(err) }
+neighbors, err := db.From("Article").HNSWCandidates(hnsw).List(ctx)
+
+// Bounded EQUAL/IN admission from an ordinary secondary index.
+sample, err := db.From("Article").
+    ApproximateCandidates("corpusId", []string{"public", "archive"}, 100).
+    List(ctx)
+```
+
+HNSW vectors contain 1–16384 finite values with a non-zero norm.
+`MaxCandidates` is bounded to 1–5000, `EFSearch` defaults to
+`max(1000, MaxCandidates)` and is bounded through 20000, and HNSW `MinScore`
+is optional in `[-1, 1]`.
+
 ### Inner queries (IN/NOT IN)
 
 ```go
@@ -528,6 +586,19 @@ schema, _ := core.Schema(ctx)
 history, _ := core.GetSchemaHistory(ctx)
 _ = core.UpdateSchema(ctx, schema, true) // publish=true
 fmt.Println("tables:", len(schema.Tables), "history entries:", len(history))
+```
+
+Searchable table and native index metadata are preserved during fetch,
+normalize, validate, and publish round trips:
+
+```go
+searchable := onyx.Table{
+    Name: "Article",
+    Type: onyx.TableTypeSearchable,
+    Indexes: []onyx.Index{
+        {Name: "content", Type: onyx.IndexTypeVector},
+    },
+}
 ```
 
 ### Secrets API

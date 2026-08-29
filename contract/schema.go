@@ -1,5 +1,15 @@
 package contract
 
+// TableType identifies how an Onyx schema table is managed.
+type TableType string
+
+const (
+	// TableTypeDefault is an ordinary Onyx table.
+	TableTypeDefault TableType = "DEFAULT"
+	// TableTypeSearchable enables native vector-managed search channels.
+	TableTypeSearchable TableType = "SEARCHABLE"
+)
+
 // Field represents a single column in a table definition.
 type Field struct {
 	Name     string `json:"name"`
@@ -19,6 +29,7 @@ type Resolver struct {
 // Table represents a database table with fields.
 type Table struct {
 	Name      string         `json:"name"`
+	Type      TableType      `json:"type,omitempty"`
 	Fields    []Field        `json:"fields"`
 	Resolvers []Resolver     `json:"resolvers,omitempty"`
 	Indexes   []Index        `json:"indexes,omitempty"`

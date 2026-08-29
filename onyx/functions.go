@@ -47,6 +47,47 @@ func StartsWith(field string, value any) Condition { return contract.StartsWith(
 func Search(queryText string, minScore ...float64) Condition {
 	return contract.Search(queryText, minScore...)
 }
+func VectorSearch(searchQuery VectorSearchQuery) Condition {
+	return contract.VectorSearch(searchQuery)
+}
+func ApproximateSearch(searchQuery VectorSearchQuery) Condition {
+	return contract.ApproximateSearch(searchQuery)
+}
+func HNSWCandidates(searchQuery HNSWSearchQuery) Condition {
+	return contract.HNSWCandidates(searchQuery)
+}
+func ApproximateCandidates(field string, valueOrValues any, maxCandidates ...int) Condition {
+	return contract.ApproximateCandidates(field, valueOrValues, maxCandidates...)
+}
+func NewSemanticVectorSignature(
+	calibrationID int64,
+	bucketID int,
+	cells []int,
+	cellCounts []int,
+	fingerprint []int64,
+	boundaryConfidence ...float64,
+) (SemanticVectorSignature, error) {
+	return contract.NewSemanticVectorSignature(
+		calibrationID,
+		bucketID,
+		cells,
+		cellCounts,
+		fingerprint,
+		boundaryConfidence...,
+	)
+}
+func NewVectorSearchQuery(input VectorSearchQueryInput) (VectorSearchQuery, error) {
+	return contract.NewVectorSearchQuery(input)
+}
+func NewHNSWSearchQuery(input HNSWSearchQueryInput) (HNSWSearchQuery, error) {
+	return contract.NewHNSWSearchQuery(input)
+}
+func NewApproximateIndexCandidateQuery(
+	valueOrValues any,
+	maxCandidates ...int,
+) (ApproximateIndexCandidateQuery, error) {
+	return contract.NewApproximateIndexCandidateQuery(valueOrValues, maxCandidates...)
+}
 func IsNull(field string) Condition                 { return contract.IsNull(field) }
 func NotNull(field string) Condition                { return contract.NotNull(field) }
 func Within(field string, query Query) Condition    { return contract.Within(field, query) }

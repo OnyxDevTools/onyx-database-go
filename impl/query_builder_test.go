@@ -91,13 +91,19 @@ func TestWithinConditionEmbedsQuery(t *testing.T) {
 func TestPartitionDefaultsAndOverrides(t *testing.T) {
 	client := &client{cfg: resolver.ResolvedConfig{DatabaseID: "db", Partition: "default"}}
 	q := newQuery(client, "users")
-	payload := buildQueryPayload(q.(*query), true)
+	payload, err := buildQueryPayload(q.(*query), true)
+	if err != nil {
+		t.Fatalf("build payload: %v", err)
+	}
 	if payload.Partition == nil || *payload.Partition != "default" {
 		t.Fatalf("expected default partition applied, got %+v", payload.Partition)
 	}
 
 	q2 := q.InPartition("p1").(*query)
-	payload2 := buildQueryPayload(q2, true)
+	payload2, err := buildQueryPayload(q2, true)
+	if err != nil {
+		t.Fatalf("build override payload: %v", err)
+	}
 	if payload2.Partition == nil || *payload2.Partition != "p1" {
 		t.Fatalf("expected override partition, got %+v", payload2.Partition)
 	}

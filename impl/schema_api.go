@@ -11,14 +11,15 @@ import (
 )
 
 type schemaEntity struct {
-	Name       string            `json:"name"`
-	Identifier *schemaIdentifier `json:"identifier,omitempty"`
-	Attributes []schemaAttribute `json:"attributes,omitempty"`
-	Partition  string            `json:"partition,omitempty"`
-	Indexes    []map[string]any  `json:"indexes,omitempty"`
-	Resolvers  []map[string]any  `json:"resolvers,omitempty"`
-	Triggers   []map[string]any  `json:"triggers,omitempty"`
-	Meta       map[string]any    `json:"meta,omitempty"`
+	Name       string             `json:"name"`
+	Type       contract.TableType `json:"type,omitempty"`
+	Identifier *schemaIdentifier  `json:"identifier,omitempty"`
+	Attributes []schemaAttribute  `json:"attributes,omitempty"`
+	Partition  string             `json:"partition,omitempty"`
+	Indexes    []map[string]any   `json:"indexes,omitempty"`
+	Resolvers  []map[string]any   `json:"resolvers,omitempty"`
+	Triggers   []map[string]any   `json:"triggers,omitempty"`
+	Meta       map[string]any     `json:"meta,omitempty"`
 }
 
 type schemaIdentifier struct {
@@ -138,10 +139,17 @@ func schemaUpsertPayload(schema contract.Schema, databaseID string) map[string]a
 func toEntities(s contract.Schema) []schemaEntity {
 	entities := make([]schemaEntity, 0, len(s.Tables))
 	for _, t := range s.Tables {
-		ent := schemaEntity{Name: t.Name}
+		ent := schemaEntity{Name: t.Name, Type: t.Type, Partition: t.Partition}
 		if len(t.Indexes) > 0 {
 			for _, idx := range t.Indexes {
-				ent.Indexes = append(ent.Indexes, map[string]any{"name": idx.Name})
+				entry := map[string]any{"name": idx.Name}
+				if idx.Type != "" {
+					entry["type"] = idx.Type
+				}
+				if idx.MinimumScore != nil {
+					entry["minimumScore"] = *idx.MinimumScore
+				}
+				ent.Indexes = append(ent.Indexes, entry)
 			}
 		}
 		if len(t.Triggers) > 0 {
@@ -188,7 +196,12 @@ func schemaFromEntities(items []any) contract.Schema {
 			continue
 		}
 		name, _ := obj["name"].(string)
-		table := contract.Table{Name: name}
+		table := contract.Table{
+			Name:      name,
+			Type:      contract.TableType(stringValue(obj["type"])),
+			Partition: stringValue(obj["partition"]),
+			Meta:      mapValue(obj["meta"]),
+		}
 		var idName string
 		if ident, ok := obj["identifier"].(map[string]any); ok {
 			if n, ok := ident["name"].(string); ok {
@@ -232,6 +245,31 @@ func schemaFromEntities(items []any) contract.Schema {
 				}
 			}
 		}
+		if indexes, ok := obj["indexes"].([]any); ok {
+			for _, index := range indexes {
+				if values, ok := index.(map[string]any); ok {
+					if name, ok := values["name"].(string); ok {
+						table.Indexes = append(table.Indexes, contract.Index{
+							Name:         name,
+							Type:         contract.IndexType(stringValue(values["type"])),
+							MinimumScore: float64PointerValue(values["minimumScore"]),
+						})
+					}
+				}
+			}
+		}
+		if triggers, ok := obj["triggers"].([]any); ok {
+			for _, trigger := range triggers {
+				switch value := trigger.(type) {
+				case string:
+					table.Triggers = append(table.Triggers, value)
+				case map[string]any:
+					if name, ok := value["name"].(string); ok {
+						table.Triggers = append(table.Triggers, name)
+					}
+				}
+			}
+		}
 		tables = append(tables, table)
 	}
 	return contract.Schema{Tables: tables}
@@ -244,7 +282,12 @@ func schemaFromTablesArray(items []any) contract.Schema {
 		if !ok {
 			continue
 		}
-		t := contract.Table{Name: stringValue(obj["name"])}
+		t := contract.Table{
+			Name:      stringValue(obj["name"]),
+			Type:      contract.TableType(stringValue(obj["type"])),
+			Partition: stringValue(obj["partition"]),
+			Meta:      mapValue(obj["meta"]),
+		}
 		if fields, ok := obj["fields"].([]any); ok {
 			for _, f := range fields {
 				fm, ok := f.(map[string]any)
@@ -277,6 +320,31 @@ func schemaFromTablesArray(items []any) contract.Schema {
 				}
 			}
 		}
+		if indexes, ok := obj["indexes"].([]any); ok {
+			for _, index := range indexes {
+				if values, ok := index.(map[string]any); ok {
+					if name, ok := values["name"].(string); ok {
+						t.Indexes = append(t.Indexes, contract.Index{
+							Name:         name,
+							Type:         contract.IndexType(stringValue(values["type"])),
+							MinimumScore: float64PointerValue(values["minimumScore"]),
+						})
+					}
+				}
+			}
+		}
+		if triggers, ok := obj["triggers"].([]any); ok {
+			for _, trigger := range triggers {
+				switch value := trigger.(type) {
+				case string:
+					t.Triggers = append(t.Triggers, value)
+				case map[string]any:
+					if name, ok := value["name"].(string); ok {
+						t.Triggers = append(t.Triggers, name)
+					}
+				}
+			}
+		}
 		tables = append(tables, t)
 	}
 	return contract.Schema{Tables: tables}
@@ -301,6 +369,23 @@ func mapValue(v any) map[string]any {
 		return m
 	}
 	return nil
+}
+
+func float64PointerValue(v any) *float64 {
+	var value float64
+	switch number := v.(type) {
+	case float64:
+		value = number
+	case float32:
+		value = float64(number)
+	case int:
+		value = float64(number)
+	case int64:
+		value = float64(number)
+	default:
+		return nil
+	}
+	return &value
 }
 
 func stripEntityText(v any) any {

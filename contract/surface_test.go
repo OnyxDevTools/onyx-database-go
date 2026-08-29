@@ -21,15 +21,19 @@ func TestContractSurfaceSnapshot(t *testing.T) {
 
 	expectedPath := filepath.Join("testdata", "contract_surface.txt")
 	expectedBytes, err := os.ReadFile(expectedPath)
-	if err != nil {
-		if os.IsNotExist(err) || os.Getenv("UPDATE_CONTRACT_SURFACE") == "true" {
-			if writeErr := os.WriteFile(expectedPath, []byte(snapshot), 0o644); writeErr != nil {
-				t.Fatalf("write snapshot: %v", writeErr)
-			}
-			expectedBytes = []byte(snapshot)
-		} else {
+	if os.Getenv("UPDATE_CONTRACT_SURFACE") == "true" {
+		if writeErr := os.WriteFile(expectedPath, []byte(snapshot), 0o644); writeErr != nil {
+			t.Fatalf("write snapshot: %v", writeErr)
+		}
+		expectedBytes = []byte(snapshot)
+	} else if err != nil {
+		if !os.IsNotExist(err) {
 			t.Fatalf("read snapshot: %v", err)
 		}
+		if writeErr := os.WriteFile(expectedPath, []byte(snapshot), 0o644); writeErr != nil {
+			t.Fatalf("write snapshot: %v", writeErr)
+		}
+		expectedBytes = []byte(snapshot)
 	}
 
 	if snapshot != string(expectedBytes) {

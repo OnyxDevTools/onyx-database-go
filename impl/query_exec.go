@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -14,7 +15,10 @@ func (q *query) queryPath() string {
 }
 
 func (q *query) List(ctx context.Context) (contract.QueryResults, error) {
-	payload := buildQueryPayload(q, true)
+	payload, err := buildQueryPayload(q, true)
+	if err != nil {
+		return nil, err
+	}
 	var resp contract.QueryResults
 	if err := q.client.httpClient.DoEntity(ctx, http.MethodPut, q.queryPath(), payload, &resp, q.client.wireFormat); err != nil {
 		return nil, err
@@ -23,7 +27,10 @@ func (q *query) List(ctx context.Context) (contract.QueryResults, error) {
 }
 
 func (q *query) Page(ctx context.Context, cursor string) (contract.PageResult, error) {
-	payload := buildQueryPayload(q, false)
+	payload, err := buildQueryPayload(q, false)
+	if err != nil {
+		return contract.PageResult{}, err
+	}
 	params := url.Values{}
 	if q.limit != nil && *q.limit > 0 {
 		params.Set("pageSize", strconv.Itoa(*q.limit))
@@ -44,7 +51,10 @@ func (q *query) Page(ctx context.Context, cursor string) (contract.PageResult, e
 }
 
 func (q *query) Stream(ctx context.Context) (contract.Iterator, error) {
-	payload := buildQueryPayload(q, true)
+	payload, err := buildQueryPayload(q, true)
+	if err != nil {
+		return nil, err
+	}
 	path := "/data/" + url.PathEscape(q.client.cfg.DatabaseID) + "/query/stream/" + url.PathEscape(q.table)
 	resp, err := q.client.httpClient.DoEntityStream(ctx, http.MethodPut, path, payload, q.client.wireFormat)
 	if err != nil {
@@ -54,7 +64,13 @@ func (q *query) Stream(ctx context.Context) (contract.Iterator, error) {
 }
 
 func (q *query) Update(ctx context.Context) (int, error) {
-	payload := buildUpdatePayload(q)
+	if q.candidateOp != "" {
+		return 0, fmt.Errorf("%s is read-only", q.candidateOp)
+	}
+	payload, err := buildUpdatePayload(q)
+	if err != nil {
+		return 0, err
+	}
 	path := "/data/" + url.PathEscape(q.client.cfg.DatabaseID) + "/query/update/" + url.PathEscape(q.table)
 	var updated int
 	if err := q.client.httpClient.DoEntity(ctx, http.MethodPut, path, payload, &updated, q.client.wireFormat); err != nil {
@@ -64,7 +80,13 @@ func (q *query) Update(ctx context.Context) (int, error) {
 }
 
 func (q *query) Delete(ctx context.Context) (int, error) {
-	payload := buildQueryPayload(q, true)
+	if q.candidateOp != "" {
+		return 0, fmt.Errorf("%s is read-only", q.candidateOp)
+	}
+	payload, err := buildQueryPayload(q, true)
+	if err != nil {
+		return 0, err
+	}
 	path := "/data/" + url.PathEscape(q.client.cfg.DatabaseID) + "/query/delete/" + url.PathEscape(q.table)
 	var deleted int
 	if err := q.client.httpClient.DoEntity(ctx, http.MethodPut, path, payload, &deleted, q.client.wireFormat); err != nil {

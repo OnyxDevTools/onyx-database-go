@@ -18,6 +18,14 @@ func (s *stubQuery) Or(condition contract.Condition) contract.Query    { return 
 func (s *stubQuery) Search(queryText string, minScore ...float64) contract.Query {
 	return s
 }
+func (s *stubQuery) SearchVector(contract.VectorSearchQuery) contract.Query { return s }
+func (s *stubQuery) ApproximateSearch(contract.VectorSearchQuery) contract.Query {
+	return s
+}
+func (s *stubQuery) HNSWCandidates(contract.HNSWSearchQuery) contract.Query { return s }
+func (s *stubQuery) ApproximateCandidates(string, any, ...int) contract.Query {
+	return s
+}
 func (s *stubQuery) Select(fields ...string) contract.Query                  { return s }
 func (s *stubQuery) GroupBy(fields ...string) contract.Query                 { return s }
 func (s *stubQuery) Distinct() contract.Query                                { return s }

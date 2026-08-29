@@ -23,9 +23,10 @@ func TestNormalizeResolversSortsAndConverts(t *testing.T) {
 	raw := []byte(`{
   "tables": [{
     "name": "Doc",
+	"type": "SEARCHABLE",
     "fields": [{"name":"id","type":"String","nullable":false,"primaryKey":true,"unique":true}],
     "resolvers": [{"name":"r","resolver":"db.from(\"X\")","meta":{"a":1}}],
-    "indexes": [{"name":"idx"}],
+	"indexes": [{"name":"idx","type":"VECTOR","minimumScore":0.25}],
     "triggers": [{"name":"tr"}],
     "meta": {"k":"v"}
   }]
@@ -36,5 +37,8 @@ func TestNormalizeResolversSortsAndConverts(t *testing.T) {
 	}
 	if len(parsed.Tables) != 1 || parsed.Tables[0].Indexes[0].Name != "idx" || parsed.Tables[0].Triggers[0] != "tr" {
 		t.Fatalf("expected indexes/triggers/meta parsed: %+v", parsed.Tables[0])
+	}
+	if parsed.Tables[0].Type != TableTypeSearchable || parsed.Tables[0].Indexes[0].Type != IndexTypeVector {
+		t.Fatalf("expected searchable/vector metadata parsed: %+v", parsed.Tables[0])
 	}
 }

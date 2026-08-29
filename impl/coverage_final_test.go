@@ -256,7 +256,10 @@ func TestDocumentSaveError(t *testing.T) {
 func TestBuildUpdatePayloadWithLimit(t *testing.T) {
 	limit := 2
 	q := &query{table: "users", updates: map[string]any{"x": 1}, limit: &limit}
-	payload := buildUpdatePayload(q)
+	payload, err := buildUpdatePayload(q)
+	if err != nil {
+		t.Fatalf("build update payload: %v", err)
+	}
 	if payload.Limit == nil || *payload.Limit != 2 {
 		t.Fatalf("expected limit set in update payload")
 	}

@@ -9,7 +9,9 @@ import (
 func TestSchemaHelperConversions(t *testing.T) {
 	entities := []any{
 		map[string]any{
-			"name": "User",
+			"name":      "User",
+			"type":      "SEARCHABLE",
+			"partition": "tenantId",
 			"identifier": map[string]any{
 				"name": "id",
 			},
@@ -18,6 +20,9 @@ func TestSchemaHelperConversions(t *testing.T) {
 				map[string]any{"name": "age", "type": "Int", "isNullable": true},
 			},
 			"resolvers": []any{"roles"},
+			"indexes": []any{
+				map[string]any{"name": "content", "type": "VECTOR", "minimumScore": 0.5},
+			},
 		},
 	}
 	schema := schemaFromEntities(entities)
@@ -26,6 +31,9 @@ func TestSchemaHelperConversions(t *testing.T) {
 	}
 	if len(schema.Tables[0].Resolvers) != 1 || schema.Tables[0].Resolvers[0].Name != "roles" {
 		t.Fatalf("resolver not parsed: %+v", schema.Tables[0].Resolvers)
+	}
+	if schema.Tables[0].Type != contract.TableTypeSearchable || schema.Tables[0].Partition != "tenantId" || schema.Tables[0].Indexes[0].Type != contract.IndexTypeVector {
+		t.Fatalf("native vector schema metadata not parsed: %+v", schema.Tables[0])
 	}
 
 	tablesArray := []any{
@@ -48,10 +56,13 @@ func TestSchemaHelperConversions(t *testing.T) {
 }
 
 func TestToEntitiesIncludesResolversMeta(t *testing.T) {
+	minimumScore := 0.25
 	schema := contract.Schema{
 		Tables: []contract.Table{
 			{
-				Name: "T",
+				Name:      "T",
+				Type:      contract.TableTypeSearchable,
+				Partition: "tenantId",
 				Fields: []contract.Field{
 					{Name: "id", Type: "String", Primary: true},
 					{Name: "n", Type: "String", Nullable: true},
@@ -59,7 +70,11 @@ func TestToEntitiesIncludesResolversMeta(t *testing.T) {
 				Resolvers: []contract.Resolver{
 					{Name: "r", Resolver: "db.from(\"X\")", Meta: map[string]any{"a": 1}},
 				},
-				Indexes: []contract.Index{{Name: "idx"}},
+				Indexes: []contract.Index{{
+					Name:         "idx",
+					Type:         contract.IndexTypeVector,
+					MinimumScore: &minimumScore,
+				}},
 				Triggers: []string{
 					"trg",
 				},
@@ -73,5 +88,11 @@ func TestToEntitiesIncludesResolversMeta(t *testing.T) {
 	}
 	if len(entities[0].Indexes) != 1 || len(entities[0].Triggers) != 1 || entities[0].Meta["m"] != "v" {
 		t.Fatalf("expected indexes/triggers/meta exported: %+v", entities[0])
+	}
+	if entities[0].Type != contract.TableTypeSearchable || entities[0].Partition != "tenantId" || entities[0].Indexes[0]["type"] != contract.IndexTypeVector {
+		t.Fatalf("native vector schema metadata not exported: %+v", entities[0])
+	}
+	if entities[0].Indexes[0]["minimumScore"] != minimumScore {
+		t.Fatalf("legacy vector minimumScore not preserved: %+v", entities[0].Indexes[0])
 	}
 }

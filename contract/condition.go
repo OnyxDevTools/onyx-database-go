@@ -1,6 +1,10 @@
 package contract
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // Condition represents a filter operator used in a query.
 type Condition interface {
@@ -21,7 +25,8 @@ type condition struct {
 	query  queryProvider
 }
 
-// FullTextQuery represents the lucene full-text search payload.
+// FullTextQuery is the legacy text-only MATCHES payload. New semantic and
+// hybrid callers should use VectorSearchQuery.
 type FullTextQuery struct {
 	QueryText string   `json:"queryText"`
 	MinScore  *float64 `json:"minScore"`
@@ -30,6 +35,9 @@ type FullTextQuery struct {
 const fullTextField = "__full_text__"
 
 func (c condition) MarshalJSON() ([]byte, error) {
+	if c.CandidateOperator() != "" && strings.TrimSpace(c.field) == "" {
+		return nil, fmt.Errorf("candidate attribute must not be blank")
+	}
 	crit := map[string]any{
 		"field":    c.field,
 		"operator": operatorFor(c.op),
@@ -60,6 +68,18 @@ func (c condition) MarshalJSON() ([]byte, error) {
 		"conditionType": "SingleCondition",
 		"criteria":      crit,
 	})
+}
+
+// CandidateOperator reports the wire operator when this condition must be the
+// sole root query criterion. It lets SDK query builders enforce the invariant
+// without expanding the stable Condition interface.
+func (c condition) CandidateOperator() string {
+	switch c.op {
+	case "candidates", "search_candidates", "hnsw_candidates":
+		return operatorFor(c.op)
+	default:
+		return ""
+	}
 }
 
 func operatorFor(op string) string {
@@ -98,6 +118,12 @@ func operatorFor(op string) string {
 		return "NOT_IN"
 	case "matches":
 		return "MATCHES"
+	case "candidates":
+		return "CANDIDATES"
+	case "search_candidates":
+		return "SEARCH_CANDIDATES"
+	case "hnsw_candidates":
+		return "HNSW_CANDIDATES"
 	default:
 		return op
 	}
@@ -164,6 +190,72 @@ func Search(queryText string, minScore ...float64) Condition {
 		field: fullTextField,
 		value: FullTextQuery{QueryText: queryText, MinScore: score},
 	}
+}
+
+// VectorSearch creates a native lexical, semantic, or hybrid MATCHES condition.
+// Unlike bounded candidate operators, this condition may be composed with
+// ordinary filters.
+func VectorSearch(searchQuery VectorSearchQuery) Condition {
+	return condition{
+		op:    "matches",
+		field: fullTextField,
+		value: searchQuery,
+	}
+}
+
+// ApproximateSearch creates a bounded lexical candidate condition. It must be
+// the query's sole root criterion and is valid only for read operations.
+func ApproximateSearch(searchQuery VectorSearchQuery) Condition {
+	return condition{
+		op:    "search_candidates",
+		field: fullTextField,
+		value: boundedLexicalSearchQuery{query: searchQuery},
+	}
+}
+
+// HNSWCandidates creates a bounded native-HNSW nearest-neighbor condition. It
+// must be the query's sole root criterion and is valid only for read operations.
+func HNSWCandidates(searchQuery HNSWSearchQuery) Condition {
+	return condition{
+		op:    "hnsw_candidates",
+		field: fullTextField,
+		value: searchQuery,
+	}
+}
+
+// ApproximateCandidates creates a bounded ordinary-index candidate condition.
+// A scalar produces EQUAL-style routing; a slice or array produces IN-style
+// routing. It must be the query's sole root criterion and is read-only.
+func ApproximateCandidates(field string, valueOrValues any, maxCandidates ...int) Condition {
+	query, err := NewApproximateIndexCandidateQuery(valueOrValues, maxCandidates...)
+	var value any = query
+	if err != nil {
+		value = invalidSearchValue{err: err}
+	}
+	return condition{op: "candidates", field: field, value: value}
+}
+
+type boundedLexicalSearchQuery struct {
+	query VectorSearchQuery
+}
+
+func (q boundedLexicalSearchQuery) MarshalJSON() ([]byte, error) {
+	normalized, err := q.query.normalized()
+	if err != nil {
+		return nil, err
+	}
+	if normalized.Text == nil || normalized.Semantic != nil {
+		return nil, fmt.Errorf("SEARCH_CANDIDATES supports text-only VectorSearchQuery values")
+	}
+	return json.Marshal(normalized)
+}
+
+type invalidSearchValue struct {
+	err error
+}
+
+func (v invalidSearchValue) MarshalJSON() ([]byte, error) {
+	return nil, v.err
 }
 
 // IsNull checks for null values.

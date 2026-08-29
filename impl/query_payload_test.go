@@ -15,7 +15,10 @@ func TestBuildUpdatePayloadIncludesUpdatesAndSort(t *testing.T) {
 		},
 		sorts: []contract.Sort{contract.Asc("email")},
 	}
-	payload := buildUpdatePayload(q)
+	payload, err := buildUpdatePayload(q)
+	if err != nil {
+		t.Fatalf("build update payload: %v", err)
+	}
 	if payload.Table != "users" {
 		t.Fatalf("unexpected table: %s", payload.Table)
 	}
@@ -48,7 +51,10 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 		clauses:       []clause{{Type: "and", Condition: contract.Eq("status", "active")}},
 	}
 
-	withLimit := buildQueryPayload(q, true)
+	withLimit, err := buildQueryPayload(q, true)
+	if err != nil {
+		t.Fatalf("build query payload: %v", err)
+	}
 	if withLimit.Limit == nil || *withLimit.Limit != 5 {
 		t.Fatalf("expected limit included")
 	}
@@ -59,7 +65,10 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 		t.Fatalf("expected distinct included")
 	}
 
-	withoutLimit := buildQueryPayload(q, false)
+	withoutLimit, err := buildQueryPayload(q, false)
+	if err != nil {
+		t.Fatalf("build query payload without limit: %v", err)
+	}
 	if withoutLimit.Limit != nil {
 		t.Fatalf("expected limit omitted when includeLimit=false")
 	}
@@ -68,18 +77,24 @@ func TestBuildQueryPayloadVariants(t *testing.T) {
 	}
 
 	// No clauses case should return nil conditions
-	if cond := buildConditions(nil); cond != nil {
+	if cond, err := buildConditions(nil); err != nil || cond != nil {
 		t.Fatalf("expected nil conditions when no clauses")
 	}
 
 	part := "p1"
 	q.partition = &part
-	withPartition := buildQueryPayload(q, true)
+	withPartition, err := buildQueryPayload(q, true)
+	if err != nil {
+		t.Fatalf("build partition query payload: %v", err)
+	}
 	if withPartition.Partition == nil || *withPartition.Partition != "p1" {
 		t.Fatalf("expected partition to be set")
 	}
 
-	upd := buildUpdatePayload(q)
+	upd, err := buildUpdatePayload(q)
+	if err != nil {
+		t.Fatalf("build partition update payload: %v", err)
+	}
 	if upd.Partition == nil || *upd.Partition != "p1" {
 		t.Fatalf("expected partition on update payload")
 	}

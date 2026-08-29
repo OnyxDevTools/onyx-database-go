@@ -8,6 +8,10 @@ type Query interface {
 	And(condition Condition) Query
 	Or(condition Condition) Query
 	Search(queryText string, minScore ...float64) Query
+	SearchVector(searchQuery VectorSearchQuery) Query
+	ApproximateSearch(searchQuery VectorSearchQuery) Query
+	HNSWCandidates(searchQuery HNSWSearchQuery) Query
+	ApproximateCandidates(attribute string, valueOrValues any, maxCandidates ...int) Query
 	Select(fields ...string) Query
 	GroupBy(fields ...string) Query
 	Distinct() Query

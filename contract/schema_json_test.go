@@ -37,12 +37,18 @@ func TestParseSchemaJSONEntities(t *testing.T) {
 		"entities": [
 			{
 				"name": "User",
+				"type": "SEARCHABLE",
+				"partition": "tenantId",
 				"identifier": {"name": "id", "type": "String", "generator": "UUID"},
 				"attributes": [
 					{"name": "id", "type": "String", "isNullable": false},
 					{"name": "email", "type": "String", "isNullable": true}
 				],
-				"resolvers": [{"name":"roles"}, {"name":"profile"}]
+				"resolvers": [{"name":"roles"}, {"name":"profile"}],
+				"indexes": [
+					{"name":"email","type":"DEFAULT"},
+					{"name":"content","type":"VECTOR","minimumScore":0.5}
+				]
 			}
 		]
 	}`)
@@ -54,6 +60,15 @@ func TestParseSchemaJSONEntities(t *testing.T) {
 
 	if len(schema.Tables) != 1 || schema.Tables[0].Name != "User" {
 		t.Fatalf("unexpected tables: %+v", schema.Tables)
+	}
+	if schema.Tables[0].Type != TableTypeSearchable || schema.Tables[0].Partition != "tenantId" {
+		t.Fatalf("expected searchable partitioned table metadata, got %+v", schema.Tables[0])
+	}
+	if len(schema.Tables[0].Indexes) != 2 || schema.Tables[0].Indexes[1].Type != IndexTypeVector {
+		t.Fatalf("expected native index metadata, got %+v", schema.Tables[0].Indexes)
+	}
+	if score := schema.Tables[0].Indexes[1].MinimumScore; score == nil || *score != 0.5 {
+		t.Fatalf("expected legacy minimumScore preserved, got %+v", score)
 	}
 
 	if len(schema.Tables[0].Fields) != 2 {

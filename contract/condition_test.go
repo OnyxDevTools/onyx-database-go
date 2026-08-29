@@ -8,10 +8,16 @@ import (
 
 type stubQuery struct{}
 
-func (s stubQuery) Where(Condition) Query                      { return s }
-func (s stubQuery) And(Condition) Query                        { return s }
-func (s stubQuery) Or(Condition) Query                         { return s }
-func (s stubQuery) Search(string, ...float64) Query            { return s }
+func (s stubQuery) Where(Condition) Query                     { return s }
+func (s stubQuery) And(Condition) Query                       { return s }
+func (s stubQuery) Or(Condition) Query                        { return s }
+func (s stubQuery) Search(string, ...float64) Query           { return s }
+func (s stubQuery) SearchVector(VectorSearchQuery) Query      { return s }
+func (s stubQuery) ApproximateSearch(VectorSearchQuery) Query { return s }
+func (s stubQuery) HNSWCandidates(HNSWSearchQuery) Query      { return s }
+func (s stubQuery) ApproximateCandidates(string, any, ...int) Query {
+	return s
+}
 func (s stubQuery) Select(...string) Query                     { return s }
 func (s stubQuery) GroupBy(...string) Query                    { return s }
 func (s stubQuery) Distinct() Query                            { return s }

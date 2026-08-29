@@ -1,6 +1,7 @@
 package impl
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
@@ -23,6 +24,8 @@ type query struct {
 	limit         *int
 	updates       map[string]any
 	partition     *string
+	candidateOp   string
+	buildErr      error
 }
 
 func newQuery(client *client, table string) contract.Query {
@@ -56,7 +59,20 @@ func (q *query) clone() *query {
 
 func (q *query) Where(condition contract.Condition) contract.Query {
 	nq := q.clone()
+	if nq.buildErr != nil {
+		return nq
+	}
+	incomingCandidate := candidateOperator(condition)
+	if nq.candidateOp != "" {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
+		return nq
+	}
+	if incomingCandidate != "" && len(nq.clauses) > 0 {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
+		return nq
+	}
 	nq.clauses = append(nq.clauses, clause{Type: "and", Condition: condition})
+	nq.candidateOp = incomingCandidate
 	return nq
 }
 
@@ -66,12 +82,45 @@ func (q *query) And(condition contract.Condition) contract.Query {
 
 func (q *query) Or(condition contract.Condition) contract.Query {
 	nq := q.clone()
+	if nq.buildErr != nil {
+		return nq
+	}
+	incomingCandidate := candidateOperator(condition)
+	if nq.candidateOp != "" {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
+		return nq
+	}
+	if incomingCandidate != "" && len(nq.clauses) > 0 {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
+		return nq
+	}
 	nq.clauses = append(nq.clauses, clause{Type: "or", Condition: condition})
+	nq.candidateOp = incomingCandidate
 	return nq
 }
 
 func (q *query) Search(queryText string, minScore ...float64) contract.Query {
 	return q.Where(contract.Search(queryText, minScore...))
+}
+
+func (q *query) SearchVector(searchQuery contract.VectorSearchQuery) contract.Query {
+	return q.Where(contract.VectorSearch(searchQuery))
+}
+
+func (q *query) ApproximateSearch(searchQuery contract.VectorSearchQuery) contract.Query {
+	return q.Where(contract.ApproximateSearch(searchQuery))
+}
+
+func (q *query) HNSWCandidates(searchQuery contract.HNSWSearchQuery) contract.Query {
+	return q.Where(contract.HNSWCandidates(searchQuery))
+}
+
+func (q *query) ApproximateCandidates(
+	attribute string,
+	valueOrValues any,
+	maxCandidates ...int,
+) contract.Query {
+	return q.Where(contract.ApproximateCandidates(attribute, valueOrValues, maxCandidates...))
 }
 
 func (q *query) Select(fields ...string) contract.Query {
@@ -131,5 +180,19 @@ func (q *query) InPartition(partition string) contract.Query {
 }
 
 func (q *query) MarshalJSON() ([]byte, error) {
-	return buildQueryPayload(q, true).MarshalJSON()
+	payload, err := buildQueryPayload(q, true)
+	if err != nil {
+		return nil, err
+	}
+	return payload.MarshalJSON()
+}
+
+func candidateOperator(condition contract.Condition) string {
+	type candidateCondition interface {
+		CandidateOperator() string
+	}
+	if candidate, ok := condition.(candidateCondition); ok {
+		return candidate.CandidateOperator()
+	}
+	return ""
 }

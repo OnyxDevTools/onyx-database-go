@@ -84,7 +84,11 @@ func schemaFromEntities(items []any) Schema {
 			continue
 		}
 		name, _ := obj["name"].(string)
-		table := Table{Name: name}
+		table := Table{
+			Name:      name,
+			Type:      TableType(stringValue(obj["type"])),
+			Partition: stringValue(obj["partition"]),
+		}
 		var idName string
 		if ident, ok := obj["identifier"].(map[string]any); ok {
 			if n, ok := ident["name"].(string); ok {
@@ -129,7 +133,11 @@ func schemaFromEntities(items []any) Schema {
 			for _, idx := range idxs {
 				if im, ok := idx.(map[string]any); ok {
 					if name, ok := im["name"].(string); ok {
-						table.Indexes = append(table.Indexes, Index{Name: name})
+						table.Indexes = append(table.Indexes, Index{
+							Name:         name,
+							Type:         IndexType(stringValue(im["type"])),
+							MinimumScore: float64PointerValue(im["minimumScore"]),
+						})
 					}
 				}
 			}
@@ -160,7 +168,11 @@ func schemaFromTablesArray(items []any) Schema {
 		if !ok {
 			continue
 		}
-		t := Table{Name: stringValue(obj["name"])}
+		t := Table{
+			Name:      stringValue(obj["name"]),
+			Type:      TableType(stringValue(obj["type"])),
+			Partition: stringValue(obj["partition"]),
+		}
 		if fields, ok := obj["fields"].([]any); ok {
 			for _, f := range fields {
 				fm, ok := f.(map[string]any)
@@ -197,7 +209,11 @@ func schemaFromTablesArray(items []any) Schema {
 			for _, idx := range idxs {
 				if im, ok := idx.(map[string]any); ok {
 					if name, ok := im["name"].(string); ok {
-						t.Indexes = append(t.Indexes, Index{Name: name})
+						t.Indexes = append(t.Indexes, Index{
+							Name:         name,
+							Type:         IndexType(stringValue(im["type"])),
+							MinimumScore: float64PointerValue(im["minimumScore"]),
+						})
 					}
 				}
 			}
@@ -240,4 +256,21 @@ func mapValue(v any) map[string]any {
 		return m
 	}
 	return nil
+}
+
+func float64PointerValue(v any) *float64 {
+	var value float64
+	switch number := v.(type) {
+	case float64:
+		value = number
+	case float32:
+		value = float64(number)
+	case int:
+		value = float64(number)
+	case int64:
+		value = float64(number)
+	default:
+		return nil
+	}
+	return &value
 }
