@@ -1,11 +1,11 @@
 # Releasing onyx-database-go
 
-This repository follows semantic versioning for the module and publishes reproducible CLI binaries.
+This repository follows semantic versioning for the module and can produce reproducible CLI binaries.
 
 ## Prepare a release
-1. Ensure `main` is green: `go vet ./...`, `go test ./... -coverprofile=coverage.out -covermode=atomic`.
+1. Ensure `main` is green: `go vet ./...`, `go test ./... -coverprofile=coverage.out -covermode=atomic`, and `go build ./...`.
 2. Update `README.md` and examples if any public APIs changed.
-3. Add a changelog entry to the GitHub release notes (see template below).
+3. Update `RELEASE_NOTES.md` with the intended tag and GitHub release notes.
 4. Tag the release with `vX.Y.Z` and push the tag.
 
 ## Tagging

@@ -139,10 +139,11 @@ onyx gen --go --schema ./api/onyx.schema.json --out ./gen/onyx --package onyx
 
 The repo ships an interactive release helper at `scripts/bump-version.sh` that:
 - Verifies a clean tree on `main`
-- Runs `go mod tidy` validation, tests, lint, build, and a smoke example tests
+- Runs `go mod tidy` validation, tests, lint, build, and smoke example tests
 - Prompts for semver bump (patch/minor/major) and a release message
 - Computes the next tag (first release starts at `v0.0.1`)
-- Commits (chore(release): …), tags, and pushes to origin; CI publishes on tag push
+- Commits (`chore(release): …`), tags, and pushes to origin; the tag identifies
+  the released Go module version
 
 Make sure your working tree is clean (commit/stash everything) before running the script; it will abort on uncommitted changes.
 Usage from the repo root:

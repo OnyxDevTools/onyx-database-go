@@ -64,12 +64,15 @@ func (q *query) Stream(ctx context.Context) (contract.Iterator, error) {
 }
 
 func (q *query) Update(ctx context.Context) (int, error) {
-	if q.candidateOp != "" {
-		return 0, fmt.Errorf("%s is read-only", q.candidateOp)
+	if q.readOnlyOp != "" {
+		return 0, fmt.Errorf("%s is read-only", q.readOnlyOp)
 	}
 	payload, err := buildUpdatePayload(q)
 	if err != nil {
 		return 0, err
+	}
+	if operator := nestedReadOnlyOperator(payload.Conditions); operator != "" {
+		return 0, fmt.Errorf("%s is read-only", operator)
 	}
 	path := "/data/" + url.PathEscape(q.client.cfg.DatabaseID) + "/query/update/" + url.PathEscape(q.table)
 	var updated int
@@ -80,12 +83,15 @@ func (q *query) Update(ctx context.Context) (int, error) {
 }
 
 func (q *query) Delete(ctx context.Context) (int, error) {
-	if q.candidateOp != "" {
-		return 0, fmt.Errorf("%s is read-only", q.candidateOp)
+	if q.readOnlyOp != "" {
+		return 0, fmt.Errorf("%s is read-only", q.readOnlyOp)
 	}
 	payload, err := buildQueryPayload(q, true)
 	if err != nil {
 		return 0, err
+	}
+	if operator := nestedReadOnlyOperator(payload.Conditions); operator != "" {
+		return 0, fmt.Errorf("%s is read-only", operator)
 	}
 	path := "/data/" + url.PathEscape(q.client.cfg.DatabaseID) + "/query/delete/" + url.PathEscape(q.table)
 	var deleted int
@@ -93,4 +99,15 @@ func (q *query) Delete(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return deleted, nil
+}
+
+// nestedReadOnlyOperator inspects the canonical public condition envelope after
+// it has already been marshaled for execution. It recognizes every read-only
+// search/admission operator without inspecting similarly named ordinary values.
+func nestedReadOnlyOperator(raw []byte) string {
+	plan, err := inspectConditionJSON(raw)
+	if err != nil {
+		return ""
+	}
+	return plan.readOnlyOperator
 }

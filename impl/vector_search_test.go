@@ -140,6 +140,69 @@ func TestCandidateBuilderIsReadOnly(t *testing.T) {
 	}
 }
 
+func TestRawCandidateConditionsAreRecursivelyReadOnlyAndSoleRoot(t *testing.T) {
+	tests := []struct {
+		operator string
+		field    string
+	}{
+		{operator: "CANDIDATES", field: "corpusId"},
+		{operator: "SEARCH_CANDIDATES", field: "__full_text__"},
+		{operator: "HNSW_CANDIDATES", field: "__full_text__"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.operator, func(t *testing.T) {
+			root := rawOperatorCondition(test.field, test.operator)
+			rootQuery := newQuery(nil, "Article").Where(root)
+			assertReadOnlyMutation(t, rootQuery, test.operator)
+
+			for name, query := range map[string]contract.Query{
+				"candidate after criterion": newQuery(nil, "Article").
+					Where(contract.Eq("active", true)).
+					And(root),
+				"criterion after candidate": newQuery(nil, "Article").
+					Where(root).
+					And(contract.Eq("active", true)),
+				"candidate hidden in compound": newQuery(nil, "Article").Where(
+					json.RawMessage(`{
+						"conditionType":"CompoundCondition",
+						"operator":"AND",
+						"conditions":[
+							{"conditionType":"SingleCondition","criteria":{"field":"active","operator":"EQUAL","value":true}},
+							` + string(root) + `
+						]
+					}`),
+				),
+			} {
+				t.Run(name, func(t *testing.T) {
+					if _, err := json.Marshal(query); err == nil ||
+						!strings.Contains(err.Error(), test.operator+" must be the sole root criterion") {
+						t.Fatalf("expected recursive sole-root error, got %v", err)
+					}
+					assertReadOnlyMutation(t, query, test.operator)
+				})
+			}
+		})
+	}
+}
+
+func rawOperatorCondition(field, operator string) json.RawMessage {
+	return json.RawMessage(`{"conditionType":"SingleCondition","criteria":{"field":"` +
+		field + `","operator":"` + operator + `","value":{}}}`)
+}
+
+func assertReadOnlyMutation(t *testing.T, query contract.Query, operator string) {
+	t.Helper()
+	if _, err := query.Update(context.Background()); err == nil ||
+		!strings.Contains(err.Error(), operator+" is read-only") {
+		t.Fatalf("expected update read-only error for %s, got %v", operator, err)
+	}
+	if _, err := query.Delete(context.Background()); err == nil ||
+		!strings.Contains(err.Error(), operator+" is read-only") {
+		t.Fatalf("expected delete read-only error for %s, got %v", operator, err)
+	}
+}
+
 func TestQueryMarshalPropagatesNativeSearchValidation(t *testing.T) {
 	invalid := contract.HNSWSearchQuery{
 		CalibrationID: "1",

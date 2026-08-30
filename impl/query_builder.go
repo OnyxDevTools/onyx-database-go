@@ -25,12 +25,13 @@ type query struct {
 	updates       map[string]any
 	partition     *string
 	candidateOp   string
+	readOnlyOp    string
 	buildErr      error
 }
 
 func newQuery(client *client, table string) contract.Query {
 	var partition *string
-	if client != nil && strings.TrimSpace(client.cfg.Partition) != "" {
+	if client != nil && table != "ALL" && strings.TrimSpace(client.cfg.Partition) != "" {
 		p := strings.TrimSpace(client.cfg.Partition)
 		partition = &p
 	}
@@ -62,9 +63,23 @@ func (q *query) Where(condition contract.Condition) contract.Query {
 	if nq.buildErr != nil {
 		return nq
 	}
-	incomingCandidate := candidateOperator(condition)
 	if nq.candidateOp != "" {
 		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
+		return nq
+	}
+	plan, err := inspectConditionOperators(condition)
+	if err != nil {
+		nq.buildErr = err
+		return nq
+	}
+	incomingCandidate := plan.candidateOperator
+	incomingReadOnly := plan.readOnlyOperator
+	if incomingReadOnly != "" {
+		nq.readOnlyOp = incomingReadOnly
+	}
+	if incomingCandidate != "" &&
+		(!plan.rootIsSingle || plan.rootOperator != incomingCandidate) {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
 		return nq
 	}
 	if incomingCandidate != "" && len(nq.clauses) > 0 {
@@ -85,9 +100,23 @@ func (q *query) Or(condition contract.Condition) contract.Query {
 	if nq.buildErr != nil {
 		return nq
 	}
-	incomingCandidate := candidateOperator(condition)
 	if nq.candidateOp != "" {
 		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
+		return nq
+	}
+	plan, err := inspectConditionOperators(condition)
+	if err != nil {
+		nq.buildErr = err
+		return nq
+	}
+	incomingCandidate := plan.candidateOperator
+	incomingReadOnly := plan.readOnlyOperator
+	if incomingReadOnly != "" {
+		nq.readOnlyOp = incomingReadOnly
+	}
+	if incomingCandidate != "" &&
+		(!plan.rootIsSingle || plan.rootOperator != incomingCandidate) {
+		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
 		return nq
 	}
 	if incomingCandidate != "" && len(nq.clauses) > 0 {
@@ -101,6 +130,13 @@ func (q *query) Or(condition contract.Condition) contract.Query {
 
 func (q *query) Search(queryText string, minScore ...float64) contract.Query {
 	return q.Where(contract.Search(queryText, minScore...))
+}
+
+func (q *query) SearchWithOptions(
+	queryText string,
+	options contract.SearchOptions,
+) contract.Query {
+	return q.Where(contract.SearchWithOptions(queryText, options))
 }
 
 func (q *query) SearchVector(searchQuery contract.VectorSearchQuery) contract.Query {
@@ -185,14 +221,4 @@ func (q *query) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	return payload.MarshalJSON()
-}
-
-func candidateOperator(condition contract.Condition) string {
-	type candidateCondition interface {
-		CandidateOperator() string
-	}
-	if candidate, ok := condition.(candidateCondition); ok {
-		return candidate.CandidateOperator()
-	}
-	return ""
 }

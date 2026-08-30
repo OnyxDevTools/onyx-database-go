@@ -16,6 +16,9 @@ func (s stubMarshalQuery) Or(condition contract.Condition) contract.Query    { r
 func (s stubMarshalQuery) Search(queryText string, minScore ...float64) contract.Query {
 	return s
 }
+func (s stubMarshalQuery) SearchWithOptions(string, contract.SearchOptions) contract.Query {
+	return s
+}
 func (s stubMarshalQuery) SearchVector(contract.VectorSearchQuery) contract.Query { return s }
 func (s stubMarshalQuery) ApproximateSearch(contract.VectorSearchQuery) contract.Query {
 	return s
@@ -72,6 +75,8 @@ func TestReExportedHelpers(t *testing.T) {
 	assertJSONEqual(t, Contains("field", "x"), contract.Contains("field", "x"))
 	assertJSONEqual(t, StartsWith("field", "x"), contract.StartsWith("field", "x"))
 	assertJSONEqual(t, Search("text", 1.2), contract.Search("text", 1.2))
+	searchOptions := SearchOptions{Mode: SearchModeHybrid, Match: SearchMatchAny}
+	assertJSONEqual(t, SearchWithOptions("text", searchOptions), contract.SearchWithOptions("text", searchOptions))
 	vectorQuery, err := NewVectorSearchQuery(VectorSearchQueryInput{Text: "text"})
 	if err != nil {
 		t.Fatalf("new vector search query: %v", err)

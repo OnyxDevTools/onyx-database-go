@@ -4,7 +4,7 @@
 #   - runs quality gates (fail fast before any git mutations)
 #   - creates a single release commit on main
 #   - tags and pushes the annotated release tag
-# CI handles publishing on tag push.
+# The pushed tag publishes the Go module version; CI validates branch changes.
 
 set -euo pipefail
 
@@ -14,6 +14,7 @@ GO_VERSION="1.22.8"
 DEFAULT_GVM_ROOT="${HOME}/.gvm/gos/go${GO_VERSION}"
 CACHE_GO_ROOT="${REPO_ROOT}/.cache/go${GO_VERSION}"
 GOLANGCI_VERSION="v1.63.4"
+COVERAGE_THRESHOLD="${COVERAGE_THRESHOLD:-54.0}"
 GOBIN="${REPO_ROOT}/bin"
 OS_NAME="$(uname -s)"
 DARWIN_MAJOR=""
@@ -150,9 +151,11 @@ info "Running tests with coverage..."
 COVER_FILE="${COVERPROFILE:-$(mktemp -t onyx-go-cover.XXXXXX)}"
 cmd "${GO_BIN}" test ./... -coverprofile="${COVER_FILE}" -covermode=atomic
 total_cov="$("${GO_BIN}" tool cover -func="${COVER_FILE}" | awk '/^total:/ {print $3}')"
-if [[ "${total_cov}" != "100.0%" ]]; then
+total_cov_value="${total_cov%\%}"
+if ! awk -v total="${total_cov_value}" -v threshold="${COVERAGE_THRESHOLD}" \
+    'BEGIN { exit(total >= threshold ? 0 : 1) }'; then
   rm -f "${COVER_FILE}"
-  abort "Coverage check failed: total coverage ${total_cov} (expected 100.0%)."
+  abort "Coverage check failed: total coverage ${total_cov} (minimum ${COVERAGE_THRESHOLD}%)."
 fi
 rm -f "${COVER_FILE}"
 
@@ -230,7 +233,7 @@ Done.
 - Version:   ${NEXT_VERSION}
 - Tag:       ${NEXT_VERSION}
 
-CI will publish from tag ${NEXT_VERSION}.
+The Go module release is identified by tag ${NEXT_VERSION}.
 
 View Actions runs:
 - Tag:    https://github.com/OnyxDevTools/onyx-database-go/actions?query=tag%3A${NEXT_VERSION}

@@ -8,6 +8,7 @@ type Client interface {
 
 	From(table string) Query
 	Search(queryText string, minScore ...float64) Query
+	SearchWithOptions(queryText string, options SearchOptions) Query
 	Cascade(spec CascadeSpec) CascadeClient
 
 	Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error)

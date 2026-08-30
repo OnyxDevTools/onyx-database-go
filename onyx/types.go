@@ -21,6 +21,11 @@ const (
 	IndexTypeVector                   = contract.IndexTypeVector
 	TableTypeDefault                  = contract.TableTypeDefault
 	TableTypeSearchable               = contract.TableTypeSearchable
+	SearchModeLexical                 = contract.SearchModeLexical
+	SearchModeSemantic                = contract.SearchModeSemantic
+	SearchModeHybrid                  = contract.SearchModeHybrid
+	SearchMatchAny                    = contract.SearchMatchAny
+	SearchMatchAll                    = contract.SearchMatchAll
 )
 
 type (
@@ -29,6 +34,9 @@ type (
 	Query                          = contract.Query
 	Condition                      = contract.Condition
 	Sort                           = contract.Sort
+	SearchMode                     = contract.SearchMode
+	SearchMatch                    = contract.SearchMatch
+	SearchOptions                  = contract.SearchOptions
 	SemanticVectorSignature        = contract.SemanticVectorSignature
 	VectorSearchQuery              = contract.VectorSearchQuery
 	VectorSearchQueryInput         = contract.VectorSearchQueryInput

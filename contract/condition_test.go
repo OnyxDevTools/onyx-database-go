@@ -8,10 +8,13 @@ import (
 
 type stubQuery struct{}
 
-func (s stubQuery) Where(Condition) Query                     { return s }
-func (s stubQuery) And(Condition) Query                       { return s }
-func (s stubQuery) Or(Condition) Query                        { return s }
-func (s stubQuery) Search(string, ...float64) Query           { return s }
+func (s stubQuery) Where(Condition) Query           { return s }
+func (s stubQuery) And(Condition) Query             { return s }
+func (s stubQuery) Or(Condition) Query              { return s }
+func (s stubQuery) Search(string, ...float64) Query { return s }
+func (s stubQuery) SearchWithOptions(string, SearchOptions) Query {
+	return s
+}
 func (s stubQuery) SearchVector(VectorSearchQuery) Query      { return s }
 func (s stubQuery) ApproximateSearch(VectorSearchQuery) Query { return s }
 func (s stubQuery) HNSWCandidates(HNSWSearchQuery) Query      { return s }

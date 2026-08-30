@@ -47,6 +47,9 @@ func StartsWith(field string, value any) Condition { return contract.StartsWith(
 func Search(queryText string, minScore ...float64) Condition {
 	return contract.Search(queryText, minScore...)
 }
+func SearchWithOptions(queryText string, options SearchOptions) Condition {
+	return contract.SearchWithOptions(queryText, options)
+}
 func VectorSearch(searchQuery VectorSearchQuery) Condition {
 	return contract.VectorSearch(searchQuery)
 }

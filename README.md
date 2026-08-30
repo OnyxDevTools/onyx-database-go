@@ -352,11 +352,75 @@ onyx.Replace
 
 `Distinct()` is a query-builder modifier on `onyx.Query`, for example `db.From("User").Select("email").Distinct().List(ctx)`.
 
-### Native vector-managed search
+### Lexical, semantic, and hybrid search
 
-Legacy `Search(queryText, minScore...)` remains available. For the complete
-native lexical, semantic, and hybrid contract, construct a validated query and
-use `SearchVector` on one searchable table:
+Use `SearchWithOptions` when an application needs to choose the search mode.
+The query text stays natural language; semantic embedding and hybrid routing
+are handled by the database:
+
+```go
+results, err := db.From("ActiveDocumentChunk").
+    SearchWithOptions(
+        "how do i calculate cost per horse",
+        onyx.SearchOptions{
+            Mode:  onyx.SearchModeHybrid,
+            Match: onyx.SearchMatchAny,
+        },
+    ).
+    List(ctx)
+if err != nil { log.Fatal(err) }
+```
+
+`Mode` accepts `SearchModeLexical`, `SearchModeSemantic`, or
+`SearchModeHybrid` and defaults to hybrid. `Match` controls the lexical portion
+and defaults to `SearchMatchAny`; use `SearchMatchAll` when every normalized
+term is required. `MaxCandidates` defaults to 1000 and may be set from 1
+through 5000 (hybrid needs at least 2 so both channels receive a budget).
+`MinScore` is optional and, when provided, must be from 0 through 1:
+
+```go
+minScore := 0.4
+results, err := db.From("ActiveDocumentChunk").
+    SearchWithOptions("cost per horse", onyx.SearchOptions{
+        Mode:          onyx.SearchModeLexical,
+        Match:         onyx.SearchMatchAll,
+        MinScore:      &minScore,
+        MaxCandidates: 500,
+    }).
+    List(ctx)
+```
+
+Queries using `SearchWithOptions` may be combined with ordinary filters and
+are read-only. A query may contain only one high-level search, and it cannot be
+combined with another `__full_text__` criterion. Legacy
+`Search(queryText, minScore...)` remains unchanged.
+
+To search every eligible unpartitioned searchable table with one global
+candidate budget, start from the client instead of a table:
+
+```go
+results, err := db.
+    SearchWithOptions("how do i calculate cost per horse", onyx.SearchOptions{}).
+    Limit(50).
+    List(ctx)
+```
+
+Semantic and hybrid modes require the database server to configure a
+`SearchEmbeddingProvider`. The server uses that provider both when it saves
+searchable text and when it embeds query text. Both operations must use the
+same model/vector space and stable calibration ID. Rows written before the
+provider was enabled (or before its model changed) must be re-saved or handled
+by a server-side backfill before semantic search can find them. Lexical mode
+does not require an embedding provider. A direct high-level search spans every
+concrete partition under one global candidate budget by default; use
+`InPartition(...)` to constrain it to one partition. Partitioned tables are not
+included in all-table search.
+
+### Advanced vector-managed search
+
+Applications that already produce native semantic signatures or query vectors
+can use the lower-level vector-managed contracts. Construct a validated query
+and use `SearchVector` on one searchable table:
 
 ```go
 minScore := 0.42

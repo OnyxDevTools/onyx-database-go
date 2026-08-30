@@ -41,6 +41,9 @@ func buildQueryPayload(q *query, includeLimit bool) (queryPayload, error) {
 	if err != nil {
 		return queryPayload{}, err
 	}
+	if err := validateConditionPlan(conditions); err != nil {
+		return queryPayload{}, err
+	}
 	payload.Conditions = conditions
 	if q.partition != nil {
 		payload.Partition = q.partition
@@ -90,6 +93,9 @@ func buildUpdatePayload(q *query) (updatePayload, error) {
 	}
 	conditions, err := buildConditions(q.clauses)
 	if err != nil {
+		return updatePayload{}, err
+	}
+	if err := validateConditionPlan(conditions); err != nil {
 		return updatePayload{}, err
 	}
 	payload := updatePayload{

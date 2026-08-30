@@ -18,6 +18,9 @@ func (s *stubQuery) Or(condition contract.Condition) contract.Query    { return 
 func (s *stubQuery) Search(queryText string, minScore ...float64) contract.Query {
 	return s
 }
+func (s *stubQuery) SearchWithOptions(string, contract.SearchOptions) contract.Query {
+	return s
+}
 func (s *stubQuery) SearchVector(contract.VectorSearchQuery) contract.Query { return s }
 func (s *stubQuery) ApproximateSearch(contract.VectorSearchQuery) contract.Query {
 	return s

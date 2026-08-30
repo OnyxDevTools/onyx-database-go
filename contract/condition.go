@@ -82,6 +82,19 @@ func (c condition) CandidateOperator() string {
 	}
 }
 
+// ReadOnlyOperator reports the wire operator when a condition is valid only
+// for read queries. Unlike CandidateOperator, it does not imply that the
+// condition must be the sole root criterion.
+func (c condition) ReadOnlyOperator() string {
+	if candidate := c.CandidateOperator(); candidate != "" {
+		return candidate
+	}
+	if c.op == "search" {
+		return operatorFor(c.op)
+	}
+	return ""
+}
+
 func operatorFor(op string) string {
 	switch op {
 	case "eq":
@@ -118,6 +131,8 @@ func operatorFor(op string) string {
 		return "NOT_IN"
 	case "matches":
 		return "MATCHES"
+	case "search":
+		return "SEARCH"
 	case "candidates":
 		return "CANDIDATES"
 	case "search_candidates":
@@ -189,6 +204,17 @@ func Search(queryText string, minScore ...float64) Condition {
 		op:    "matches",
 		field: fullTextField,
 		value: FullTextQuery{QueryText: queryText, MinScore: score},
+	}
+}
+
+// SearchWithOptions creates a high-level lexical, semantic, or hybrid search
+// condition. It may be composed with ordinary filters, but queries containing
+// it are read-only.
+func SearchWithOptions(queryText string, options SearchOptions) Condition {
+	return condition{
+		op:    "search",
+		field: fullTextField,
+		value: newTextSearchQuery(queryText, options),
 	}
 }
 
