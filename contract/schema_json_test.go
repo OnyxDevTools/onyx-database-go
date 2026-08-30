@@ -38,6 +38,7 @@ func TestParseSchemaJSONEntities(t *testing.T) {
 			{
 				"name": "User",
 				"type": "SEARCHABLE",
+				"searchSupport": "SEMANTIC",
 				"partition": "tenantId",
 				"identifier": {"name": "id", "type": "String", "generator": "UUID"},
 				"attributes": [
@@ -61,7 +62,7 @@ func TestParseSchemaJSONEntities(t *testing.T) {
 	if len(schema.Tables) != 1 || schema.Tables[0].Name != "User" {
 		t.Fatalf("unexpected tables: %+v", schema.Tables)
 	}
-	if schema.Tables[0].Type != TableTypeSearchable || schema.Tables[0].Partition != "tenantId" {
+	if schema.Tables[0].Type != TableTypeSearchable || schema.Tables[0].SearchSupport != SearchSupportSemantic || schema.Tables[0].Partition != "tenantId" {
 		t.Fatalf("expected searchable partitioned table metadata, got %+v", schema.Tables[0])
 	}
 	if len(schema.Tables[0].Indexes) != 2 || schema.Tables[0].Indexes[1].Type != IndexTypeVector {

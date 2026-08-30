@@ -21,6 +21,9 @@ const (
 	IndexTypeVector                   = contract.IndexTypeVector
 	TableTypeDefault                  = contract.TableTypeDefault
 	TableTypeSearchable               = contract.TableTypeSearchable
+	SearchSupportLexical              = contract.SearchSupportLexical
+	SearchSupportSemantic             = contract.SearchSupportSemantic
+	SearchSupportBoth                 = contract.SearchSupportBoth
 	SearchModeLexical                 = contract.SearchModeLexical
 	SearchModeSemantic                = contract.SearchModeSemantic
 	SearchModeHybrid                  = contract.SearchModeHybrid
@@ -52,6 +55,7 @@ type (
 	Schema                         = contract.Schema
 	Table                          = contract.Table
 	TableType                      = contract.TableType
+	SearchSupport                  = contract.SearchSupport
 	Field                          = contract.Field
 	Index                          = contract.Index
 	IndexType                      = contract.IndexType

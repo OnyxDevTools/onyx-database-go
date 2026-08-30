@@ -9,9 +9,10 @@ import (
 func TestSchemaHelperConversions(t *testing.T) {
 	entities := []any{
 		map[string]any{
-			"name":      "User",
-			"type":      "SEARCHABLE",
-			"partition": "tenantId",
+			"name":          "User",
+			"type":          "SEARCHABLE",
+			"searchSupport": "LEXICAL",
+			"partition":     "tenantId",
 			"identifier": map[string]any{
 				"name": "id",
 			},
@@ -32,7 +33,7 @@ func TestSchemaHelperConversions(t *testing.T) {
 	if len(schema.Tables[0].Resolvers) != 1 || schema.Tables[0].Resolvers[0].Name != "roles" {
 		t.Fatalf("resolver not parsed: %+v", schema.Tables[0].Resolvers)
 	}
-	if schema.Tables[0].Type != contract.TableTypeSearchable || schema.Tables[0].Partition != "tenantId" || schema.Tables[0].Indexes[0].Type != contract.IndexTypeVector {
+	if schema.Tables[0].Type != contract.TableTypeSearchable || schema.Tables[0].SearchSupport != contract.SearchSupportLexical || schema.Tables[0].Partition != "tenantId" || schema.Tables[0].Indexes[0].Type != contract.IndexTypeVector {
 		t.Fatalf("native vector schema metadata not parsed: %+v", schema.Tables[0])
 	}
 
@@ -60,9 +61,10 @@ func TestToEntitiesIncludesResolversMeta(t *testing.T) {
 	schema := contract.Schema{
 		Tables: []contract.Table{
 			{
-				Name:      "T",
-				Type:      contract.TableTypeSearchable,
-				Partition: "tenantId",
+				Name:          "T",
+				Type:          contract.TableTypeSearchable,
+				SearchSupport: contract.SearchSupportSemantic,
+				Partition:     "tenantId",
 				Fields: []contract.Field{
 					{Name: "id", Type: "String", Primary: true},
 					{Name: "n", Type: "String", Nullable: true},
@@ -89,7 +91,7 @@ func TestToEntitiesIncludesResolversMeta(t *testing.T) {
 	if len(entities[0].Indexes) != 1 || len(entities[0].Triggers) != 1 || entities[0].Meta["m"] != "v" {
 		t.Fatalf("expected indexes/triggers/meta exported: %+v", entities[0])
 	}
-	if entities[0].Type != contract.TableTypeSearchable || entities[0].Partition != "tenantId" || entities[0].Indexes[0]["type"] != contract.IndexTypeVector {
+	if entities[0].Type != contract.TableTypeSearchable || entities[0].SearchSupport != contract.SearchSupportSemantic || entities[0].Partition != "tenantId" || entities[0].Indexes[0]["type"] != contract.IndexTypeVector {
 		t.Fatalf("native vector schema metadata not exported: %+v", entities[0])
 	}
 	if entities[0].Indexes[0]["minimumScore"] != minimumScore {

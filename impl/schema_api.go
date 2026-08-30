@@ -11,15 +11,16 @@ import (
 )
 
 type schemaEntity struct {
-	Name       string             `json:"name"`
-	Type       contract.TableType `json:"type,omitempty"`
-	Identifier *schemaIdentifier  `json:"identifier,omitempty"`
-	Attributes []schemaAttribute  `json:"attributes,omitempty"`
-	Partition  string             `json:"partition,omitempty"`
-	Indexes    []map[string]any   `json:"indexes,omitempty"`
-	Resolvers  []map[string]any   `json:"resolvers,omitempty"`
-	Triggers   []map[string]any   `json:"triggers,omitempty"`
-	Meta       map[string]any     `json:"meta,omitempty"`
+	Name          string                 `json:"name"`
+	Type          contract.TableType     `json:"type,omitempty"`
+	SearchSupport contract.SearchSupport `json:"searchSupport,omitempty"`
+	Identifier    *schemaIdentifier      `json:"identifier,omitempty"`
+	Attributes    []schemaAttribute      `json:"attributes,omitempty"`
+	Partition     string                 `json:"partition,omitempty"`
+	Indexes       []map[string]any       `json:"indexes,omitempty"`
+	Resolvers     []map[string]any       `json:"resolvers,omitempty"`
+	Triggers      []map[string]any       `json:"triggers,omitempty"`
+	Meta          map[string]any         `json:"meta,omitempty"`
 }
 
 type schemaIdentifier struct {
@@ -139,7 +140,12 @@ func schemaUpsertPayload(schema contract.Schema, databaseID string) map[string]a
 func toEntities(s contract.Schema) []schemaEntity {
 	entities := make([]schemaEntity, 0, len(s.Tables))
 	for _, t := range s.Tables {
-		ent := schemaEntity{Name: t.Name, Type: t.Type, Partition: t.Partition}
+		ent := schemaEntity{
+			Name:          t.Name,
+			Type:          t.Type,
+			SearchSupport: t.SearchSupport,
+			Partition:     t.Partition,
+		}
 		if len(t.Indexes) > 0 {
 			for _, idx := range t.Indexes {
 				entry := map[string]any{"name": idx.Name}
@@ -197,10 +203,11 @@ func schemaFromEntities(items []any) contract.Schema {
 		}
 		name, _ := obj["name"].(string)
 		table := contract.Table{
-			Name:      name,
-			Type:      contract.TableType(stringValue(obj["type"])),
-			Partition: stringValue(obj["partition"]),
-			Meta:      mapValue(obj["meta"]),
+			Name:          name,
+			Type:          contract.TableType(stringValue(obj["type"])),
+			SearchSupport: contract.SearchSupport(stringValue(obj["searchSupport"])),
+			Partition:     stringValue(obj["partition"]),
+			Meta:          mapValue(obj["meta"]),
 		}
 		var idName string
 		if ident, ok := obj["identifier"].(map[string]any); ok {
@@ -283,10 +290,11 @@ func schemaFromTablesArray(items []any) contract.Schema {
 			continue
 		}
 		t := contract.Table{
-			Name:      stringValue(obj["name"]),
-			Type:      contract.TableType(stringValue(obj["type"])),
-			Partition: stringValue(obj["partition"]),
-			Meta:      mapValue(obj["meta"]),
+			Name:          stringValue(obj["name"]),
+			Type:          contract.TableType(stringValue(obj["type"])),
+			SearchSupport: contract.SearchSupport(stringValue(obj["searchSupport"])),
+			Partition:     stringValue(obj["partition"]),
+			Meta:          mapValue(obj["meta"]),
 		}
 		if fields, ok := obj["fields"].([]any); ok {
 			for _, f := range fields {

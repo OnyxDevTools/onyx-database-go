@@ -78,11 +78,12 @@ type Schema struct{Tables []Table "json:\"tables\""}
 type SearchMatch string
 type SearchMode string
 type SearchOptions struct{Mode SearchMode "json:\"mode\""; Match SearchMatch "json:\"match,omitempty\""; MinScore *float64 "json:\"minScore,omitempty\""; MaxCandidates int "json:\"maxCandidates,omitempty\""}
+type SearchSupport string
 type Secret struct{Key string "json:\"key\""; Value string "json:\"value\""; CreatedAt string "json:\"createdAt,omitempty\""; UpdatedAt string "json:\"updatedAt,omitempty\""}
 type SecretClient interface{Delete(ctx context.Context, key string) error; Get(ctx context.Context, key string) (OnyxSecret, error); List(ctx context.Context) ([]OnyxSecret, error); Set(ctx context.Context, secret OnyxSecret) (OnyxSecret, error)}
 type SemanticVectorSignature struct{CalibrationID string "json:\"calibrationId\""; BucketID int "json:\"bucketId\""; Cells []int "json:\"cells\""; CellCounts []int "json:\"cellCounts\""; Fingerprint []string "json:\"fingerprint\""; Bands []string "json:\"bands\""; BoundaryConfidence float64 "json:\"boundaryConfidence\""}
 type Sort interface{encoding/json.Marshaler}
-type Table struct{Name string "json:\"name\""; Type TableType "json:\"type,omitempty\""; Fields []Field "json:\"fields\""; Resolvers []Resolver "json:\"resolvers,omitempty\""; Indexes []Index "json:\"indexes,omitempty\""; Triggers []string "json:\"triggers,omitempty\""; Partition string "json:\"partition,omitempty\""; Meta map[string]any "json:\"meta,omitempty\""}
+type Table struct{Name string "json:\"name\""; Type TableType "json:\"type,omitempty\""; SearchSupport SearchSupport "json:\"searchSupport,omitempty\""; Fields []Field "json:\"fields\""; Resolvers []Resolver "json:\"resolvers,omitempty\""; Indexes []Index "json:\"indexes,omitempty\""; Triggers []string "json:\"triggers,omitempty\""; Partition string "json:\"partition,omitempty\""; Meta map[string]any "json:\"meta,omitempty\""}
 type TableType string
 type VectorSearchQuery struct{Text *string "json:\"text\""; Semantic *SemanticVectorSignature "json:\"semantic\""; MinScore *float64 "json:\"minScore\""; NearbyBucketRadius int "json:\"nearbyBucketRadius\""; MaxCandidates int "json:\"maxCandidates\""; RequireAllTerms bool "json:\"requireAllTerms\""}
 type VectorSearchQueryInput struct{Text string; Semantic *SemanticVectorSignature; MinScore *float64; NearbyBucketRadius *int; MaxCandidates int; RequireAllTerms *bool}

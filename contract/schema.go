@@ -10,6 +10,19 @@ const (
 	TableTypeSearchable TableType = "SEARCHABLE"
 )
 
+// SearchSupport identifies the search indexes maintained for a searchable table.
+type SearchSupport string
+
+const (
+	// SearchSupportLexical maintains term-based lexical indexes only.
+	SearchSupportLexical SearchSupport = "LEXICAL"
+	// SearchSupportSemantic maintains embedding-backed HNSW indexes only.
+	SearchSupportSemantic SearchSupport = "SEMANTIC"
+	// SearchSupportBoth maintains both lexical and semantic indexes.
+	// It is the backward-compatible default when searchSupport is omitted.
+	SearchSupportBoth SearchSupport = "BOTH"
+)
+
 // Field represents a single column in a table definition.
 type Field struct {
 	Name     string `json:"name"`
@@ -28,14 +41,15 @@ type Resolver struct {
 
 // Table represents a database table with fields.
 type Table struct {
-	Name      string         `json:"name"`
-	Type      TableType      `json:"type,omitempty"`
-	Fields    []Field        `json:"fields"`
-	Resolvers []Resolver     `json:"resolvers,omitempty"`
-	Indexes   []Index        `json:"indexes,omitempty"`
-	Triggers  []string       `json:"triggers,omitempty"`
-	Partition string         `json:"partition,omitempty"`
-	Meta      map[string]any `json:"meta,omitempty"`
+	Name          string         `json:"name"`
+	Type          TableType      `json:"type,omitempty"`
+	SearchSupport SearchSupport  `json:"searchSupport,omitempty"`
+	Fields        []Field        `json:"fields"`
+	Resolvers     []Resolver     `json:"resolvers,omitempty"`
+	Indexes       []Index        `json:"indexes,omitempty"`
+	Triggers      []string       `json:"triggers,omitempty"`
+	Partition     string         `json:"partition,omitempty"`
+	Meta          map[string]any `json:"meta,omitempty"`
 }
 
 // Field retrieves a field by name, if present.

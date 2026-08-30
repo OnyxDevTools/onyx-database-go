@@ -13,15 +13,29 @@ type FieldDiff struct {
 	To   contract.Field `json:"to"`
 }
 
+// TableTypeDiff captures a table management-type change.
+type TableTypeDiff struct {
+	From contract.TableType `json:"from"`
+	To   contract.TableType `json:"to"`
+}
+
+// SearchSupportDiff captures a searchable table capability change.
+type SearchSupportDiff struct {
+	From contract.SearchSupport `json:"from"`
+	To   contract.SearchSupport `json:"to"`
+}
+
 // TableDiff captures changes within a table.
 type TableDiff struct {
-	Name             string           `json:"name"`
-	AddedFields      []contract.Field `json:"addedFields,omitempty"`
-	RemovedFields    []contract.Field `json:"removedFields,omitempty"`
-	ModifiedFields   []FieldDiff      `json:"modifiedFields,omitempty"`
-	AddedResolvers   []string         `json:"addedResolvers,omitempty"`
-	RemovedResolvers []string         `json:"removedResolvers,omitempty"`
-	ModifiedResolvers []ResolverDiff  `json:"modifiedResolvers,omitempty"`
+	Name              string             `json:"name"`
+	Type              *TableTypeDiff     `json:"type,omitempty"`
+	SearchSupport     *SearchSupportDiff `json:"searchSupport,omitempty"`
+	AddedFields       []contract.Field   `json:"addedFields,omitempty"`
+	RemovedFields     []contract.Field   `json:"removedFields,omitempty"`
+	ModifiedFields    []FieldDiff        `json:"modifiedFields,omitempty"`
+	AddedResolvers    []string           `json:"addedResolvers,omitempty"`
+	RemovedResolvers  []string           `json:"removedResolvers,omitempty"`
+	ModifiedResolvers []ResolverDiff     `json:"modifiedResolvers,omitempty"`
 }
 
 // SchemaDiff reports differences between schemas.
@@ -33,9 +47,9 @@ type SchemaDiff struct {
 
 // ResolverDiff captures a resolver change.
 type ResolverDiff struct {
-	Name string             `json:"name"`
-	From contract.Resolver  `json:"from"`
-	To   contract.Resolver  `json:"to"`
+	Name string            `json:"name"`
+	From contract.Resolver `json:"from"`
+	To   contract.Resolver `json:"to"`
 }
 
 // DiffSchemas compares two schemas and reports structural differences.
@@ -92,6 +106,18 @@ func diffTable(a, b contract.Table) *TableDiff {
 	}
 
 	td := TableDiff{Name: a.Name}
+	typeA := effectiveTableType(a.Type)
+	typeB := effectiveTableType(b.Type)
+	if typeA != typeB {
+		td.Type = &TableTypeDiff{From: typeA, To: typeB}
+	}
+	if typeA == contract.TableTypeSearchable || typeB == contract.TableTypeSearchable {
+		supportA := effectiveSearchSupport(a.SearchSupport)
+		supportB := effectiveSearchSupport(b.SearchSupport)
+		if supportA != supportB {
+			td.SearchSupport = &SearchSupportDiff{From: supportA, To: supportB}
+		}
+	}
 
 	for name, fieldB := range fieldMapB {
 		if _, exists := fieldMapA[name]; !exists {
@@ -145,7 +171,9 @@ func diffTable(a, b contract.Table) *TableDiff {
 	sort.Strings(td.AddedResolvers)
 	sort.Strings(td.RemovedResolvers)
 
-	if len(td.AddedFields) == 0 &&
+	if td.Type == nil &&
+		td.SearchSupport == nil &&
+		len(td.AddedFields) == 0 &&
 		len(td.RemovedFields) == 0 &&
 		len(td.ModifiedFields) == 0 &&
 		len(td.AddedResolvers) == 0 &&
@@ -155,6 +183,20 @@ func diffTable(a, b contract.Table) *TableDiff {
 	}
 
 	return &td
+}
+
+func effectiveTableType(value contract.TableType) contract.TableType {
+	if value == "" {
+		return contract.TableTypeDefault
+	}
+	return value
+}
+
+func effectiveSearchSupport(value contract.SearchSupport) contract.SearchSupport {
+	if value == "" {
+		return contract.SearchSupportBoth
+	}
+	return value
 }
 
 func fieldChanged(a, b contract.Field) bool {

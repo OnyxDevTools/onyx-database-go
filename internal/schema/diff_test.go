@@ -119,6 +119,42 @@ func TestDiffSchemasNoChanges(t *testing.T) {
 	}
 }
 
+func TestDiffSchemasSearchCapabilities(t *testing.T) {
+	base := contract.Schema{Tables: []contract.Table{
+		{Name: "article", Type: contract.TableTypeSearchable, SearchSupport: contract.SearchSupportLexical},
+		{Name: "legacy", Type: contract.TableTypeSearchable},
+		{Name: "ordinary", SearchSupport: contract.SearchSupportLexical},
+	}}
+	updated := contract.Schema{Tables: []contract.Table{
+		{Name: "article", Type: contract.TableTypeSearchable, SearchSupport: contract.SearchSupportSemantic},
+		{Name: "legacy", Type: contract.TableTypeSearchable, SearchSupport: contract.SearchSupportBoth},
+		{Name: "ordinary", SearchSupport: contract.SearchSupportSemantic},
+	}}
+
+	diff := DiffSchemas(base, updated)
+	if len(diff.TableDiffs) != 1 {
+		t.Fatalf("expected one effective capability diff, got %+v", diff.TableDiffs)
+	}
+	got := diff.TableDiffs[0].SearchSupport
+	if got == nil || got.From != contract.SearchSupportLexical || got.To != contract.SearchSupportSemantic {
+		t.Fatalf("unexpected search support diff: %+v", got)
+	}
+}
+
+func TestDiffSchemasTableBecomesSearchable(t *testing.T) {
+	base := contract.Schema{Tables: []contract.Table{{Name: "article"}}}
+	updated := contract.Schema{Tables: []contract.Table{{
+		Name:          "article",
+		Type:          contract.TableTypeSearchable,
+		SearchSupport: contract.SearchSupportLexical,
+	}}}
+
+	diff := DiffSchemas(base, updated)
+	if len(diff.TableDiffs) != 1 || diff.TableDiffs[0].Type == nil || diff.TableDiffs[0].SearchSupport == nil {
+		t.Fatalf("expected type and search support diffs, got %+v", diff.TableDiffs)
+	}
+}
+
 func TestHelperChangeDetectors(t *testing.T) {
 	fieldCases := []struct {
 		name string

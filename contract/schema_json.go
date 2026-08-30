@@ -85,9 +85,10 @@ func schemaFromEntities(items []any) Schema {
 		}
 		name, _ := obj["name"].(string)
 		table := Table{
-			Name:      name,
-			Type:      TableType(stringValue(obj["type"])),
-			Partition: stringValue(obj["partition"]),
+			Name:          name,
+			Type:          TableType(stringValue(obj["type"])),
+			SearchSupport: SearchSupport(stringValue(obj["searchSupport"])),
+			Partition:     stringValue(obj["partition"]),
 		}
 		var idName string
 		if ident, ok := obj["identifier"].(map[string]any); ok {
@@ -169,9 +170,10 @@ func schemaFromTablesArray(items []any) Schema {
 			continue
 		}
 		t := Table{
-			Name:      stringValue(obj["name"]),
-			Type:      TableType(stringValue(obj["type"])),
-			Partition: stringValue(obj["partition"]),
+			Name:          stringValue(obj["name"]),
+			Type:          TableType(stringValue(obj["type"])),
+			SearchSupport: SearchSupport(stringValue(obj["searchSupport"])),
+			Partition:     stringValue(obj["partition"]),
 		}
 		if fields, ok := obj["fields"].([]any); ok {
 			for _, f := range fields {

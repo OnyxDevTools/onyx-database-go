@@ -153,6 +153,12 @@ func summarizeDiff(diff schemas.SchemaDiff) string {
 
 	for _, td := range diff.TableDiffs {
 		var lines []string
+		if td.Type != nil {
+			lines = append(lines, fmt.Sprintf("  Type: %s -> %s", td.Type.From, td.Type.To))
+		}
+		if td.SearchSupport != nil {
+			lines = append(lines, fmt.Sprintf("  Search support: %s -> %s", td.SearchSupport.From, td.SearchSupport.To))
+		}
 		if len(td.AddedFields) > 0 {
 			lines = append(lines, "  Added fields:")
 			for _, f := range td.AddedFields {

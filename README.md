@@ -657,13 +657,18 @@ normalize, validate, and publish round trips:
 
 ```go
 searchable := onyx.Table{
-    Name: "Article",
-    Type: onyx.TableTypeSearchable,
+    Name:          "Article",
+    Type:          onyx.TableTypeSearchable,
+    SearchSupport: onyx.SearchSupportBoth,
     Indexes: []onyx.Index{
         {Name: "content", Type: onyx.IndexTypeVector},
     },
 }
 ```
+
+Choose `SearchSupportLexical`, `SearchSupportSemantic`, or `SearchSupportBoth`.
+Omitting `SearchSupport` retains the backward-compatible `BOTH` behavior for a
+searchable table. The field is ignored for ordinary tables.
 
 ### Secrets API
 
