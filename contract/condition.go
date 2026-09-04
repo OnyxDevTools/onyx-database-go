@@ -70,9 +70,9 @@ func (c condition) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// CandidateOperator reports the wire operator when this condition must be the
-// sole root query criterion. It lets SDK query builders enforce the invariant
-// without expanding the stable Condition interface.
+// CandidateOperator reports the bounded-admission wire operator. It lets SDK
+// query builders enforce operator-specific composition rules without expanding
+// the stable Condition interface.
 func (c condition) CandidateOperator() string {
 	switch c.op {
 	case "candidates", "search_candidates", "hnsw_candidates":
@@ -83,8 +83,7 @@ func (c condition) CandidateOperator() string {
 }
 
 // ReadOnlyOperator reports the wire operator when a condition is valid only
-// for read queries. Unlike CandidateOperator, it does not imply that the
-// condition must be the sole root criterion.
+// for read queries.
 func (c condition) ReadOnlyOperator() string {
 	if candidate := c.CandidateOperator(); candidate != "" {
 		return candidate
@@ -219,8 +218,8 @@ func SearchWithOptions(queryText string, options SearchOptions) Condition {
 }
 
 // VectorSearch creates a native lexical, semantic, or hybrid MATCHES condition.
-// Unlike bounded candidate operators, this condition may be composed with
-// ordinary filters.
+// Unlike the sole-root SEARCH_CANDIDATES and HNSW_CANDIDATES operators, this
+// condition may be composed with ordinary filters.
 func VectorSearch(searchQuery VectorSearchQuery) Condition {
 	return condition{
 		op:    "matches",
@@ -251,7 +250,8 @@ func HNSWCandidates(searchQuery HNSWSearchQuery) Condition {
 
 // ApproximateCandidates creates a bounded ordinary-index candidate condition.
 // A scalar produces EQUAL-style routing; a slice or array produces IN-style
-// routing. It must be the query's sole root criterion and is read-only.
+// routing. Exactly one such condition may appear in a recursively non-negated
+// AND tree. Queries containing it are read-only.
 func ApproximateCandidates(field string, valueOrValues any, maxCandidates ...int) Condition {
 	query, err := NewApproximateIndexCandidateQuery(valueOrValues, maxCandidates...)
 	var value any = query

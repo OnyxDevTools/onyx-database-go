@@ -12,6 +12,10 @@ type Query interface {
 	SearchVector(searchQuery VectorSearchQuery) Query
 	ApproximateSearch(searchQuery VectorSearchQuery) Query
 	HNSWCandidates(searchQuery HNSWSearchQuery) Query
+	// ApproximateCandidates adds a bounded ordinary-index candidate condition.
+	//
+	// Deprecated: use Where(ApproximateCandidates(...)) so candidate admission
+	// composes through the same condition API as other query operators.
 	ApproximateCandidates(attribute string, valueOrValues any, maxCandidates ...int) Query
 	Select(fields ...string) Query
 	GroupBy(fields ...string) Query

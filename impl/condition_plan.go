@@ -11,18 +11,20 @@ import (
 const fullTextSearchField = "__full_text__"
 
 type conditionPlan struct {
-	candidateOperator string
-	readOnlyOperator  string
-	searchCount       int
-	searchWrongField  bool
-	fullTextCount     int
-	rootIsSingle      bool
-	rootOperator      string
+	soleRootCandidateOperator string
+	approximateCandidateCount int
+	readOnlyOperator          string
+	searchCount               int
+	searchWrongField          bool
+	fullTextCount             int
+	rootIsSingle              bool
+	rootOperator              string
+	pureConjunction           bool
 }
 
-// inspectConditionOperators avoids an extra marshal for SDK-owned conditions,
-// while still recognizing operators hidden inside arbitrary public condition
-// marshalers such as json.RawMessage.
+// inspectConditionOperators avoids an extra marshal for SDK-owned single
+// conditions while still recognizing operators and logical structure inside
+// arbitrary public condition marshalers such as json.RawMessage.
 func inspectConditionOperators(condition contract.Condition) (conditionPlan, error) {
 	type candidateCondition interface {
 		CandidateOperator() string
@@ -35,12 +37,25 @@ func inspectConditionOperators(condition contract.Condition) (conditionPlan, err
 	readOnly, readOnlyKnown := condition.(readOnlyCondition)
 	if candidateKnown && readOnlyKnown {
 		candidateOperator := canonicalCandidateOperator(candidate.CandidateOperator())
-		return conditionPlan{
-			candidateOperator: candidateOperator,
-			readOnlyOperator:  canonicalReadOnlyOperator(readOnly.ReadOnlyOperator()),
-			rootIsSingle:      true,
-			rootOperator:      candidateOperator,
-		}, nil
+		readOnlyOperator := canonicalReadOnlyOperator(readOnly.ReadOnlyOperator())
+		plan := conditionPlan{
+			readOnlyOperator: readOnlyOperator,
+			rootIsSingle:     true,
+			rootOperator:     candidateOperator,
+			pureConjunction:  true,
+		}
+		switch candidateOperator {
+		case "CANDIDATES":
+			plan.approximateCandidateCount = 1
+		case "SEARCH_CANDIDATES", "HNSW_CANDIDATES":
+			plan.soleRootCandidateOperator = candidateOperator
+			plan.fullTextCount = 1
+		}
+		if readOnlyOperator == "SEARCH" {
+			plan.searchCount = 1
+			plan.fullTextCount = 1
+		}
+		return plan, nil
 	}
 
 	raw, err := json.Marshal(condition)
@@ -66,21 +81,26 @@ func inspectConditionJSON(raw json.RawMessage) (conditionPlan, error) {
 		plan.rootIsSingle = true
 		plan.rootOperator, _ = criteriaOperatorAndField(rootNode)
 	}
-	inspectConditionNode(root, &plan)
+	plan.pureConjunction = inspectConditionNode(root, &plan)
 	return plan, nil
 }
 
-func inspectConditionNode(value any, plan *conditionPlan) {
+func inspectConditionNode(value any, plan *conditionPlan) bool {
 	node, ok := value.(map[string]any)
 	if !ok {
-		return
+		return false
 	}
+	nonNegated := !conditionNodeIsNegated(node)
 
 	switch {
 	case isConditionType(node, "SingleCondition"):
 		operator, field := criteriaOperatorAndField(node)
-		if candidate := canonicalCandidateOperator(operator); candidate != "" && plan.candidateOperator == "" {
-			plan.candidateOperator = candidate
+		if candidate := canonicalCandidateOperator(operator); candidate != "" {
+			if candidate == "CANDIDATES" {
+				plan.approximateCandidateCount++
+			} else if plan.soleRootCandidateOperator == "" {
+				plan.soleRootCandidateOperator = candidate
+			}
 		}
 		if readOnly := canonicalReadOnlyOperator(operator); readOnly != "" && plan.readOnlyOperator == "" {
 			plan.readOnlyOperator = readOnly
@@ -94,14 +114,22 @@ func inspectConditionNode(value any, plan *conditionPlan) {
 		if field == fullTextSearchField {
 			plan.fullTextCount++
 		}
+		return nonNegated
 	case isConditionType(node, "CompoundCondition"):
 		conditions, ok := node["conditions"].([]any)
 		if !ok {
-			return
+			return false
 		}
+		operator, _ := node["operator"].(string)
+		conjunction := nonNegated && strings.EqualFold(strings.TrimSpace(operator), "AND")
 		for _, condition := range conditions {
-			inspectConditionNode(condition, plan)
+			if !inspectConditionNode(condition, plan) {
+				conjunction = false
+			}
 		}
+		return conjunction
+	default:
+		return false
 	}
 }
 
@@ -111,9 +139,21 @@ func validateConditionPlan(raw json.RawMessage) error {
 		return err
 	}
 
-	if plan.candidateOperator != "" &&
-		(!plan.rootIsSingle || plan.rootOperator != plan.candidateOperator) {
-		return fmt.Errorf("%s must be the sole root criterion", plan.candidateOperator)
+	return validateInspectedConditionPlan(plan)
+}
+
+func validateInspectedConditionPlan(plan conditionPlan) error {
+	if plan.soleRootCandidateOperator != "" &&
+		(!plan.rootIsSingle ||
+			plan.rootOperator != plan.soleRootCandidateOperator ||
+			!plan.pureConjunction) {
+		return fmt.Errorf("%s must be the sole root criterion", plan.soleRootCandidateOperator)
+	}
+	if plan.approximateCandidateCount > 1 {
+		return fmt.Errorf("A query may contain only one CANDIDATES criterion")
+	}
+	if plan.approximateCandidateCount == 1 && !plan.pureConjunction {
+		return fmt.Errorf("CANDIDATES can be combined only with non-negated AND predicates")
 	}
 	if plan.searchCount > 1 {
 		return fmt.Errorf("a query may contain only one SEARCH criterion")
@@ -127,6 +167,44 @@ func validateConditionPlan(raw json.RawMessage) error {
 		}
 	}
 	return nil
+}
+
+func combineConditionPlans(left, right conditionPlan, operator string) conditionPlan {
+	return conditionPlan{
+		soleRootCandidateOperator: firstNonEmpty(left.soleRootCandidateOperator, right.soleRootCandidateOperator),
+		approximateCandidateCount: left.approximateCandidateCount + right.approximateCandidateCount,
+		readOnlyOperator:          firstNonEmpty(left.readOnlyOperator, right.readOnlyOperator),
+		searchCount:               left.searchCount + right.searchCount,
+		searchWrongField:          left.searchWrongField || right.searchWrongField,
+		fullTextCount:             left.fullTextCount + right.fullTextCount,
+		pureConjunction: strings.EqualFold(strings.TrimSpace(operator), "AND") &&
+			left.pureConjunction && right.pureConjunction,
+	}
+}
+
+func firstNonEmpty(left, right string) string {
+	if left != "" {
+		return left
+	}
+	return right
+}
+
+func conditionNodeIsNegated(node map[string]any) bool {
+	if trueConditionFlag(node, "isNot") || trueConditionFlag(node, "flip") {
+		return true
+	}
+	criteria, ok := node["criteria"].(map[string]any)
+	return ok && (trueConditionFlag(criteria, "isNot") || trueConditionFlag(criteria, "flip"))
+}
+
+func trueConditionFlag(node map[string]any, want string) bool {
+	for key, value := range node {
+		if strings.EqualFold(strings.TrimSpace(key), want) {
+			flag, _ := value.(bool)
+			return flag
+		}
+	}
+	return false
 }
 
 func isConditionType(node map[string]any, want string) bool {

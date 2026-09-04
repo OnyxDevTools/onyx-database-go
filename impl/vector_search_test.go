@@ -63,15 +63,185 @@ func TestBoundedCandidateBuilderWire(t *testing.T) {
 
 	assertQueryJSON(
 		t,
-		newQuery(nil, "Article").ApproximateCandidates("corpusId", []string{"one", "two"}, 17),
-		`{"type":"SelectQuery","table":"Article","conditions":{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"maxCandidates":17,"values":["one","two"]}}}}`,
+		newQuery(nil, "Article").
+			Where(contract.ApproximateCandidates("corpusId", []string{"one", "two"}, 17)).
+			And(contract.Eq("published", true)),
+		`{"type":"SelectQuery","table":"Article","conditions":{"conditionType":"CompoundCondition","conditions":[{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"maxCandidates":17,"values":["one","two"]}}},{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}}],"operator":"AND"}}`,
 	)
 }
 
-func TestCandidateBuilderEnforcesSoleRootBothDirections(t *testing.T) {
+func TestApproximateCandidateConditionComposesWithAndInEitherOrder(t *testing.T) {
+	candidate := contract.ApproximateCandidates("corpusId", []string{"one", "two"}, 17)
+	tests := []struct {
+		name  string
+		query contract.Query
+		want  string
+	}{
+		{
+			name: "candidate first",
+			query: newQuery(nil, "Article").
+				Where(candidate).
+				And(contract.Eq("published", true)),
+			want: `{"type":"SelectQuery","table":"Article","conditions":{"conditionType":"CompoundCondition","conditions":[{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"maxCandidates":17,"values":["one","two"]}}},{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}}],"operator":"AND"}}`,
+		},
+		{
+			name: "candidate last",
+			query: newQuery(nil, "Article").
+				Where(contract.Eq("published", true)).
+				And(candidate),
+			want: `{"type":"SelectQuery","table":"Article","conditions":{"conditionType":"CompoundCondition","conditions":[{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}},{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"maxCandidates":17,"values":["one","two"]}}}],"operator":"AND"}}`,
+		},
+		{
+			name: "compatibility shortcut",
+			query: newQuery(nil, "Article").
+				ApproximateCandidates("corpusId", []string{"one", "two"}, 17).
+				And(contract.Eq("published", true)),
+			want: `{"type":"SelectQuery","table":"Article","conditions":{"conditionType":"CompoundCondition","conditions":[{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"maxCandidates":17,"values":["one","two"]}}},{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}}],"operator":"AND"}}`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assertQueryJSON(t, test.query, test.want)
+		})
+	}
+}
+
+func TestApproximateCandidateConditionAcceptsNestedAndTree(t *testing.T) {
+	nested := json.RawMessage(`{
+		"conditionType":"CompoundCondition",
+		"operator":"AND",
+		"conditions":[
+			{"conditionType":"SingleCondition","criteria":{"field":"active","operator":"EQUAL","value":true}},
+			{"conditionType":"CompoundCondition","operator":"AND","conditions":[
+				{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"values":["one"],"maxCandidates":17}}},
+				{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}}
+			]}
+		]
+	}`)
+	query := newQuery(nil, "Article").Where(nested).And(contract.Eq("locale", "en"))
+	payload, err := json.Marshal(query)
+	if err != nil {
+		t.Fatalf("marshal nested candidate AND tree: %v", err)
+	}
+	if count := strings.Count(string(payload), `"operator":"CANDIDATES"`); count != 1 {
+		t.Fatalf("expected exactly one candidate condition, got %d in %s", count, payload)
+	}
+	assertReadOnlyMutation(t, query, "CANDIDATES")
+}
+
+func TestApproximateCandidateConditionRejectsUnsafeTrees(t *testing.T) {
+	candidate := contract.ApproximateCandidates("corpusId", "one")
+	tests := []struct {
+		name     string
+		query    contract.Query
+		contains string
+	}{
+		{
+			name: "OR after candidate",
+			query: newQuery(nil, "Article").
+				Where(candidate).
+				Or(contract.Eq("published", true)),
+			contains: "non-negated AND predicates",
+		},
+		{
+			name: "candidate after OR",
+			query: newQuery(nil, "Article").
+				Where(contract.Eq("published", true)).
+				Or(candidate),
+			contains: "non-negated AND predicates",
+		},
+		{
+			name: "candidate after nested ordinary OR",
+			query: newQuery(nil, "Article").
+				Where(contract.Eq("published", true)).
+				Or(contract.Eq("active", true)).
+				And(candidate),
+			contains: "non-negated AND predicates",
+		},
+		{
+			name: "duplicate candidates",
+			query: newQuery(nil, "Article").
+				Where(candidate).
+				And(contract.ApproximateCandidates("tenantId", "two")),
+			contains: "only one CANDIDATES criterion",
+		},
+		{
+			name: "nested OR",
+			query: newQuery(nil, "Article").Where(json.RawMessage(`{
+				"conditionType":"CompoundCondition",
+				"operator":"AND",
+				"conditions":[
+					{"conditionType":"SingleCondition","criteria":{"field":"active","operator":"EQUAL","value":true}},
+					{"conditionType":"CompoundCondition","operator":"OR","conditions":[
+						{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"values":["one"],"maxCandidates":17}}},
+						{"conditionType":"SingleCondition","criteria":{"field":"published","operator":"EQUAL","value":true}}
+					]}
+				]
+			}`)),
+			contains: "non-negated AND predicates",
+		},
+		{
+			name: "nested duplicate candidates",
+			query: newQuery(nil, "Article").Where(json.RawMessage(`{
+				"conditionType":"CompoundCondition",
+				"operator":"AND",
+				"conditions":[
+					{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"values":["one"],"maxCandidates":17}}},
+					{"conditionType":"CompoundCondition","operator":"AND","conditions":[
+						{"conditionType":"SingleCondition","criteria":{"field":"tenantId","operator":"CANDIDATES","value":{"values":["two"],"maxCandidates":17}}}
+					]}
+				]
+			}`)),
+			contains: "only one CANDIDATES criterion",
+		},
+		{
+			name: "negated candidate",
+			query: newQuery(nil, "Article").Where(json.RawMessage(`{
+				"conditionType":"SingleCondition",
+				"isNot":true,
+				"criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"values":["one"],"maxCandidates":17}}
+			}`)),
+			contains: "non-negated AND predicates",
+		},
+		{
+			name: "negated outer group",
+			query: newQuery(nil, "Article").Where(json.RawMessage(`{
+				"conditionType":"CompoundCondition",
+				"operator":"AND",
+				"flip":true,
+				"conditions":[
+					{"conditionType":"SingleCondition","criteria":{"field":"corpusId","operator":"CANDIDATES","value":{"values":["one"],"maxCandidates":17}}},
+					{"conditionType":"SingleCondition","criteria":{"field":"active","operator":"EQUAL","value":true}}
+				]
+			}`)),
+			contains: "non-negated AND predicates",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := json.Marshal(test.query); err == nil || !strings.Contains(err.Error(), test.contains) {
+				t.Fatalf("expected %q error, got %v", test.contains, err)
+			}
+			assertReadOnlyMutation(t, test.query, "CANDIDATES")
+		})
+	}
+}
+
+func TestStrictCandidateBuilderEnforcesSoleRootBothDirections(t *testing.T) {
 	lexical, err := contract.NewVectorSearchQuery(contract.VectorSearchQueryInput{Text: "bounded"})
 	if err != nil {
 		t.Fatalf("new lexical query: %v", err)
+	}
+	hnsw, err := contract.NewHNSWSearchQuery(contract.HNSWSearchQueryInput{
+		CalibrationID: 1,
+		Vector:        []float64{1},
+		MaxCandidates: 1,
+		EFSearch:      1,
+	})
+	if err != nil {
+		t.Fatalf("new HNSW query: %v", err)
 	}
 
 	tests := []struct {
@@ -103,9 +273,21 @@ func TestCandidateBuilderEnforcesSoleRootBothDirections(t *testing.T) {
 				SearchVector(lexical),
 		},
 		{
-			name: "condition helper receives same enforcement",
+			name: "nested condition receives same enforcement",
 			query: newQuery(nil, "Article").
-				Where(contract.ApproximateCandidates("corpusId", "one")).
+				Where(contract.ApproximateSearch(lexical)).
+				And(contract.Eq("published", true)),
+		},
+		{
+			name: "HNSW candidate after existing criterion",
+			query: newQuery(nil, "Article").
+				Where(contract.Eq("published", true)).
+				HNSWCandidates(hnsw),
+		},
+		{
+			name: "criterion after HNSW candidate",
+			query: newQuery(nil, "Article").
+				HNSWCandidates(hnsw).
 				And(contract.Eq("published", true)),
 		},
 	}
@@ -140,12 +322,11 @@ func TestCandidateBuilderIsReadOnly(t *testing.T) {
 	}
 }
 
-func TestRawCandidateConditionsAreRecursivelyReadOnlyAndSoleRoot(t *testing.T) {
+func TestRawStrictCandidateConditionsAreRecursivelyReadOnlyAndSoleRoot(t *testing.T) {
 	tests := []struct {
 		operator string
 		field    string
 	}{
-		{operator: "CANDIDATES", field: "corpusId"},
 		{operator: "SEARCH_CANDIDATES", field: "__full_text__"},
 		{operator: "HNSW_CANDIDATES", field: "__full_text__"},
 	}

@@ -439,9 +439,11 @@ if err != nil { log.Fatal(err) }
 and the optional `NearbyBucketRadius` and `RequireAllTerms` controls. Semantic
 64-bit identifiers and fingerprint words are serialized losslessly as strings.
 
-Physically bounded candidate channels are explicit and read-only. Each must be
-the sole root criterion; partitioned tables also require one concrete
-`InPartition` value:
+Physically bounded candidate channels are explicit and read-only.
+`SEARCH_CANDIDATES` and `HNSW_CANDIDATES` must be the sole root criterion.
+Exactly one ordinary-index `CANDIDATES` condition may instead be combined with
+recursively non-negated `AND` predicates. Partitioned tables also require one
+concrete `InPartition` value:
 
 ```go
 // Bounded lexical candidates.
@@ -465,9 +467,21 @@ neighbors, err := db.From("Article").HNSWCandidates(hnsw).List(ctx)
 
 // Bounded EQUAL/IN admission from an ordinary secondary index.
 sample, err := db.From("Article").
-    ApproximateCandidates("corpusId", []string{"public", "archive"}, 100).
+    InPartition("tenant-id").
+    Where(onyx.ApproximateCandidates(
+        "corpusId",
+        []string{"public", "archive"},
+        100,
+    )).
+    And(onyx.Eq("published", true)).
     List(ctx)
 ```
+
+The `CANDIDATES` index walk admits at most `MaxCandidates` rows once; later
+`AND` conditions filter only that admitted set. `OR`, negation, and a second
+`CANDIDATES` condition are rejected. `Query.ApproximateCandidates` remains as
+a deprecated compatibility shortcut; new code should use the condition helper
+inside `Where` as shown above.
 
 HNSW vectors contain 1–16384 finite values with a non-zero norm.
 `MaxCandidates` is bounded to 1–5000, `EFSearch` defaults to

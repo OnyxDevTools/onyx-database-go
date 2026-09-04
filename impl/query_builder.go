@@ -1,7 +1,6 @@
 package impl
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/OnyxDevTools/onyx-database-go/contract"
@@ -24,7 +23,7 @@ type query struct {
 	limit         *int
 	updates       map[string]any
 	partition     *string
-	candidateOp   string
+	conditionPlan *conditionPlan
 	readOnlyOp    string
 	buildErr      error
 }
@@ -59,36 +58,7 @@ func (q *query) clone() *query {
 }
 
 func (q *query) Where(condition contract.Condition) contract.Query {
-	nq := q.clone()
-	if nq.buildErr != nil {
-		return nq
-	}
-	if nq.candidateOp != "" {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
-		return nq
-	}
-	plan, err := inspectConditionOperators(condition)
-	if err != nil {
-		nq.buildErr = err
-		return nq
-	}
-	incomingCandidate := plan.candidateOperator
-	incomingReadOnly := plan.readOnlyOperator
-	if incomingReadOnly != "" {
-		nq.readOnlyOp = incomingReadOnly
-	}
-	if incomingCandidate != "" &&
-		(!plan.rootIsSingle || plan.rootOperator != incomingCandidate) {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
-		return nq
-	}
-	if incomingCandidate != "" && len(nq.clauses) > 0 {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
-		return nq
-	}
-	nq.clauses = append(nq.clauses, clause{Type: "and", Condition: condition})
-	nq.candidateOp = incomingCandidate
-	return nq
+	return q.addCondition("and", condition)
 }
 
 func (q *query) And(condition contract.Condition) contract.Query {
@@ -96,36 +66,51 @@ func (q *query) And(condition contract.Condition) contract.Query {
 }
 
 func (q *query) Or(condition contract.Condition) contract.Query {
+	return q.addCondition("or", condition)
+}
+
+func (q *query) addCondition(operator string, condition contract.Condition) contract.Query {
 	nq := q.clone()
 	if nq.buildErr != nil {
 		return nq
 	}
-	if nq.candidateOp != "" {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", nq.candidateOp)
-		return nq
-	}
-	plan, err := inspectConditionOperators(condition)
+	incoming, err := inspectConditionOperators(condition)
 	if err != nil {
 		nq.buildErr = err
 		return nq
 	}
-	incomingCandidate := plan.candidateOperator
-	incomingReadOnly := plan.readOnlyOperator
-	if incomingReadOnly != "" {
-		nq.readOnlyOp = incomingReadOnly
+
+	prospective := incoming
+	if len(nq.clauses) > 0 {
+		existing, existingErr := nq.inspectedConditionPlan()
+		if existingErr != nil {
+			nq.buildErr = existingErr
+			return nq
+		}
+		prospective = combineConditionPlans(existing, incoming, operator)
 	}
-	if incomingCandidate != "" &&
-		(!plan.rootIsSingle || plan.rootOperator != incomingCandidate) {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
+	if prospective.readOnlyOperator != "" {
+		nq.readOnlyOp = prospective.readOnlyOperator
+	}
+	if err := validateInspectedConditionPlan(prospective); err != nil {
+		nq.buildErr = err
 		return nq
 	}
-	if incomingCandidate != "" && len(nq.clauses) > 0 {
-		nq.buildErr = fmt.Errorf("%s must be the sole root criterion", incomingCandidate)
-		return nq
-	}
-	nq.clauses = append(nq.clauses, clause{Type: "or", Condition: condition})
-	nq.candidateOp = incomingCandidate
+
+	nq.clauses = append(nq.clauses, clause{Type: operator, Condition: condition})
+	nq.conditionPlan = &prospective
 	return nq
+}
+
+func (q *query) inspectedConditionPlan() (conditionPlan, error) {
+	if q.conditionPlan != nil {
+		return *q.conditionPlan, nil
+	}
+	raw, err := buildConditions(q.clauses)
+	if err != nil {
+		return conditionPlan{}, err
+	}
+	return inspectConditionJSON(raw)
 }
 
 func (q *query) Search(queryText string, minScore ...float64) contract.Query {
@@ -151,6 +136,10 @@ func (q *query) HNSWCandidates(searchQuery contract.HNSWSearchQuery) contract.Qu
 	return q.Where(contract.HNSWCandidates(searchQuery))
 }
 
+// ApproximateCandidates is retained as a compatibility shortcut.
+//
+// Deprecated: use Where(contract.ApproximateCandidates(...)) so bounded
+// admission follows the same condition composition pattern as other operators.
 func (q *query) ApproximateCandidates(
 	attribute string,
 	valueOrValues any,

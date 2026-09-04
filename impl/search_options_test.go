@@ -30,7 +30,7 @@ func TestSearchWithOptionsBuilderWireAndComposition(t *testing.T) {
 	}
 
 	// SEARCH is composable in either direction and is not subject to the
-	// sole-root restriction used by bounded candidate operators.
+	// sole-root restriction used by strict bounded candidate operators.
 	reversed := newQuery(nil, "ActiveDocumentChunk").
 		Where(contract.Eq("active", true)).
 		SearchWithOptions("cost per horse", options)
@@ -123,6 +123,12 @@ func TestSearchWithOptionsRejectsConflictingFullTextCriteria(t *testing.T) {
 	if err != nil {
 		t.Fatalf("new vector query: %v", err)
 	}
+	withCandidate := newQuery(nil, "Article").
+		SearchWithOptions("semantic", options).
+		And(contract.ApproximateCandidates("corpusId", "one"))
+	if _, err := json.Marshal(withCandidate); err != nil {
+		t.Fatalf("SEARCH should compose with an ordinary-index candidate condition: %v", err)
+	}
 
 	tests := []struct {
 		name     string
@@ -156,13 +162,6 @@ func TestSearchWithOptionsRejectsConflictingFullTextCriteria(t *testing.T) {
 				SearchWithOptions("semantic", options).
 				SearchVector(vector),
 			contains: "another full-text search criterion",
-		},
-		{
-			name: "candidate conflicts with high-level search",
-			query: newQuery(nil, "Article").
-				SearchWithOptions("semantic", options).
-				ApproximateCandidates("corpusId", "one"),
-			contains: "CANDIDATES must be the sole root criterion",
 		},
 		{
 			name: "raw compound full-text conflict",

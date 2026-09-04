@@ -59,6 +59,9 @@ func ApproximateSearch(searchQuery VectorSearchQuery) Condition {
 func HNSWCandidates(searchQuery HNSWSearchQuery) Condition {
 	return contract.HNSWCandidates(searchQuery)
 }
+
+// ApproximateCandidates creates a bounded ordinary-index candidate condition
+// for use with Query.Where and Query.And.
 func ApproximateCandidates(field string, valueOrValues any, maxCandidates ...int) Condition {
 	return contract.ApproximateCandidates(field, valueOrValues, maxCandidates...)
 }
