@@ -228,7 +228,7 @@ func TestNonEntityRoutesRemainJSONWithMessagePackConfigured(t *testing.T) {
 
 func TestWireFormatNormalization(t *testing.T) {
 	for input, want := range map[string]string{
-		"":          contract.WireFormatJSON,
+		"":          contract.WireFormatMessagePack,
 		"  JSON  ":  contract.WireFormatJSON,
 		" MSGPACK ": contract.WireFormatMessagePack,
 	} {

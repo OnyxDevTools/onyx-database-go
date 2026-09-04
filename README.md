@@ -165,14 +165,14 @@ Shape:
 
 `onyx.Init` / `onyx.New` resolve configuration once per cache key and reuse a single signed HTTP client (keep-alive enabled). Reuse the returned client across operations; `CacheTTL` controls how long resolution results are reused. `onyx.ClearConfigCache()` also clears the HTTP client cache.
 
-### Optional binary entity transport
+### Entity transport
 
-JSON remains the default. To opt entity saves, deletes, batches, queries, and query streams into the smaller MessagePack transport, set `WireFormat` when initializing the core client:
+Entity saves, deletes, batches, queries, and query streams use the smaller MessagePack transport by default. To force the legacy JSON transport, set `WireFormat` when initializing the core client:
 
 ```go
 db, err := onyx.Init(ctx, onyx.Config{
     DatabaseID: "db_123",
-    WireFormat: onyx.WireFormatMessagePack,
+    WireFormat: onyx.WireFormatJSON,
 })
 ```
 

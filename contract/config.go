@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	// WireFormatJSON keeps the existing JSON entity transport and is the default.
+	// WireFormatJSON opts entity CRUD and query routes into JSON.
 	WireFormatJSON = "json"
-	// WireFormatMessagePack opts entity CRUD and query routes into MessagePack.
+	// WireFormatMessagePack uses the default MessagePack entity transport.
 	WireFormatMessagePack = "msgpack"
 )
 
@@ -25,7 +25,7 @@ type Config struct {
 	LogResponses    bool
 	Partition       string
 	// WireFormat controls entity CRUD and query payloads. Empty is equivalent
-	// to WireFormatJSON. Documents, schemas, secrets, and AI always use JSON.
+	// to WireFormatMessagePack. Documents, schemas, secrets, and AI always use JSON.
 	WireFormat string
 	HTTPClient *http.Client
 	Clock      func() time.Time

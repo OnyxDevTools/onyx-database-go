@@ -166,10 +166,10 @@ func Init(ctx context.Context, cfg Config) (contract.Client, error) {
 
 func normalizeWireFormat(value string) (string, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "", contract.WireFormatJSON:
-		return contract.WireFormatJSON, nil
-	case contract.WireFormatMessagePack:
+	case "", contract.WireFormatMessagePack:
 		return contract.WireFormatMessagePack, nil
+	case contract.WireFormatJSON:
+		return contract.WireFormatJSON, nil
 	default:
 		return "", fmt.Errorf("unsupported entity wire format %q (expected %q or %q)", value, contract.WireFormatJSON, contract.WireFormatMessagePack)
 	}
