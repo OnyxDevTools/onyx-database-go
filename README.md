@@ -767,3 +767,18 @@ See `RELEASING.md` for details. In short:
 ## License
 
 MIT © Onyx Dev Tools. See `LICENSE`.
+
+## Insert without overwriting
+
+`insert` uses `POST /data/{databaseId}/{table}` (Onyx 4.2.9) and returns the new entity on `201 Created`. An identifier already present in the same partition returns HTTP `409` with the database exception message; the existing row is preserved. `save` continues to insert or update. Writes are not retried automatically.
+
+```go
+// Use the SDK client returned by onyx.New, with a physical table name.
+inserted, err := db.Insert(ctx, "Account", map[string]any{
+    "id": "acct_new", "name": "Primary", "balance": 0,
+}, nil)
+if err != nil { return err }
+_ = inserted
+```
+
+Arrays, where supported by the client, run sequentially and can partially complete before an error. Cascade children use save semantics. Inspect uncertain outcomes before retrying; never fall back to save to bypass a conflict.

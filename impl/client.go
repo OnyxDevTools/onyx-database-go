@@ -219,6 +219,20 @@ func (c *client) Save(ctx context.Context, table string, entity any, relationshi
 	return resp, nil
 }
 
+func (c *client) Insert(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
+	path := c.tablePath(table)
+	if len(relationships) > 0 {
+		params := url.Values{}
+		params.Set("relationships", strings.Join(relationships, ","))
+		path += "?" + params.Encode()
+	}
+	var resp map[string]any
+	if err := c.httpClient.DoEntity(ctx, http.MethodPost, path, entity, &resp, c.wireFormat); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (c *client) Delete(ctx context.Context, table, id string) error {
 	path := c.tablePath(table) + "/" + tableEscape(id)
 	if strings.TrimSpace(c.cfg.Partition) != "" {

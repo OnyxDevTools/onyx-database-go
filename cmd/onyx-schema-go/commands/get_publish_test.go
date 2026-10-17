@@ -109,6 +109,9 @@ func (s *stubClient) Cascade(spec onyx.CascadeSpec) onyx.CascadeClient        { 
 func (s *stubClient) Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
 	return nil, nil
 }
+func (s *stubClient) Insert(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error) {
+	return nil, nil
+}
 func (s *stubClient) Delete(ctx context.Context, table, id string) error { return nil }
 func (s *stubClient) BatchSave(ctx context.Context, table string, entities []any, batchSize int) error {
 	return nil

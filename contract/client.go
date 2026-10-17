@@ -12,6 +12,8 @@ type Client interface {
 	Cascade(spec CascadeSpec) CascadeClient
 
 	Save(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error)
+	// Insert creates one root entity; duplicate identifiers in its partition return status 409.
+	Insert(ctx context.Context, table string, entity any, relationships []string) (map[string]any, error)
 	Delete(ctx context.Context, table, id string) error
 	BatchSave(ctx context.Context, table string, entities []any, batchSize int) error
 
